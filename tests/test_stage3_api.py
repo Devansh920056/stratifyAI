@@ -183,12 +183,20 @@ async def test_non_existent_job_returns_404(api_client: httpx.AsyncClient):
 @pytest.mark.asyncio
 async def test_list_jobs_endpoint(api_client: httpx.AsyncClient):
     """Verify /api/v1/jobs returns paginated list of jobs."""
+    # Create a job first to ensure data exists independently of test ordering
+    await api_client.post("/api/v1/jobs", json={
+        "research_question": "Examine carbon capture and storage market economics",
+        "target_market": "Climate Tech",
+        "geography": "Global",
+    })
+
     res = await api_client.get("/api/v1/jobs?limit=10&offset=0")
     assert res.status_code == 200
     data = res.json()
     assert isinstance(data, list)
     assert len(data) >= 1
     assert "tasks_count" in data[0]
+
 
 
 @pytest.mark.asyncio
