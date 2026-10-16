@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: stratify_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-stratify_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-stratify_dev_secret_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-stratify_db}
+    ports:
+      # Explicit loopback binding to port 5434 to prevent conflicting with host postgres on 5432
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - stratify_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-stratify_admin} -d $${POSTGRES_DB:-stratify_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - stratify_net
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: stratify_rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-stratify_broker}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-broker_dev_secret_change_me}
+    ports:
+      # Explicit loopback binding for AMQP protocol and Management UI
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - stratify_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    networks:
+      - stratify_net
+
+volumes:
+  stratify_postgres_data:
+    name: stratify_postgres_data
+  stratify_rabbitmq_data:
+    name: stratify_rabbitmq_data
+
+networks:
+  stratify_net:
+    name: stratify_net
+    driver: bridge
