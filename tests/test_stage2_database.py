@@ -11,7 +11,8 @@ Verifies:
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 import pytest_asyncio
 from sqlalchemy import select, update
@@ -29,7 +30,7 @@ from backend.app.models.enums import (
     TaskStatus,
     TaskType,
 )
-from backend.app.models.evidence import Evidence, compute_url_hash
+from backend.app.models.evidence import Evidence
 from backend.app.models.job import Job
 from backend.app.models.outbox import OutboxEvent
 from backend.app.models.report import Report
@@ -121,7 +122,12 @@ async def test_task_result_uniqueness_enforcement(db_session: AsyncSession):
     # Insert initial task result
     result1 = TaskResult(
         task_id=task.id,
-        key_findings=[{"claim": "NIST standardized lattice-based algorithms", "source_id": "src-1"}],
+        key_findings=[
+            {
+                "claim": "NIST standardized lattice-based algorithms",
+                "source_id": "src-1",
+            }
+        ],
         grounded_summary="Post-quantum standards established by NIST.",
         confidence_score=0.95,
         citations=[{"url": "https://nist.gov/pqc", "title": "PQC Standards"}],
@@ -278,7 +284,7 @@ async def test_outbox_event_persistence_and_polling(db_session: AsyncSession):
 
     # Simulate successful dispatch
     matching_event.status = OutboxStatus.PUBLISHED.value
-    matching_event.published_at = datetime.now(timezone.utc)
+    matching_event.published_at = datetime.now(UTC)
     await db_session.flush()
 
     assert matching_event.status == OutboxStatus.PUBLISHED.value

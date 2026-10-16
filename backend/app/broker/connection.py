@@ -2,12 +2,14 @@
 RabbitMQ Asynchronous Connection & Channel Factory using aio-pika.
 """
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator, Optional
+
 import aio_pika
 from aio_pika.abc import AbstractRobustChannel, AbstractRobustConnection
-from backend.app.core.config import get_settings
+
 from backend.app.broker.topology import setup_broker_topology
+from backend.app.core.config import get_settings
 
 settings = get_settings()
 

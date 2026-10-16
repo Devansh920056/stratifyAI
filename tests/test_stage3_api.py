@@ -11,9 +11,11 @@ Verifies:
 """
 
 import uuid
+
+import httpx
 import pytest
 import pytest_asyncio
-import httpx
+
 from backend.app.main import app
 from backend.app.models.enums import TaskType
 
@@ -64,7 +66,7 @@ async def test_create_research_job_success(api_client: httpx.AsyncClient):
     response = await api_client.post("/api/v1/jobs", json=payload)
     assert response.status_code == 202
     assert "Location" in response.headers
-    
+
     data = response.json()
     assert "id" in data
     job_id = data["id"]
@@ -103,26 +105,35 @@ async def test_create_research_job_success(api_client: httpx.AsyncClient):
 async def test_create_research_job_validation_errors(api_client: httpx.AsyncClient):
     """Verify input validation returns 422 on invalid, missing, or whitespace payloads."""
     # 1. Question too short (< 10 chars)
-    res1 = await api_client.post("/api/v1/jobs", json={
-        "research_question": "Too short",
-        "target_market": "Tech",
-        "geography": "Global",
-    })
+    res1 = await api_client.post(
+        "/api/v1/jobs",
+        json={
+            "research_question": "Too short",
+            "target_market": "Tech",
+            "geography": "Global",
+        },
+    )
     assert res1.status_code == 422
 
     # 2. Missing required field target_market
-    res2 = await api_client.post("/api/v1/jobs", json={
-        "research_question": "Valid research question about markets",
-        "geography": "Global",
-    })
+    res2 = await api_client.post(
+        "/api/v1/jobs",
+        json={
+            "research_question": "Valid research question about markets",
+            "geography": "Global",
+        },
+    )
     assert res2.status_code == 422
 
     # 3. Whitespace-only string
-    res3 = await api_client.post("/api/v1/jobs", json={
-        "research_question": "   ",
-        "target_market": "Tech",
-        "geography": "Global",
-    })
+    res3 = await api_client.post(
+        "/api/v1/jobs",
+        json={
+            "research_question": "   ",
+            "target_market": "Tech",
+            "geography": "Global",
+        },
+    )
     assert res3.status_code == 422
 
 
@@ -130,11 +141,14 @@ async def test_create_research_job_validation_errors(api_client: httpx.AsyncClie
 async def test_get_job_tasks_endpoint(api_client: httpx.AsyncClient):
     """Verify /api/v1/jobs/{job_id}/tasks returns list of tasks."""
     # Create job
-    create_res = await api_client.post("/api/v1/jobs", json={
-        "research_question": "Examine solid state battery commercialization",
-        "target_market": "Energy Storage",
-        "geography": "Global",
-    })
+    create_res = await api_client.post(
+        "/api/v1/jobs",
+        json={
+            "research_question": "Examine solid state battery commercialization",
+            "target_market": "Energy Storage",
+            "geography": "Global",
+        },
+    )
     job_id = create_res.json()["id"]
 
     # Query tasks
@@ -157,11 +171,14 @@ async def test_report_endpoint_honest_404_before_ready(api_client: httpx.AsyncCl
     No fake functionality or premature reports.
     Querying /report on an incomplete job MUST return 404 with honest explanation.
     """
-    create_res = await api_client.post("/api/v1/jobs", json={
-        "research_question": "Direct lithium extraction technology landscape",
-        "target_market": "Mining & Materials",
-        "geography": "South America",
-    })
+    create_res = await api_client.post(
+        "/api/v1/jobs",
+        json={
+            "research_question": "Direct lithium extraction technology landscape",
+            "target_market": "Mining & Materials",
+            "geography": "South America",
+        },
+    )
     job_id = create_res.json()["id"]
 
     report_res = await api_client.get(f"/api/v1/jobs/{job_id}/report")
@@ -184,11 +201,14 @@ async def test_non_existent_job_returns_404(api_client: httpx.AsyncClient):
 async def test_list_jobs_endpoint(api_client: httpx.AsyncClient):
     """Verify /api/v1/jobs returns paginated list of jobs."""
     # Create a job first to ensure data exists independently of test ordering
-    await api_client.post("/api/v1/jobs", json={
-        "research_question": "Examine carbon capture and storage market economics",
-        "target_market": "Climate Tech",
-        "geography": "Global",
-    })
+    await api_client.post(
+        "/api/v1/jobs",
+        json={
+            "research_question": "Examine carbon capture and storage market economics",
+            "target_market": "Climate Tech",
+            "geography": "Global",
+        },
+    )
 
     res = await api_client.get("/api/v1/jobs?limit=10&offset=0")
     assert res.status_code == 200
@@ -198,12 +218,14 @@ async def test_list_jobs_endpoint(api_client: httpx.AsyncClient):
     assert "tasks_count" in data[0]
 
 
-
 @pytest.mark.asyncio
 async def test_openapi_docs_available(api_client: httpx.AsyncClient):
     """Verify OpenAPI schema is successfully generated."""
     res = await api_client.get("/openapi.json")
     assert res.status_code == 200
     openapi = res.json()
-    assert openapi["info"]["title"] == "Stratify AI — Distributed Market Intelligence Coordinator"
+    assert (
+        openapi["info"]["title"]
+        == "Stratify AI — Distributed Market Intelligence Coordinator"
+    )
     assert "/api/v1/jobs" in openapi["paths"]

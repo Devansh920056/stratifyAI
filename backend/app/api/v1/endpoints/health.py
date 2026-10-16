@@ -2,9 +2,11 @@
 Health and Readiness Probes.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
+
 from backend.app.db.session import check_database_health
 from backend.app.schemas.health import HealthResponse
 
@@ -22,7 +24,7 @@ async def liveness_probe() -> HealthResponse:
     return HealthResponse(
         status="healthy",
         version="0.1.0",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         components={"api": "healthy"},
     )
 
@@ -43,7 +45,7 @@ async def readiness_probe():
             content=HealthResponse(
                 status="unhealthy",
                 version="0.1.0",
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
                 components=components,
             ).model_dump(mode="json"),
         )
@@ -51,6 +53,6 @@ async def readiness_probe():
     return HealthResponse(
         status="healthy",
         version="0.1.0",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         components=components,
     )

@@ -3,6 +3,7 @@ API v1 Router aggregator.
 """
 
 from fastapi import APIRouter
+
 from backend.app.api.v1.endpoints import health, jobs
 
 api_router = APIRouter()

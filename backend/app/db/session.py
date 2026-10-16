@@ -2,7 +2,8 @@
 Async Database Session & Engine Management using SQLAlchemy 2.x and Psycopg 3.
 """
 
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -10,6 +11,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
 from backend.app.core.config import get_settings
 
 settings = get_settings()
@@ -20,8 +22,8 @@ async_engine: AsyncEngine = create_async_engine(
     echo=(settings.LOG_LEVEL == "DEBUG"),
     pool_size=10,
     max_overflow=20,
-    pool_pre_ping=True,      # Tests connection liveness before checking out from pool
-    pool_recycle=1800,       # Recycles connections every 30 minutes to prevent server timeouts
+    pool_pre_ping=True,  # Tests connection liveness before checking out from pool
+    pool_recycle=1800,  # Recycles connections every 30 minutes to prevent server timeouts
     connect_args={"connect_timeout": 10},
 )
 
@@ -51,6 +53,9 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+from sqlalchemy.exc import SQLAlchemyError
+
+
 async def check_database_health() -> bool:
     """
     Executes a lightweight ping to verify database responsiveness.
@@ -60,5 +65,5 @@ async def check_database_health() -> bool:
         async with async_engine.connect() as conn:
             await conn.execute(text("SELECT 1;"))
             return True
-    except Exception:
+    except (SQLAlchemyError, OSError):
         return False

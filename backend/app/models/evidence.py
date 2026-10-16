@@ -5,14 +5,15 @@ Evidence Model representing untrusted raw text retrieved from external web sourc
 import hashlib
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
+
 from sqlalchemy import DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from backend.app.db.base import Base, utc_now
 
 if TYPE_CHECKING:
-    from backend.app.models.job import Job
     from backend.app.models.task import Task
 
 
@@ -43,25 +44,25 @@ class Evidence(Base):
         index=True,
     )
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
-    source_title: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    source_title: Mapped[str | None] = mapped_column(Text, nullable=True)
     snippet: Mapped[str] = mapped_column(Text, nullable=False)
     retrieved_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=utc_now,
         nullable=False,
     )
-    provider_name: Mapped[str] = mapped_column(String(50), nullable=False, default="mock")
+    provider_name: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="mock"
+    )
     provider_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    
+
     # URL hash allows fast index lookups and deduplication within the task
     url_hash: Mapped[str] = mapped_column(String(64), nullable=False)
 
     # Relationships
     task: Mapped["Task"] = relationship("Task", back_populates="evidence")
 
-    __table_args__ = (
-        Index("ix_evidence_task_url_hash", "task_id", "url_hash"),
-    )
+    __table_args__ = (Index("ix_evidence_task_url_hash", "task_id", "url_hash"),)
 
     def __init__(self, **kwargs):
         if "source_url" in kwargs and "url_hash" not in kwargs:
@@ -69,4 +70,6 @@ class Evidence(Base):
         super().__init__(**kwargs)
 
     def __repr__(self) -> str:
-        return f"<Evidence id={self.id} task_id={self.task_id} url={self.source_url[:30]}>"
+        return (
+            f"<Evidence id={self.id} task_id={self.task_id} url={self.source_url[:30]}>"
+        )

@@ -3,9 +3,10 @@ Job Service managing transactional persistence of research jobs and task decompo
 """
 
 import uuid
-from typing import List, Optional
+
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.app.models.enums import JobStatus, OutboxStatus
 from backend.app.models.job import Job
 from backend.app.models.outbox import OutboxEvent
@@ -73,36 +74,29 @@ class JobService:
         return job
 
     @staticmethod
-    async def get_job(db: AsyncSession, job_id: uuid.UUID) -> Optional[Job]:
+    async def get_job(db: AsyncSession, job_id: uuid.UUID) -> Job | None:
         """Fetch a Job by UUID with related tasks and report."""
         stmt = select(Job).where(Job.id == job_id)
         return await db.scalar(stmt)
 
     @staticmethod
-    async def list_jobs(db: AsyncSession, limit: int = 50, offset: int = 0) -> List[Job]:
+    async def list_jobs(
+        db: AsyncSession, limit: int = 50, offset: int = 0
+    ) -> list[Job]:
         """Fetch recent jobs ordered by creation date descending."""
-        stmt = (
-            select(Job)
-            .order_by(desc(Job.created_at))
-            .limit(limit)
-            .offset(offset)
-        )
+        stmt = select(Job).order_by(desc(Job.created_at)).limit(limit).offset(offset)
         result = await db.scalars(stmt)
         return list(result.all())
 
     @staticmethod
-    async def get_job_tasks(db: AsyncSession, job_id: uuid.UUID) -> List[Task]:
+    async def get_job_tasks(db: AsyncSession, job_id: uuid.UUID) -> list[Task]:
         """Fetch all child tasks for a given Job."""
-        stmt = (
-            select(Task)
-            .where(Task.job_id == job_id)
-            .order_by(Task.created_at)
-        )
+        stmt = select(Task).where(Task.job_id == job_id).order_by(Task.created_at)
         result = await db.scalars(stmt)
         return list(result.all())
 
     @staticmethod
-    async def get_job_report(db: AsyncSession, job_id: uuid.UUID) -> Optional[Report]:
+    async def get_job_report(db: AsyncSession, job_id: uuid.UUID) -> Report | None:
         """Fetch the generated report for a given Job if completed."""
         stmt = select(Report).where(Report.job_id == job_id)
         return await db.scalar(stmt)

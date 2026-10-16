@@ -4,8 +4,10 @@ Sets up durable exchanges, durable queues, bindings, and dead-letter routing.
 """
 
 import logging
+
 import aio_pika
 from aio_pika import ExchangeType
+
 from backend.app.broker.constants import (
     DEAD_LETTER_EXCHANGE,
     DEAD_LETTER_QUEUE,

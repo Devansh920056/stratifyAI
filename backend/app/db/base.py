@@ -2,10 +2,11 @@
 Database Base Class and Metadata for SQLAlchemy 2.0 Declarative Models.
 """
 
-from datetime import datetime, timezone
-from typing import Any
+from datetime import UTC, datetime
+from typing import Any, ClassVar
+
 from sqlalchemy import DateTime, MetaData
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase
 
 # Standard naming convention for constraints to ensure deterministic Alembic migrations
 POSTGRES_NAMING_CONVENTION = {
@@ -19,14 +20,13 @@ POSTGRES_NAMING_CONVENTION = {
 
 def utc_now() -> datetime:
     """Generate timezone-aware UTC datetime."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class Base(DeclarativeBase):
     """Declarative Base containing common metadata and helpers."""
+
     metadata = MetaData(naming_convention=POSTGRES_NAMING_CONVENTION)
 
-    # Automatically map timezone-aware datetime types
-    type_annotation_map = {
-        datetime: DateTime(timezone=True)
-    }
+    # Explicit ClassVar annotation for type_annotation_map
+    type_annotation_map: ClassVar[dict[Any, Any]] = {datetime: DateTime(timezone=True)}

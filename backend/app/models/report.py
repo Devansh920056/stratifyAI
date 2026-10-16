@@ -4,10 +4,12 @@ Report Model representing the aggregated intelligence report for a completed or 
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
+
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from backend.app.db.base import Base, utc_now
 from backend.app.models.enums import ReportStatus
 
@@ -34,11 +36,15 @@ class Report(Base):
     )
     executive_summary: Mapped[str] = mapped_column(Text, nullable=False)
     market_findings: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    competitor_analysis: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    competitor_analysis: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, default=dict
+    )
     customer_insights: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    opportunities_and_risks: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
+    opportunities_and_risks: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, default=dict
+    )
     citations: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
-    research_limitations: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    research_limitations: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     status: Mapped[str] = mapped_column(
         String(30),

@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import List, Optional
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     Centralized, validated configuration for Stratify AI.
     Loads values from environment variables or .env file.
     """
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -19,13 +20,16 @@ class Settings(BaseSettings):
     # --------------------------------------------------------------------------
     # Application & Logging
     # --------------------------------------------------------------------------
-    ENVIRONMENT: str = Field(default="development", description="Environment mode: development | test | production")
+    ENVIRONMENT: str = Field(
+        default="development",
+        description="Environment mode: development | test | production",
+    )
     LOG_LEVEL: str = Field(default="INFO", description="Standard logging level")
     API_HOST: str = Field(default="127.0.0.1", description="FastAPI bind address")
     API_PORT: int = Field(default=8000, description="FastAPI bind port")
-    CORS_ORIGINS: List[str] = Field(
+    CORS_ORIGINS: list[str] = Field(
         default=["http://localhost:3000", "http://127.0.0.1:3000"],
-        description="Allowed CORS origin domains"
+        description="Allowed CORS origin domains",
     )
 
     # --------------------------------------------------------------------------
@@ -35,15 +39,17 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = Field(default="stratify_dev_secret_change_me")
     POSTGRES_DB: str = Field(default="stratify_db")
     POSTGRES_HOST: str = Field(default="127.0.0.1")
-    POSTGRES_PORT: int = Field(default=5434, description="Docker PostgreSQL mapped port")
-    DATABASE_URL: Optional[str] = Field(
+    POSTGRES_PORT: int = Field(
+        default=5434, description="Docker PostgreSQL mapped port"
+    )
+    DATABASE_URL: str | None = Field(
         default=None,
-        description="Full connection URI. Computed from parts if not explicitly provided."
+        description="Full connection URI. Computed from parts if not explicitly provided.",
     )
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: Optional[str], info) -> str:
+    def assemble_db_connection(cls, v: str | None, info) -> str:
         if isinstance(v, str) and v.strip():
             return v
         data = info.data
@@ -62,14 +68,14 @@ class Settings(BaseSettings):
     RABBITMQ_HOST: str = Field(default="127.0.0.1")
     RABBITMQ_PORT: int = Field(default=5672)
     RABBITMQ_MANAGEMENT_PORT: int = Field(default=15672)
-    RABBITMQ_URL: Optional[str] = Field(
+    RABBITMQ_URL: str | None = Field(
         default=None,
-        description="Full AMQP connection URL. Computed from parts if not provided."
+        description="Full AMQP connection URL. Computed from parts if not provided.",
     )
 
     @field_validator("RABBITMQ_URL", mode="before")
     @classmethod
-    def assemble_rabbitmq_url(cls, v: Optional[str], info) -> str:
+    def assemble_rabbitmq_url(cls, v: str | None, info) -> str:
         if isinstance(v, str) and v.strip():
             return v
         data = info.data
@@ -83,10 +89,10 @@ class Settings(BaseSettings):
     # Research Providers (Search & LLM)
     # --------------------------------------------------------------------------
     SEARCH_PROVIDER: str = Field(default="mock", description="mock | tavily | serper")
-    TAVILY_API_KEY: Optional[str] = Field(default=None)
+    TAVILY_API_KEY: str | None = Field(default=None)
 
     LLM_PROVIDER: str = Field(default="mock", description="mock | gemini | openai")
-    GEMINI_API_KEY: Optional[str] = Field(default=None)
+    GEMINI_API_KEY: str | None = Field(default=None)
     LLM_MODEL: str = Field(default="gemini-1.5-flash")
 
     # --------------------------------------------------------------------------
@@ -98,7 +104,7 @@ class Settings(BaseSettings):
     OUTBOX_POLL_INTERVAL_SECONDS: float = Field(default=1.0, ge=0.1, le=10.0)
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """Singleton getter for application configuration."""
     return Settings()

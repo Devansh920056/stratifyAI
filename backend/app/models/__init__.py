@@ -17,15 +17,15 @@ from backend.app.models.task import Task
 from backend.app.models.task_result import TaskResult
 
 __all__ = [
-    "Job",
-    "Task",
     "Evidence",
-    "TaskResult",
-    "Report",
-    "OutboxEvent",
+    "Job",
     "JobStatus",
+    "OutboxEvent",
+    "OutboxStatus",
+    "Report",
+    "ReportStatus",
+    "Task",
+    "TaskResult",
     "TaskStatus",
     "TaskType",
-    "ReportStatus",
-    "OutboxStatus",
 ]

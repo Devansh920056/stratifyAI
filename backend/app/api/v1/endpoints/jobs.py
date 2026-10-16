@@ -4,9 +4,11 @@ Handles job submission, status polling, task inspection, and report retrieval.
 """
 
 import uuid
-from typing import List
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.app.db.session import get_async_session
 from backend.app.schemas.job import (
     JobCreateRequest,
@@ -19,6 +21,9 @@ from backend.app.services.job_service import JobService
 
 router = APIRouter()
 
+# Modern FastAPI dependency annotation avoiding B008
+SessionDep = Annotated[AsyncSession, Depends(get_async_session)]
+
 
 @router.post(
     "",
@@ -30,10 +35,10 @@ router = APIRouter()
 async def create_research_job(
     request: JobCreateRequest,
     response: Response,
-    db: AsyncSession = Depends(get_async_session),
+    db: SessionDep,
 ) -> JobResponse:
     job = await JobService.create_job(db=db, request=request)
-    
+
     # Set standard HTTP 202 Location header for polling
     response.headers["Location"] = f"/api/v1/jobs/{job.id}"
 
@@ -55,15 +60,15 @@ async def create_research_job(
 
 @router.get(
     "",
-    response_model=List[JobResponse],
+    response_model=list[JobResponse],
     summary="List Research Jobs",
     description="Returns recent research jobs ordered by creation timestamp descending.",
 )
 async def list_jobs(
+    db: SessionDep,
     limit: int = 50,
     offset: int = 0,
-    db: AsyncSession = Depends(get_async_session),
-) -> List[JobResponse]:
+) -> list[JobResponse]:
     jobs = await JobService.list_jobs(db=db, limit=limit, offset=offset)
     return [
         JobResponse(
@@ -92,7 +97,7 @@ async def list_jobs(
 )
 async def get_job_detail(
     job_id: uuid.UUID,
-    db: AsyncSession = Depends(get_async_session),
+    db: SessionDep,
 ) -> JobDetailResponse:
     job = await JobService.get_job(db=db, job_id=job_id)
     if not job:
@@ -101,9 +106,7 @@ async def get_job_detail(
             detail=f"Research job '{job_id}' not found.",
         )
 
-    task_summaries = [
-        TaskSummaryResponse.model_validate(t) for t in job.tasks
-    ]
+    task_summaries = [TaskSummaryResponse.model_validate(t) for t in job.tasks]
 
     return JobDetailResponse(
         id=job.id,
@@ -125,14 +128,14 @@ async def get_job_detail(
 
 @router.get(
     "/{job_id}/tasks",
-    response_model=List[TaskSummaryResponse],
+    response_model=list[TaskSummaryResponse],
     summary="Get Job Sub-Tasks",
     description="Lists all individual research tasks associated with a job.",
 )
 async def get_job_tasks(
     job_id: uuid.UUID,
-    db: AsyncSession = Depends(get_async_session),
-) -> List[TaskSummaryResponse]:
+    db: SessionDep,
+) -> list[TaskSummaryResponse]:
     # Check if job exists
     job = await JobService.get_job(db=db, job_id=job_id)
     if not job:
@@ -153,7 +156,7 @@ async def get_job_tasks(
 )
 async def get_job_report(
     job_id: uuid.UUID,
-    db: AsyncSession = Depends(get_async_session),
+    db: SessionDep,
 ) -> ReportResponse:
     job = await JobService.get_job(db=db, job_id=job_id)
     if not job:

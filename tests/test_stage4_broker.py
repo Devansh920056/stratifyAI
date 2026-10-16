@@ -11,13 +11,14 @@ Verifies:
 
 import json
 import uuid
-from datetime import datetime, timezone
+
+import aio_pika
 import pytest
 import pytest_asyncio
-import aio_pika
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.app.broker.connection import get_broker_channel
 from backend.app.broker.constants import (
     DEAD_LETTER_EXCHANGE,
     DEAD_LETTER_QUEUE,
@@ -25,7 +26,6 @@ from backend.app.broker.constants import (
     TASKS_EXCHANGE,
     TASKS_QUEUE,
 )
-from backend.app.broker.connection import get_broker_channel, get_broker_connection
 from backend.app.broker.publisher import ReliableTaskPublisher
 from backend.app.broker.schemas import TaskMessage
 from backend.app.broker.topology import setup_broker_topology
@@ -41,19 +41,22 @@ from backend.app.services.outbox_relay import OutboxRelayService
 settings = get_settings()
 
 
+from contextlib import suppress
+
+
 @pytest_asyncio.fixture
 async def broker_channel():
     """Provides a RabbitMQ robust channel with topology initialized, and purges test queues after."""
-    async with get_broker_channel(publisher_confirms=True, ensure_topology=True) as channel:
+    async with get_broker_channel(
+        publisher_confirms=True, ensure_topology=True
+    ) as channel:
         yield channel
         # Cleanup: purge test queues
-        try:
+        with suppress(Exception):
             tasks_queue = await channel.get_queue(TASKS_QUEUE, ensure=False)
             await tasks_queue.purge()
             dlq = await channel.get_queue(DEAD_LETTER_QUEUE, ensure=False)
             await dlq.purge()
-        except Exception:
-            pass
 
 
 @pytest_asyncio.fixture
@@ -75,8 +78,14 @@ async def test_topology_declaration(broker_channel):
 
     # Verify queue arguments for dead lettering
     queue_declaration = await broker_channel.get_queue(TASKS_QUEUE)
-    assert queue_declaration.arguments.get("x-dead-letter-exchange") == DEAD_LETTER_EXCHANGE
-    assert queue_declaration.arguments.get("x-dead-letter-routing-key") == DEAD_LETTER_ROUTING_KEY
+    assert (
+        queue_declaration.arguments.get("x-dead-letter-exchange")
+        == DEAD_LETTER_EXCHANGE
+    )
+    assert (
+        queue_declaration.arguments.get("x-dead-letter-routing-key")
+        == DEAD_LETTER_ROUTING_KEY
+    )
 
 
 @pytest.mark.asyncio
@@ -150,7 +159,9 @@ async def test_outbox_atomic_dispatch(broker_channel):
         assert dispatched_count == 4
 
         # Verify OutboxEvent statuses are now PUBLISHED
-        outbox_stmt = select(OutboxEvent).where(OutboxEvent.aggregate_id.in_([t.id for t in job.tasks]))
+        outbox_stmt = select(OutboxEvent).where(
+            OutboxEvent.aggregate_id.in_([t.id for t in job.tasks])
+        )
         outbox_events = (await session.scalars(outbox_stmt)).all()
         assert len(outbox_events) == 4
         for ev in outbox_events:
@@ -251,35 +262,70 @@ async def test_redelivery_flag_detection(broker_channel):
 
 
 @pytest.mark.asyncio
-async def test_broker_outage_resilience():
+async def test_broker_outage_resilience(monkeypatch):
     """
     CRITICAL RELIABILITY TEST:
-    Verify that if RabbitMQ is unreachable or fails during dispatch,
-    Outbox events in PostgreSQL REMAIN in PENDING status. No data is lost.
+    Verify that if RabbitMQ is unreachable or fails during dispatch:
+    1. OutboxRelayService catches the outage, returns 0, and leaves events safely PENDING in DB.
+    2. Zero tasks are lost or prematurely marked as published.
+    3. Once the broker recovers, the next relay execution successfully dispatches the pending events.
     """
+    from contextlib import asynccontextmanager
+
     async with AsyncSessionLocal() as session:
-        # Create an outbox event
-        task_id = uuid.uuid4()
-        event = OutboxEvent(
-            aggregate_type="TASK",
-            aggregate_id=task_id,
-            event_type="TASK_CREATED",
-            payload={
-                "task_id": str(task_id),
-                "job_id": str(uuid.uuid4()),
-                "task_type": "MARKET_OVERVIEW",
-                "search_queries": ["test queries"],
-            },
-            status=OutboxStatus.PENDING.value,
+        # Create a Job with 4 tasks and 4 outbox events
+        request = JobCreateRequest(
+            research_question="Resilience test inquiry for broker outage",
+            target_market="Distributed Systems",
+            geography="Global",
         )
-        session.add(event)
+        job = await JobService.create_job(db=session, request=request)
         await session.commit()
 
-        # Simulate broker outage by pointing to a non-existent port
-        unreachable_url = "amqp://stratify_broker:broker_dev_secret_change_me@127.0.0.1:59999/"
-        
-        # We test that Outbox event remains in PENDING status
-        stmt = select(OutboxEvent).where(OutboxEvent.id == event.id)
-        persisted_event = await session.scalar(stmt)
-        assert persisted_event.status == OutboxStatus.PENDING.value
-        assert persisted_event.published_at is None
+        # Check initial state: 4 events in PENDING
+        stmt = select(OutboxEvent).where(
+            OutboxEvent.aggregate_id.in_([t.id for t in job.tasks])
+        )
+        events_before = (await session.scalars(stmt)).all()
+        assert len(events_before) == 4
+        assert all(e.status == OutboxStatus.PENDING.value for e in events_before)
+
+        # 1. SIMULATE BROKER OUTAGE
+        @asynccontextmanager
+        async def mock_broken_channel(*args, **kwargs):
+            raise ConnectionRefusedError(
+                "[Errno 61] Connection refused: RabbitMQ broker is offline"
+            )
+            yield  # pragma: no cover
+
+        monkeypatch.setattr(
+            "backend.app.services.outbox_relay.get_broker_channel", mock_broken_channel
+        )
+
+        # Attempt relay while broker is down
+        dispatched_during_outage = await OutboxRelayService.relay_batch(db=session)
+        assert dispatched_during_outage == 0
+
+        # Verify that all 4 events remain safely in PENDING status in the database
+        events_during = (await session.scalars(stmt)).all()
+        assert len(events_during) == 4
+        assert all(e.status == OutboxStatus.PENDING.value for e in events_during)
+        assert all(e.published_at is None for e in events_during)
+
+        # 2. SIMULATE BROKER RECOVERY
+        monkeypatch.undo()
+
+        # Re-run relay now that broker is healthy
+        dispatched_after_recovery = await OutboxRelayService.relay_batch(db=session)
+        await session.commit()
+        assert dispatched_after_recovery == 4
+
+        # Verify that all 4 events are now marked PUBLISHED and tasks are DISPATCHED
+        events_after = (await session.scalars(stmt)).all()
+        assert len(events_after) == 4
+        assert all(e.status == OutboxStatus.PUBLISHED.value for e in events_after)
+        assert all(e.published_at is not None for e in events_after)
+
+        tasks_stmt = select(Task).where(Task.job_id == job.id)
+        tasks_after = (await session.scalars(tasks_stmt)).all()
+        assert all(t.status == TaskStatus.DISPATCHED.value for t in tasks_after)

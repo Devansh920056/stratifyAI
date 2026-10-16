@@ -2,10 +2,11 @@
 Reliable Task Publisher with Publisher Confirms and Persistent Delivery.
 """
 
-import json
 import logging
+
 import aio_pika
 from aio_pika import DeliveryMode, Message
+
 from backend.app.broker.constants import TASKS_EXCHANGE
 from backend.app.broker.schemas import TaskMessage
 
@@ -45,7 +46,7 @@ class ReliableTaskPublisher:
         )
 
         # In publisher confirms mode, publish() waits for broker ACK confirmation
-        confirmation = await exchange.publish(
+        await exchange.publish(
             message=message,
             routing_key=routing_key,
             mandatory=True,

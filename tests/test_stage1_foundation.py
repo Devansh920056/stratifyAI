@@ -9,10 +9,12 @@ Verifies that:
 """
 
 import socket
-import pytest
-import psycopg
+
 import aio_pika
 import httpx
+import psycopg
+import pytest
+
 from backend.app.core.config import get_settings
 
 
@@ -34,19 +36,20 @@ def test_host_postgres_port_undisturbed():
     sock.settimeout(2.0)
     result = sock.connect_ex(("127.0.0.1", 5432))
     sock.close()
-    assert result == 0, "Host PostgreSQL on port 5432 should remain active and listening"
+    assert result == 0, (
+        "Host PostgreSQL on port 5432 should remain active and listening"
+    )
 
 
 def test_docker_postgres_connectivity():
     """Verify direct connection and query execution on Docker PostgreSQL (port 5434)."""
     settings = get_settings()
     conn_str = f"host={settings.POSTGRES_HOST} port={settings.POSTGRES_PORT} dbname={settings.POSTGRES_DB} user={settings.POSTGRES_USER} password={settings.POSTGRES_PASSWORD}"
-    
-    with psycopg.connect(conn_str) as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT version();")
-            version = cur.fetchone()[0]
-            assert "PostgreSQL 16" in version
+
+    with psycopg.connect(conn_str) as conn, conn.cursor() as cur:
+        cur.execute("SELECT version();")
+        version = cur.fetchone()[0]
+        assert "PostgreSQL 16" in version
 
 
 @pytest.mark.asyncio
@@ -55,10 +58,10 @@ async def test_docker_rabbitmq_amqp_connectivity():
     settings = get_settings()
     connection = await aio_pika.connect_robust(settings.RABBITMQ_URL)
     assert not connection.is_closed
-    
+
     channel = await connection.channel()
     assert not channel.is_closed
-    
+
     await channel.close()
     await connection.close()
 
@@ -69,7 +72,7 @@ async def test_docker_rabbitmq_management_api():
     settings = get_settings()
     url = f"http://{settings.RABBITMQ_HOST}:{settings.RABBITMQ_MANAGEMENT_PORT}/api/overview"
     auth = (settings.RABBITMQ_USER, settings.RABBITMQ_PASSWORD)
-    
+
     async with httpx.AsyncClient() as client:
         response = await client.get(url, auth=auth, timeout=5.0)
         assert response.status_code == 200

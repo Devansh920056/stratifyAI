@@ -4,9 +4,11 @@ Main FastAPI Application Entrypoint.
 
 import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 from backend.app.api.v1.router import api_router
 from backend.app.core.config import get_settings
 from backend.app.db.session import async_engine, check_database_health
@@ -30,6 +32,19 @@ async def lifespan(app: FastAPI):
         logger.info("Database connectivity verified on startup.")
     else:
         logger.warning("Database connectivity check failed on startup!")
+
+    # Attempt to assert broker topology on startup if RabbitMQ is reachable
+    try:
+        import aio_pika
+
+        from backend.app.broker.connection import get_broker_channel
+
+        async with get_broker_channel(ensure_topology=True) as _:
+            logger.info("RabbitMQ broker topology asserted on startup.")
+    except (aio_pika.exceptions.AMQPException, OSError, TimeoutError) as broker_err:
+        logger.warning(
+            f"RabbitMQ connection not available on startup: {broker_err}. Outbox relay will retry."
+        )
 
     yield
 
@@ -67,10 +82,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     Catch-all exception handler preventing uncaught stack traces or secrets
     from leaking to the client in HTTP 500 responses.
     """
-    logger.error(f"Unhandled server error on {request.method} {request.url.path}: {str(exc)}", exc_info=True)
+    logger.error(
+        f"Unhandled server error on {request.method} {request.url.path}: {exc!s}",
+        exc_info=exc,
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "An internal server error occurred. Please try again later."},
+        content={
+            "detail": "An internal server error occurred. Please try again later."
+        },
     )
 
 

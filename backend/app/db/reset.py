@@ -5,8 +5,10 @@ Fails immediately if executed in a production environment.
 """
 
 import sys
+
 from alembic import command
 from alembic.config import Config
+
 from backend.app.core.config import get_settings
 
 
@@ -14,10 +16,14 @@ def reset_dev_database() -> None:
     settings = get_settings()
 
     if settings.ENVIRONMENT.lower() == "production":
-        print("ERROR: Cannot reset database in production environment!", file=sys.stderr)
+        print(
+            "ERROR: Cannot reset database in production environment!", file=sys.stderr
+        )
         sys.exit(1)
 
-    print(f"Resetting disposable database: {settings.POSTGRES_DB} on {settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}...")
+    print(
+        f"Resetting disposable database: {settings.POSTGRES_DB} on {settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}..."
+    )
     alembic_cfg = Config("alembic.ini")
 
     # Step 1: Downgrade all migrations to base (drops all schema entities)

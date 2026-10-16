@@ -4,10 +4,11 @@ OutboxEvent Model implementing the Transactional Outbox pattern to prevent the d
 
 import uuid
 from datetime import datetime
-from typing import Optional
+
 from sqlalchemy import DateTime, Index, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
+
 from backend.app.db.base import Base, utc_now
 from backend.app.models.enums import OutboxStatus
 
@@ -53,7 +54,7 @@ class OutboxEvent(Base):
         nullable=False,
         index=True,
     )
-    published_at: Mapped[Optional[datetime]] = mapped_column(
+    published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )

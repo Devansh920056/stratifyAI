@@ -8,6 +8,7 @@ Can be run as an independent background daemon:
 import asyncio
 import logging
 import signal
+
 from backend.app.core.config import get_settings
 from backend.app.services.outbox_relay import OutboxRelayService
 

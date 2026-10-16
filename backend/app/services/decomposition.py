@@ -4,7 +4,7 @@ Decomposes a broad market research question into orthogonal, independently execu
 """
 
 import uuid
-from typing import Dict, List
+
 from backend.app.models.enums import TaskStatus, TaskType
 from backend.app.schemas.job import JobCreateRequest
 
@@ -15,8 +15,8 @@ def generate_search_queries(
     market: str,
     geography: str,
     time_range: str,
-    focus_areas: List[str],
-) -> List[str]:
+    focus_areas: list[str],
+) -> list[str]:
     """
     Deterministically crafts targeted search queries for a specific research vector.
     """
@@ -55,7 +55,9 @@ def generate_search_queries(
         return [f"{question} {market} {geography}"]
 
 
-def decompose_job_into_tasks(job_id: uuid.UUID, request: JobCreateRequest) -> List[Dict]:
+def decompose_job_into_tasks(
+    job_id: uuid.UUID, request: JobCreateRequest
+) -> list[dict]:
     """
     Decomposes a research request into 4 distinct, orthogonal task specifications.
     Each task has its own unique UUID and targeted search queries.
@@ -79,15 +81,17 @@ def decompose_job_into_tasks(job_id: uuid.UUID, request: JobCreateRequest) -> Li
             focus_areas=request.focus_areas,
         )
 
-        decomposed_tasks.append({
-            "id": task_id,
-            "job_id": job_id,
-            "task_type": task_type.value,
-            "search_queries": queries,
-            "status": TaskStatus.PENDING.value,
-            "attempt_count": 0,
-            "max_attempts": 3,
-            "version": 1,
-        })
+        decomposed_tasks.append(
+            {
+                "id": task_id,
+                "job_id": job_id,
+                "task_type": task_type.value,
+                "search_queries": queries,
+                "status": TaskStatus.PENDING.value,
+                "attempt_count": 0,
+                "max_attempts": 3,
+                "version": 1,
+            }
+        )
 
     return decomposed_tasks
