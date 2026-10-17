@@ -2,14 +2,14 @@
 Pydantic Schemas Package.
 """
 
-from backend.app.schemas.health import HealthResponse
+from backend.app.schemas.health import HealthResponse, TelemetryResponse
 from backend.app.schemas.job import (
     JobCreateRequest,
     JobDetailResponse,
     JobResponse,
 )
 from backend.app.schemas.report import CitationItem, ReportResponse
-from backend.app.schemas.task import TaskSummaryResponse
+from backend.app.schemas.task import TaskResultResponse, TaskSummaryResponse
 
 __all__ = [
     "CitationItem",
@@ -18,5 +18,7 @@ __all__ = [
     "JobDetailResponse",
     "JobResponse",
     "ReportResponse",
+    "TaskResultResponse",
     "TaskSummaryResponse",
+    "TelemetryResponse",
 ]

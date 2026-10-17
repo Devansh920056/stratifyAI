@@ -9,12 +9,13 @@ import {
   JobDetailResponse,
   ReportResponse,
   TaskSummaryResponse,
+  TelemetryResponse,
 } from "@/types/api";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-class ApiError extends Error {
+export class ApiError extends Error {
   constructor(public status: number, message: string) {
     super(message);
     this.name = "ApiError";
@@ -41,7 +42,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
               : JSON.stringify(errJson.detail);
         }
       } catch {
-        // Fallback to status text
         errorMsg = res.statusText || errorMsg;
       }
       throw new ApiError(res.status, errorMsg);
@@ -76,17 +76,20 @@ export async function getJobReport(jobId: string): Promise<ReportResponse | null
     return await request<ReportResponse>(`/api/v1/jobs/${jobId}/report`);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
-      // Report not ready yet
       return null;
     }
     throw err;
   }
 }
 
-export async function listRecentJobs(limit = 10): Promise<JobDetailResponse[]> {
+export async function listRecentJobs(limit = 20): Promise<JobDetailResponse[]> {
   return request<JobDetailResponse[]>(`/api/v1/jobs?limit=${limit}`);
 }
 
 export async function checkBackendHealth(): Promise<HealthResponse> {
   return request<HealthResponse>("/api/v1/health/live");
+}
+
+export async function getSystemTelemetry(): Promise<TelemetryResponse> {
+  return request<TelemetryResponse>("/api/v1/health/telemetry");
 }

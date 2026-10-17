@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { JobDetailResponse, TaskSummaryResponse } from "@/types/api";
 import { getJob } from "@/lib/api";
 import {
@@ -9,19 +9,26 @@ import {
   ArrowRight,
   BarChart3,
   CheckCircle2,
+  ChevronRight,
   Clock,
+  Compass,
   Copy,
   ExternalLink,
   Flame,
   Globe,
+  Info,
+  Layers,
   Loader2,
   RefreshCw,
   Search,
   Shield,
+  Sparkles,
   Tag,
   Target,
   TrendingUp,
   Users,
+  X,
+  Zap,
 } from "lucide-react";
 
 interface JobStatusTrackerProps {
@@ -85,10 +92,11 @@ export function JobStatusTracker({
   onNewInquiry,
 }: JobStatusTrackerProps) {
   const [job, setJob] = useState<JobDetailResponse | null>(initialJob || null);
-  const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaskSummaryResponse | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const fetchJob = useCallback(
     async (showRefreshIndicator = false) => {
@@ -96,8 +104,15 @@ export function JobStatusTracker({
       try {
         const updated = await getJob(jobId);
         setJob(updated);
+        setLastUpdated(new Date());
         setError(null);
         if (onJobUpdate) onJobUpdate(updated);
+
+        // Keep selectedTask in sync if updated
+        if (selectedTask) {
+          const matching = updated.tasks.find((t) => t.id === selectedTask.id);
+          if (matching) setSelectedTask(matching);
+        }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to load job status";
         setError(msg);
@@ -105,7 +120,7 @@ export function JobStatusTracker({
         if (showRefreshIndicator) setIsRefreshing(false);
       }
     },
-    [jobId, onJobUpdate]
+    [jobId, onJobUpdate, selectedTask]
   );
 
   useEffect(() => {
@@ -118,340 +133,523 @@ export function JobStatusTracker({
     const isOngoing = job.status === "PENDING" || job.status === "PROCESSING";
     if (!isOngoing) return;
 
-    const timer = setInterval(() => {
+    const interval = setInterval(() => {
       fetchJob(false);
-    }, 2000);
+    }, 2500);
 
-    return () => clearInterval(timer);
+    return () => clearInterval(interval);
   }, [job, fetchJob]);
 
-  const copyJobId = () => {
+  const handleCopyId = () => {
     navigator.clipboard.writeText(jobId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (!job && loading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-20 glass-panel rounded-2xl">
-        <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" />
-        <p className="text-slate-300 font-medium">Connecting to job telemetry pipeline...</p>
-      </div>
-    );
-  }
+  const completedTasksCount = useMemo(() => {
+    if (!job) return 0;
+    return job.tasks.filter((t) => t.status === "COMPLETED").length;
+  }, [job]);
 
-  if (error && !job) {
-    return (
-      <div className="p-8 glass-panel rounded-2xl border-rose-500/30 text-center">
-        <AlertCircle className="w-12 h-12 text-rose-400 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-slate-100 mb-2">Job Telemetry Unavailable</h3>
-        <p className="text-sm text-slate-400 mb-6">{error}</p>
-        <button
-          onClick={() => fetchJob(true)}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm transition"
-        >
-          Retry Connection
-        </button>
-      </div>
-    );
-  }
+  const totalTasksCount = job?.tasks.length || 4;
+  const progressPercent = Math.round((completedTasksCount / totalTasksCount) * 100);
 
-  if (!job) return null;
-
-  const totalTasks = job.tasks.length || 4;
-  const completedTasks = job.tasks.filter((t) => t.status === "COMPLETED").length;
-  const failedTasks = job.tasks.filter((t) => t.status === "FAILED").length;
-  const inProgressTasks = job.tasks.filter(
-    (t) => t.status === "IN_PROGRESS" || t.status === "DISPATCHED"
-  ).length;
-  const progressPercent = Math.round(
-    ((completedTasks + (failedTasks > 0 ? failedTasks * 0.5 : 0)) / totalTasks) * 100
-  );
+  const isCompleted =
+    job?.status === "COMPLETED" ||
+    job?.status === "PARTIALLY_COMPLETED" ||
+    job?.has_report === true;
 
   return (
     <div className="space-y-6">
-      {/* Top Banner & Metadata */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl border-slate-800 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl -z-10 pointer-events-none" />
-
-        <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6 mb-6">
-          <div className="space-y-3 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-slate-800 border border-slate-700 text-slate-300">
-                Job ID: {job.id.slice(0, 8)}...
+      {/* ─── Top Control Card ────────────────────────────────── */}
+      <div className="glass-panel p-6 rounded-2xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Inquiry Tracking Matrix
               </span>
+              <span className="text-slate-600">•</span>
               <button
-                onClick={copyJobId}
-                className="text-slate-400 hover:text-slate-200 transition p-1 rounded"
-                title="Copy full UUID"
+                onClick={handleCopyId}
+                className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-cyan-300 transition"
+                title="Copy Job ID"
               >
-                <Copy className="w-3.5 h-3.5" />
+                <span>ID: {jobId.slice(0, 8)}...</span>
+                <Copy className="w-3 h-3" />
+                {copied && <span className="text-emerald-400 font-sans">Copied!</span>}
               </button>
-              {copied && <span className="text-xs text-cyan-400 font-medium">Copied!</span>}
-
-              {/* Status Pill */}
-              <div className="ml-auto lg:ml-2">
-                {job.status === "PENDING" && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center gap-1.5 animate-pulse">
-                    <Clock className="w-3.5 h-3.5" /> Pending Queue
-                  </span>
-                )}
-                {job.status === "PROCESSING" && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center gap-1.5">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing Vectors
-                  </span>
-                )}
-                {job.status === "COMPLETED" && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                  </span>
-                )}
-                {job.status === "PARTIALLY_COMPLETED" && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5" /> Partially Completed
-                  </span>
-                )}
-                {job.status === "FAILED" && (
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5" /> Job Failed
-                  </span>
-                )}
-              </div>
             </div>
-
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-100 leading-snug">
-              {job.research_question}
-            </h1>
-
-            {/* Scope Badges */}
-            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-slate-300">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700/60">
-                <Target className="w-3.5 h-3.5 text-cyan-400" />
-                {job.target_market}
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700/60">
-                <Globe className="w-3.5 h-3.5 text-emerald-400" />
-                {job.geography}
-              </span>
-              {job.time_range && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-800/80 border border-slate-700/60">
-                  <Clock className="w-3.5 h-3.5 text-indigo-400" />
-                  {job.time_range}
-                </span>
-              )}
-              {job.focus_areas && job.focus_areas.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {job.focus_areas.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-700/50 text-slate-400 text-[11px]"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+            <h2 className="text-xl font-bold text-slate-100 leading-snug">
+              {job?.research_question || "Processing Research Inquiry..."}
+            </h2>
           </div>
 
-          {/* Action triggers */}
-          <div className="flex sm:flex-col items-center sm:items-end justify-between gap-3 border-t sm:border-t-0 border-slate-800 pt-4 sm:pt-0">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => fetchJob(true)}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800/70 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition"
-              title="Refresh job status"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-800 text-xs text-slate-300 hover:text-white border border-slate-700 transition cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-cyan-400" : ""}`} />
-              Refresh
+              <span>Refresh</span>
             </button>
-            <button
-              onClick={onNewInquiry}
-              className="text-xs text-slate-400 hover:text-cyan-400 transition"
-            >
-              + New Inquiry
-            </button>
+
+            {isCompleted && (
+              <button
+                onClick={onViewReport}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-xs font-semibold text-white shadow-md shadow-indigo-500/20 transition active:scale-95 cursor-pointer animate-pulse-slow"
+              >
+                <span>View Executive Report</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Distributed Progress Bar */}
-        <div className="space-y-2 pt-2 border-t border-slate-800/60">
+        {/* Progress Bar & Status Meta */}
+        <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400 font-medium flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              Sub-Task Execution Matrix ({completedTasks}/{totalTasks} Completed)
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400">Orchestration Progress:</span>
+              <span className="font-semibold text-slate-200">
+                {completedTasksCount} of {totalTasksCount} Vectors Complete ({progressPercent}%)
+              </span>
+            </div>
+            <span className="text-slate-500 text-[11px]">
+              Last updated: {lastUpdated.toLocaleTimeString()}
             </span>
-            <span className="text-cyan-400 font-bold">{progressPercent}%</span>
           </div>
-          <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden border border-slate-800">
+
+          <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800/80">
             <div
-              className="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-400 transition-all duration-700 ease-out"
+              className="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-violet-500 transition-all duration-500 rounded-full glow-cyan"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
-      </div>
 
-      {/* 4-Vector Sub-Task Matrix Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {job.tasks.map((task: TaskSummaryResponse) => {
-          const config = VECTOR_CONFIG[task.task_type] || {
-            title: task.task_type,
-            subtitle: "Autonomous research vector",
-            icon: BarChart3,
-            accentColor: "text-slate-300",
-            borderColor: "border-slate-800",
-            glowColor: "rgba(100, 116, 139, 0.2)",
-          };
-          const Icon = config.icon;
+        {/* Metadata Badges */}
+        {job && (
+          <div className="flex flex-wrap items-center gap-2 pt-2 text-xs text-slate-400">
+            <span className="px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/60 text-slate-300 flex items-center gap-1.5">
+              <Target className="w-3 h-3 text-indigo-400" />
+              <span>Market:</span>
+              <span className="font-semibold text-white">{job.target_market}</span>
+            </span>
 
-          return (
-            <div
-              key={task.id}
-              className={`glass-panel p-5 rounded-xl border transition-all duration-300 ${
-                task.status === "IN_PROGRESS"
-                  ? `${config.borderColor} shadow-lg`
-                  : "border-slate-800/80 hover:border-slate-700"
-              }`}
-              style={{
-                boxShadow:
-                  task.status === "IN_PROGRESS" ? `0 0 20px -5px ${config.glowColor}` : undefined,
-              }}
-            >
-              {/* Task Header */}
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-lg bg-slate-900 border border-slate-800 ${config.accentColor}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-100">{config.title}</h3>
-                    <p className="text-xs text-slate-400 line-clamp-1">{config.subtitle}</p>
-                  </div>
-                </div>
+            <span className="px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/60 text-slate-300 flex items-center gap-1.5">
+              <Globe className="w-3 h-3 text-cyan-400" />
+              <span>Geo:</span>
+              <span className="font-semibold text-white">{job.geography}</span>
+            </span>
 
-                {/* Sub-Task Status Badge */}
-                <div>
-                  {task.status === "PENDING" && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
-                      QUEUED
-                    </span>
-                  )}
-                  {task.status === "DISPATCHED" && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
-                      DISPATCHED
-                    </span>
-                  )}
-                  {task.status === "IN_PROGRESS" && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 flex items-center gap-1 animate-pulse">
-                      <Loader2 className="w-3 h-3 animate-spin" /> RUNNING
-                    </span>
-                  )}
-                  {task.status === "COMPLETED" && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> DONE
-                    </span>
-                  )}
-                  {task.status === "FAILED" && (
-                    <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30 flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3" /> FAILED
-                    </span>
-                  )}
-                </div>
-              </div>
+            {job.time_range && (
+              <span className="px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/60 text-slate-300 flex items-center gap-1.5">
+                <Clock className="w-3 h-3 text-amber-400" />
+                <span>Horizon:</span>
+                <span className="font-semibold text-white">{job.time_range}</span>
+              </span>
+            )}
 
-              {/* Search Queries List */}
-              <div className="space-y-1.5 my-3 bg-slate-950/60 p-3 rounded-lg border border-slate-900">
-                <span className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                  <Search className="w-3 h-3 text-cyan-400" />
-                  Targeted Tavily Search Queries ({task.search_queries.length})
-                </span>
-                <div className="space-y-1">
-                  {task.search_queries.map((q, idx) => (
-                    <div
-                      key={idx}
-                      className="text-xs text-slate-300 font-mono bg-slate-900/80 px-2 py-1 rounded border border-slate-800/60 truncate"
-                      title={q}
-                    >
-                      • {q}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Task Footer Meta */}
-              <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-800/40">
-                <span className="flex items-center gap-1">
-                  <Flame
-                    className={`w-3.5 h-3.5 ${
-                      task.attempt_count > 1 ? "text-amber-400" : "text-slate-400"
-                    }`}
-                  />
-                  Attempt: {task.attempt_count}/3
-                </span>
-                {task.completed_at ? (
-                  <span className="text-emerald-400">
-                    Finished in{" "}
-                    {task.started_at
-                      ? `${Math.max(
-                          1,
-                          Math.round(
-                            (new Date(task.completed_at).getTime() -
-                              new Date(task.started_at).getTime()) /
-                              1000
-                          )
-                        )}s`
-                      : "completed"}
-                  </span>
-                ) : task.started_at ? (
-                  <span className="text-cyan-400">Executing LLM & web search...</span>
-                ) : (
-                  <span>Awaiting worker capacity</span>
-                )}
-              </div>
-
-              {/* Error Callout if Failed */}
-              {task.error_details && (
-                <div className="mt-3 p-2.5 bg-rose-950/40 border border-rose-500/30 rounded-lg text-xs text-rose-300">
-                  <p className="font-semibold text-rose-200">Execution Error:</p>
-                  <p className="text-[11px] text-rose-300/90 font-mono mt-0.5 line-clamp-2">
-                    {task.error_details}
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Report Available CTA Banner */}
-      {(job.has_report || job.status === "COMPLETED" || job.status === "PARTIALLY_COMPLETED") && (
-        <div className="glass-panel p-6 rounded-2xl border-cyan-500/40 bg-gradient-to-r from-slate-950 via-cyan-950/30 to-slate-950 relative overflow-hidden shadow-xl shadow-cyan-500/10">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-center sm:text-left">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-6 h-6 text-cyan-400" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-100">
-                  Executive Intelligence Report Ready
-                </h3>
-                <p className="text-xs text-slate-300">
-                  Cross-task findings synthesized, verified against web citations, and ready for review.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={onViewReport}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/25 transition-all flex items-center justify-center gap-2 group shrink-0 cursor-pointer"
-            >
-              <span>View Executive Intelligence Report</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+            <StatusBadge status={job.status} />
           </div>
+        )}
+      </div>
+
+      {/* ─── Ready Announcement Banner ──────────────────────── */}
+      {isCompleted && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-cyan-950/80 via-indigo-950/80 to-slate-900 border border-cyan-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">
+                Executive Market Intelligence Report Compiled
+              </h3>
+              <p className="text-xs text-slate-400">
+                All 4 research vectors have converged with verified Tavily evidence & Gemini citations.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onViewReport}
+            className="w-full sm:w-auto px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 shadow-md transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>Open Executive Report</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
+      )}
+
+      {/* ─── 4-Vector Execution Grid ─────────────────────────── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Orthogonal Research Vectors (4 Tasks)
+            </h3>
+          </div>
+          <span className="text-[11px] text-slate-500">
+            Click any vector card to inspect findings & search queries
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {job?.tasks.map((task) => {
+            const config = VECTOR_CONFIG[task.task_type] || {
+              title: task.task_type,
+              subtitle: "Specialized research vector",
+              icon: Compass,
+              accentColor: "text-slate-300",
+              borderColor: "border-slate-800",
+              glowColor: "transparent",
+            };
+            const Icon = config.icon;
+            const hasResult = !!task.result;
+
+            return (
+              <div
+                key={task.id}
+                onClick={() => setSelectedTask(task)}
+                className={`glass-panel p-5 rounded-xl border transition-all duration-200 cursor-pointer space-y-4 hover:border-slate-600 group relative ${
+                  selectedTask?.id === task.id ? "ring-1 ring-cyan-500 border-cyan-500/50" : ""
+                }`}
+              >
+                {/* Vector Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-xl bg-slate-900 border ${config.borderColor} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}
+                    >
+                      <Icon className={`w-4 h-4 ${config.accentColor}`} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-100 group-hover:text-cyan-300 transition-colors">
+                        {config.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {config.subtitle}
+                      </p>
+                    </div>
+                  </div>
+
+                  <TaskStatusBadge status={task.status} />
+                </div>
+
+                {/* Sub-Task Grounded Snippet preview if completed */}
+                {hasResult && task.result?.grounded_summary && (
+                  <div className="p-3 rounded-lg bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                      <span>CONFIDENCE: {Math.round(task.result.confidence_score * 100)}%</span>
+                      <span>{task.result.key_findings.length} CLAIMS</span>
+                    </div>
+                    <p className="line-clamp-2 text-slate-300 leading-relaxed">
+                      {task.result.grounded_summary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Search Queries Executed */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Search className="w-3 h-3" />
+                      Generated Web Queries ({task.search_queries.length})
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-600">
+                      OCC v{task.version} • Attempt {task.attempt_count}/3
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {task.search_queries.slice(0, 2).map((q, idx) => (
+                      <span
+                        key={idx}
+                        className="text-[10px] px-2 py-0.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400 truncate max-w-[280px]"
+                        title={q}
+                      >
+                        {q}
+                      </span>
+                    ))}
+                    {task.search_queries.length > 2 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900/60 text-slate-500">
+                        +{task.search_queries.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Card Footer */}
+                <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-500">
+                  <span>
+                    {task.completed_at
+                      ? `Completed at ${new Date(task.completed_at).toLocaleTimeString()}`
+                      : task.started_at
+                      ? `Started at ${new Date(task.started_at).toLocaleTimeString()}`
+                      : "Pending worker dispatch"}
+                  </span>
+                  <span className="text-cyan-400 group-hover:translate-x-1 transition-transform flex items-center gap-0.5 font-medium">
+                    Inspect <ChevronRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ─── Task Deep Dive Modal / Drawer ───────────────────── */}
+      {selectedTask && (
+        <TaskDetailModal
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
       )}
     </div>
   );
+}
+
+// ─── Sub-Task Inspector Modal ────────────────────────────────
+function TaskDetailModal({
+  task,
+  onClose,
+}: {
+  task: TaskSummaryResponse;
+  onClose: () => void;
+}) {
+  const config = VECTOR_CONFIG[task.task_type] || {
+    title: task.task_type,
+    subtitle: "Research Vector",
+    icon: Compass,
+    accentColor: "text-slate-300",
+    borderColor: "border-slate-800",
+    glowColor: "transparent",
+  };
+  const Icon = config.icon;
+  const result = task.result;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+      <div
+        onClick={onClose}
+        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+      />
+
+      <div className="relative z-50 w-full max-w-2xl glass-panel bg-slate-900/95 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-xl bg-slate-900 border ${config.borderColor} flex items-center justify-center`}
+            >
+              <Icon className={`w-4 h-4 ${config.accentColor}`} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-100">{config.title}</h3>
+              <p className="text-[11px] text-slate-400 font-mono">
+                Task UUID: {task.id}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <TaskStatusBadge status={task.status} />
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* Status & Timing Bar */}
+          <div className="grid grid-cols-3 gap-3 text-center text-xs">
+            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase">OCC Version</span>
+              <span className="font-mono font-bold text-cyan-300 block">v{task.version}</span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase">Attempts</span>
+              <span className="font-mono font-bold text-slate-200 block">
+                {task.attempt_count} / 3
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase">Confidence</span>
+              <span className="font-mono font-bold text-emerald-400 block">
+                {result ? `${Math.round(result.confidence_score * 100)}%` : "N/A"}
+              </span>
+            </div>
+          </div>
+
+          {/* Grounded Summary if available */}
+          {result?.grounded_summary ? (
+            <div className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                Gemini Synthesized Vector Summary
+              </span>
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                {result.grounded_summary}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800/80 text-xs text-slate-400 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-cyan-400" />
+              <span>Worker executing web search and AI reasoning...</span>
+            </div>
+          )}
+
+          {/* Key Findings Claims */}
+          {result?.key_findings && result.key_findings.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                Factual Claims & Evidence Links ({result.key_findings.length})
+              </span>
+              <div className="space-y-2">
+                {result.key_findings.map((f, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl bg-slate-950/50 border border-slate-800 text-xs space-y-1.5"
+                  >
+                    <p className="text-slate-200">{f.claim}</p>
+                    {f.source_url && (
+                      <a
+                        href={f.source_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300 transition"
+                      >
+                        <ExternalLink className="w-2.5 h-2.5" />
+                        <span className="truncate max-w-[360px]">{f.source_url}</span>
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Generated Search Queries */}
+          <div className="space-y-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Search className="w-3.5 h-3.5 text-indigo-400" />
+              Tavily Web Search Queries
+            </span>
+            <div className="space-y-1.5">
+              {task.search_queries.map((q, idx) => (
+                <div
+                  key={idx}
+                  className="px-3 py-2 rounded-lg bg-slate-950/50 border border-slate-800 text-xs font-mono text-slate-300 flex items-center gap-2"
+                >
+                  <span className="text-slate-600 text-[10px]">#{idx + 1}</span>
+                  <span>{q}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Diagnostic Error Details if failed */}
+          {task.error_details && (
+            <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-500/40 text-xs text-rose-300 space-y-1">
+              <span className="font-bold flex items-center gap-1.5 text-rose-400">
+                <AlertCircle className="w-4 h-4" />
+                Execution Error Diagnostic
+              </span>
+              <p className="font-mono text-[11px] leading-relaxed">{task.error_details}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Status Badges ───────────────────────────────────────────
+
+function StatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "COMPLETED":
+      return (
+        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+          <CheckCircle2 className="w-3 h-3" />
+          Completed
+        </span>
+      );
+    case "PARTIALLY_COMPLETED":
+      return (
+        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-950/80 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" />
+          Degraded (Partial)
+        </span>
+      );
+    case "PROCESSING":
+      return (
+        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-cyan-950/80 text-cyan-400 border border-cyan-500/30 flex items-center gap-1">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Processing
+        </span>
+      );
+    case "FAILED":
+      return (
+        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-rose-950/80 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+          <AlertCircle className="w-3 h-3" />
+          Failed
+        </span>
+      );
+    default:
+      return (
+        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          Pending
+        </span>
+      );
+  }
+}
+
+function TaskStatusBadge({ status }: { status: string }) {
+  switch (status) {
+    case "COMPLETED":
+      return (
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+          <CheckCircle2 className="w-2.5 h-2.5" />
+          DONE
+        </span>
+      );
+    case "IN_PROGRESS":
+      return (
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-950/90 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
+          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+          RUNNING
+        </span>
+      );
+    case "DISPATCHED":
+      return (
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-950/90 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+          <Zap className="w-2.5 h-2.5" />
+          DISPATCHED
+        </span>
+      );
+    case "FAILED":
+      return (
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-950/90 text-rose-400 border border-rose-500/30 flex items-center gap-1">
+          <AlertCircle className="w-2.5 h-2.5" />
+          FAILED
+        </span>
+      );
+    default:
+      return (
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800/80 text-slate-400 border border-slate-700 flex items-center gap-1">
+          <Clock className="w-2.5 h-2.5" />
+          QUEUED
+        </span>
+      );
+  }
 }

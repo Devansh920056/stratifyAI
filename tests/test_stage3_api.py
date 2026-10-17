@@ -229,3 +229,19 @@ async def test_openapi_docs_available(api_client: httpx.AsyncClient):
         == "Stratify AI — Distributed Market Intelligence Coordinator"
     )
     assert "/api/v1/jobs" in openapi["paths"]
+
+
+@pytest.mark.asyncio
+async def test_system_telemetry_endpoint(api_client: httpx.AsyncClient):
+    """Verify /api/v1/health/telemetry returns deep architectural telemetry and metrics."""
+    res = await api_client.get("/api/v1/health/telemetry")
+    assert res.status_code == 200
+    telemetry = res.json()
+    assert telemetry["status"] in ("healthy", "degraded")
+    assert "database" in telemetry
+    assert telemetry["database"]["host_port"] == 5434
+    assert "broker" in telemetry
+    assert telemetry["broker"]["amqp_port"] == 5672
+    assert "orchestrator" in telemetry
+    assert "metrics" in telemetry
+    assert "total_jobs" in telemetry["metrics"]

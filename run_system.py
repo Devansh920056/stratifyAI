@@ -65,7 +65,7 @@ def check_prerequisites():
         s.connect(("127.0.0.1", 5434))
         s.close()
         print("  ✓ PostgreSQL active on 127.0.0.1:5434")
-    except Exception:
+    except OSError:
         print("\033[1;31m[ERROR]\033[0m PostgreSQL is not reachable on 127.0.0.1:5434!")
         print("  Run: docker compose -f docker/docker-compose.yml up -d")
         sys.exit(1)
@@ -76,7 +76,7 @@ def check_prerequisites():
         s.connect(("127.0.0.1", 5672))
         s.close()
         print("  ✓ RabbitMQ active on 127.0.0.1:5672")
-    except Exception:
+    except OSError:
         print("\033[1;31m[ERROR]\033[0m RabbitMQ is not reachable on 127.0.0.1:5672!")
         print("  Run: docker compose -f docker/docker-compose.yml up -d")
         sys.exit(1)
@@ -85,7 +85,7 @@ def check_prerequisites():
 def apply_migrations():
     print("\033[1;34m[DATABASE]\033[0m Applying database schema migrations...")
     alembic_cmd = [VENV_PYTHON, "-m", "alembic", "upgrade", "head"]
-    result = subprocess.run(alembic_cmd, cwd=PROJECT_ROOT)
+    result = subprocess.run(alembic_cmd, check=False, cwd=PROJECT_ROOT)
     if result.returncode != 0:
         print("\033[1;31m[ERROR]\033[0m Alembic migration failed.")
         sys.exit(1)

@@ -10,6 +10,27 @@ export interface JobCreateRequest {
   focus_areas?: string[];
 }
 
+export interface KeyFinding {
+  claim: string;
+  source_url: string;
+  confidence: number;
+}
+
+export interface CitationItem {
+  url: string;
+  title?: string;
+  task_type?: string;
+  claim_id?: string;
+}
+
+export interface TaskResultResponse {
+  grounded_summary: string;
+  key_findings: KeyFinding[];
+  confidence_score: number;
+  citations: CitationItem[];
+  model_name: string;
+}
+
 export interface TaskSummaryResponse {
   id: string;
   job_id: string;
@@ -22,6 +43,7 @@ export interface TaskSummaryResponse {
   completed_at: string | null;
   error_details: string | null;
   created_at: string;
+  result?: TaskResultResponse | null;
 }
 
 export interface JobDetailResponse {
@@ -39,19 +61,6 @@ export interface JobDetailResponse {
   completed_at: string | null;
   has_report: boolean;
   tasks: TaskSummaryResponse[];
-}
-
-export interface KeyFinding {
-  claim: string;
-  source_url: string;
-  confidence: number;
-}
-
-export interface CitationItem {
-  url: string;
-  title?: string;
-  task_type?: string;
-  claim_id?: string;
 }
 
 export interface ReportSection {
@@ -82,6 +91,44 @@ export interface ReportResponse {
 export interface HealthResponse {
   status: string;
   version: string;
-  database?: string;
-  broker?: string;
+  components?: Record<string, string>;
+}
+
+export interface TelemetryResponse {
+  status: string;
+  version: string;
+  timestamp: string;
+  database: {
+    status: string;
+    host_port: number;
+    container: string;
+    engine: string;
+    isolation: string;
+  };
+  broker: {
+    status: string;
+    amqp_port: number;
+    management_port: number;
+    exchange: string;
+    queue: string;
+    dlq: string;
+    delivery_mode: string;
+  };
+  orchestrator: {
+    concurrency_control: string;
+    outbox_pattern: string;
+    max_worker_retries: number;
+    qos_prefetch_count: number;
+  };
+  ai_providers: {
+    llm: string;
+    search: string;
+    anti_hallucination: string;
+  };
+  metrics: {
+    total_jobs: number;
+    completed_jobs: number;
+    processing_jobs: number;
+    total_tasks: number;
+  };
 }
