@@ -22,14 +22,23 @@ logger = logging.getLogger("stratify.workers.consumer")
 settings = get_settings()
 
 
+from backend.app.providers.search.base import SearchProvider
+
+
 class WorkerConsumer:
     """
     Subscribes to RabbitMQ tasks queue and processes messages with bounded concurrency.
     """
 
-    def __init__(self, worker_id: str = "worker-1", prefetch_count: int | None = None):
+    def __init__(
+        self,
+        worker_id: str = "worker-1",
+        prefetch_count: int | None = None,
+        search_provider: SearchProvider | None = None,
+    ):
         self.worker_id = worker_id
         self.prefetch_count = prefetch_count or settings.WORKER_CONCURRENCY
+        self.search_provider = search_provider
         self._connection: aio_pika.RobustConnection | None = None
         self._channel: aio_pika.RobustChannel | None = None
         self._consumer_tag: str | None = None
@@ -90,6 +99,7 @@ class WorkerConsumer:
                 success, reason = await TaskProcessor.process_task(
                     session=session,
                     task_message=task_msg,
+                    search_provider=self.search_provider,
                 )
 
                 if success:
