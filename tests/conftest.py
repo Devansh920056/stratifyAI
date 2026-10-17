@@ -8,15 +8,8 @@ from sqlalchemy import text
 from backend.app.db.session import async_engine
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def clean_database_tables():
-    """
-    Autouse fixture that runs before each test to ensure a clean database and broker state.
-    Truncates all tables with CASCADE and purges test queues.
-    """
-    async with async_engine.begin() as conn:
-        await conn.execute(text("TRUNCATE TABLE jobs, outbox_events CASCADE;"))
-
+async def _purge_broker_queues():
+    """Purge all test queues in RabbitMQ, suppressing any connectivity errors."""
     from contextlib import suppress
 
     with suppress(Exception):
@@ -31,7 +24,24 @@ async def clean_database_tables():
             dlq = await channel.get_queue(DEAD_LETTER_QUEUE, ensure=False)
             await dlq.purge()
 
+
+@pytest_asyncio.fixture(autouse=True)
+async def clean_database_tables():
+    """
+    Autouse fixture that purges both the database and RabbitMQ queues
+    BEFORE each test (setup) and AFTER each test (teardown).
+    This eliminates ordering flakiness caused by in-flight worker messages
+    from previous test cases contaminating the next test's queue state.
+    """
+    # --- SETUP: clean slate before test ---
+    async with async_engine.begin() as conn:
+        await conn.execute(text("TRUNCATE TABLE jobs, outbox_events CASCADE;"))
+    await _purge_broker_queues()
+
     yield
+
+    # --- TEARDOWN: purge stale messages left by background workers ---
+    await _purge_broker_queues()
 
 
 @pytest_asyncio.fixture

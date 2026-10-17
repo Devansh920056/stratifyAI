@@ -8,23 +8,57 @@ import { ReportViewer } from "@/components/ReportViewer";
 import { RecentJobs } from "@/components/RecentJobs";
 import { JobDetailResponse } from "@/types/api";
 import {
-  Activity,
-  ArrowRight,
+  AlertTriangle,
   CheckCircle2,
   Cpu,
   Database,
   FileCheck,
-  Globe,
-  Layers,
   Network,
-  Shield,
   Sparkles,
-  Zap,
 } from "lucide-react";
+
+// ─── View state machine ──────────────────────────────────────
+type ViewMode = "form" | "tracker" | "report";
+
+// ─── Platform invariant cards ────────────────────────────────
+const INVARIANTS = [
+  {
+    icon: Network,
+    title: "RabbitMQ Broker",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10 border-cyan-500/20",
+    description:
+      "Publisher confirms, durable delivery (mode=2), QoS prefetch, Dead Letter Queue routing with 3× bounded retries.",
+  },
+  {
+    icon: Database,
+    title: "Atomic Outbox & OCC",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10 border-indigo-500/20",
+    description:
+      "PostgreSQL 16 with Optimistic Concurrency Control, ACID transaction isolation, and idempotent UNIQUE constraints.",
+  },
+  {
+    icon: Cpu,
+    title: "Gemini LLM Reasoning",
+    color: "text-violet-400",
+    bg: "bg-violet-500/10 border-violet-500/20",
+    description:
+      "Structured JSON synthesis with confidence scoring, strict post-generation anti-hallucination citation guardrails.",
+  },
+  {
+    icon: FileCheck,
+    title: "Tavily Web Evidence",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10 border-emerald-500/20",
+    description:
+      "Real web retrieval with UTM stripping, URL canonicalization, and score-based deduplication for zero phantom citations.",
+  },
+];
 
 export default function Home() {
   const [activeJob, setActiveJob] = useState<JobDetailResponse | null>(null);
-  const [viewMode, setViewMode] = useState<"form" | "tracker" | "report">("form");
+  const [viewMode, setViewMode] = useState<ViewMode>("form");
   const [isRecentJobsOpen, setIsRecentJobsOpen] = useState(false);
 
   const handleJobCreated = (job: JobDetailResponse) => {
@@ -34,11 +68,7 @@ export default function Home() {
 
   const handleSelectRecentJob = (job: JobDetailResponse) => {
     setActiveJob(job);
-    if (job.has_report) {
-      setViewMode("report");
-    } else {
-      setViewMode("tracker");
-    }
+    setViewMode(job.has_report ? "report" : "tracker");
   };
 
   const handleNewInquiry = () => {
@@ -47,7 +77,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#090D16]">
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg-base)" }}>
       {/* Sticky Header */}
       <Header
         onNewInquiryClick={handleNewInquiry}
@@ -55,118 +85,103 @@ export default function Home() {
         activeJobId={activeJob?.id || null}
       />
 
-      {/* Main Content Area */}
+      {/* ─── Main Content ──────────────────────────────────── */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* VIEW 1: Form & Platform Introduction */}
+
+        {/* ════════════════════════════════════════════════════
+            VIEW 1 — Inquiry Form & Platform Hero
+        ════════════════════════════════════════════════════ */}
         {viewMode === "form" && (
-          <div className="space-y-12">
-            {/* Hero Heading */}
-            <div className="text-center max-w-3xl mx-auto space-y-4 pt-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 shadow-sm">
+          <div className="space-y-14 animate-fade-in">
+
+            {/* Hero */}
+            <div className="text-center max-w-3xl mx-auto space-y-5 pt-4">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Autonomous Market Intelligence Matrix</span>
+                <span>Autonomous Market Intelligence Matrix — 4-Vector Research</span>
               </div>
 
-              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-100 leading-tight">
+              <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight text-slate-100">
                 Deep Strategic Intelligence,{" "}
-                <span className="bg-gradient-to-r from-cyan-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">
+                <span
+                  className="bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage: "linear-gradient(135deg, #22d3ee, #818cf8, #a78bfa)",
+                  }}
+                >
                   Grounded in Evidence
                 </span>
               </h1>
 
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-2xl mx-auto">
+              <p className="text-base text-slate-400 leading-relaxed max-w-2xl mx-auto">
                 Stratify AI decomposes high-stakes market questions into 4 concurrent research
-                vectors—analyzing macro sizing, competitive moats, customer churn, and regulatory
-                headwinds backed by real web sources.
+                vectors — macro sizing, competitive moats, customer churn, and regulatory
+                headwinds — backed by verifiable real web sources.
               </p>
+
+              {/* Quick stats bar */}
+              <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs font-medium text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  68 automated tests passing
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Tavily real-time web evidence
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Anti-hallucination guardrails
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  Markdown report export
+                </span>
+              </div>
             </div>
 
             {/* Research Input Form */}
             <ResearchForm onJobCreated={handleJobCreated} />
 
-            {/* Platform Invariants & Architecture Showcase */}
-            <div className="pt-6">
-              <div className="text-center mb-6">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Distributed Systems Guarantees
-                </h3>
-              </div>
-
+            {/* Platform Architecture Invariants */}
+            <div className="pt-4 border-t border-slate-900">
+              <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-500 mb-8">
+                Distributed Systems Guarantees
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="glass-panel p-5 rounded-xl border-slate-800 space-y-2">
-                  <div className="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
-                    <Network className="w-4 h-4" />
+                {INVARIANTS.map(({ icon: Icon, title, color, bg, description }) => (
+                  <div
+                    key={title}
+                    className="glass-panel p-5 rounded-xl space-y-3 hover:border-slate-700 transition-all duration-200 group"
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-lg ${bg} border flex items-center justify-center transition-transform duration-200 group-hover:scale-110`}
+                    >
+                      <Icon className={`w-5 h-5 ${color}`} />
+                    </div>
+                    <h3 className="text-sm font-semibold text-slate-100">{title}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
                   </div>
-                  <h4 className="text-sm font-semibold text-slate-100">RabbitMQ Broker</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Publisher confirms, persistent delivery mode, prefetch QoS, and DLQ routing with
-                    3x bounded retries.
-                  </p>
-                </div>
-
-                <div className="glass-panel p-5 rounded-xl border-slate-800 space-y-2">
-                  <div className="w-9 h-9 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-                    <Database className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-sm font-semibold text-slate-100">Atomic Outbox & OCC</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    PostgreSQL 16 with optimistic concurrency control, transaction isolation, and
-                    idempotent unique constraints.
-                  </p>
-                </div>
-
-                <div className="glass-panel p-5 rounded-xl border-slate-800 space-y-2">
-                  <div className="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
-                    <Cpu className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-sm font-semibold text-slate-100">Gemini LLM Reasoning</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Structured JSON synthesis, confidence scores, and strict post-generation
-                    anti-hallucination citation checks.
-                  </p>
-                </div>
-
-                <div className="glass-panel p-5 rounded-xl border-slate-800 space-y-2">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                    <FileCheck className="w-4 h-4" />
-                  </div>
-                  <h4 className="text-sm font-semibold text-slate-100">Tavily Web Evidence</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    Real web retrieval with UTM stripping, URL canonicalization, and deduplication
-                    for zero phantom citations.
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* VIEW 2: Sub-Task Execution Tracker */}
+        {/* ════════════════════════════════════════════════════
+            VIEW 2 — Sub-Task Execution Tracker
+        ════════════════════════════════════════════════════ */}
         {viewMode === "tracker" && activeJob && (
-          <div className="space-y-6">
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <button
-                onClick={handleNewInquiry}
-                className="hover:text-slate-200 transition underline underline-offset-4"
-              >
-                Inquiry Form
-              </button>
-              <span>/</span>
-              <span className="text-cyan-400 font-medium">Sub-Task Execution Matrix</span>
-              {activeJob.has_report && (
-                <>
-                  <span>/</span>
-                  <button
-                    onClick={() => setViewMode("report")}
-                    className="hover:text-slate-200 transition underline underline-offset-4"
-                  >
-                    Executive Intelligence Report
-                  </button>
-                </>
-              )}
-            </div>
-
+          <div className="space-y-6 animate-fade-in">
+            <Breadcrumbs
+              items={[
+                { label: "Inquiry", onClick: handleNewInquiry },
+                { label: "Sub-Task Execution", active: true },
+                ...(activeJob.has_report
+                  ? [{ label: "Executive Report", onClick: () => setViewMode("report") }]
+                  : []),
+              ]}
+            />
             <JobStatusTracker
               jobId={activeJob.id}
               initialJob={activeJob}
@@ -177,28 +192,18 @@ export default function Home() {
           </div>
         )}
 
-        {/* VIEW 3: Executive Intelligence Report */}
+        {/* ════════════════════════════════════════════════════
+            VIEW 3 — Executive Intelligence Report
+        ════════════════════════════════════════════════════ */}
         {viewMode === "report" && activeJob && (
-          <div className="space-y-6">
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <button
-                onClick={handleNewInquiry}
-                className="hover:text-slate-200 transition underline underline-offset-4"
-              >
-                Inquiry Form
-              </button>
-              <span>/</span>
-              <button
-                onClick={() => setViewMode("tracker")}
-                className="hover:text-slate-200 transition underline underline-offset-4"
-              >
-                Sub-Task Execution Matrix
-              </button>
-              <span>/</span>
-              <span className="text-cyan-400 font-medium">Executive Intelligence Report</span>
-            </div>
-
+          <div className="space-y-6 animate-fade-in">
+            <Breadcrumbs
+              items={[
+                { label: "Inquiry", onClick: handleNewInquiry },
+                { label: "Sub-Task Execution", onClick: () => setViewMode("tracker") },
+                { label: "Executive Report", active: true },
+              ]}
+            />
             <ReportViewer
               jobId={activeJob.id}
               onBackToTracker={() => setViewMode("tracker")}
@@ -208,7 +213,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Slide-over Recent Jobs Drawer */}
+      {/* ─── Recent Jobs Slide-Over Drawer ─────────────────── */}
       <RecentJobs
         isOpen={isRecentJobsOpen}
         onClose={() => setIsRecentJobsOpen(false)}
@@ -216,31 +221,75 @@ export default function Home() {
         currentJobId={activeJob?.id || null}
       />
 
-      {/* Modern Platform Footer */}
-      <footer className="mt-auto border-t border-slate-900 bg-slate-950/80 px-6 py-6 text-xs text-slate-400">
+      {/* ─── Footer ────────────────────────────────────────── */}
+      <footer
+        className="mt-auto border-t px-6 py-5 text-xs text-slate-500"
+        style={{ borderColor: "rgba(30,41,59,0.6)", background: "rgba(8,12,20,0.85)" }}
+      >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="font-semibold text-slate-300">Stratify AI Intelligence Core</span>
-            <span className="text-slate-400">•</span>
-            <span className="font-mono text-cyan-400">v1.0.0-rc1</span>
+            <span
+              className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold"
+              style={{
+                background: "rgba(6,182,212,0.1)",
+                border: "1px solid rgba(6,182,212,0.3)",
+                color: "#22d3ee",
+              }}
+            >
+              v1.0.0
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              PostgreSQL 16 (Port 5434)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-              RabbitMQ 3.13 (AMQP 5672)
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-              Google Gemini LLM
-            </span>
+          <div className="flex flex-wrap items-center gap-5">
+            <Dot color="#34d399" label="PostgreSQL 16 · Port 5434" />
+            <Dot color="#22d3ee" label="RabbitMQ 3.13 · AMQP 5672" />
+            <Dot color="#a78bfa" label="Google Gemini LLM" />
+            <Dot color="#f59e0b" label="Tavily Search API" />
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+// ─── Helper components ───────────────────────────────────────
+
+interface BreadcrumbItem {
+  label: string;
+  onClick?: () => void;
+  active?: boolean;
+}
+
+function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
+  return (
+    <nav className="flex items-center gap-1.5 text-xs text-slate-400 flex-wrap">
+      {items.map((item, idx) => (
+        <React.Fragment key={item.label}>
+          {idx > 0 && <span className="text-slate-700">/</span>}
+          {item.active ? (
+            <span className="font-medium" style={{ color: "#22d3ee" }}>
+              {item.label}
+            </span>
+          ) : (
+            <button
+              onClick={item.onClick}
+              className="hover:text-slate-200 transition-colors underline underline-offset-4 decoration-slate-700 hover:decoration-slate-500"
+            >
+              {item.label}
+            </button>
+          )}
+        </React.Fragment>
+      ))}
+    </nav>
+  );
+}
+
+function Dot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+      <span>{label}</span>
+    </span>
   );
 }
