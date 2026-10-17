@@ -473,7 +473,7 @@ async def test_worker_processes_with_live_tavily_search_provider():
                 select(TaskResult).where(TaskResult.task_id == task.id)
             )
             assert result is not None
-            assert result.model_name == "tavily-grounder-v1"
+            assert "grounder" in result.model_name
             assert (
                 result.citations[0]["url"]
                 == "https://www.federalaviation-news.gov/part-135-cargo-drone-ruling"

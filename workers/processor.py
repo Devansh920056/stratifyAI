@@ -15,8 +15,11 @@ from backend.app.core.config import get_settings
 from backend.app.db.base import utc_now
 from backend.app.models.enums import TaskStatus
 from backend.app.models.evidence import Evidence
+from backend.app.models.job import Job
 from backend.app.models.task import Task
 from backend.app.models.task_result import TaskResult
+from backend.app.providers.llm.base import LLMProvider
+from backend.app.providers.llm.factory import get_llm_provider
 from backend.app.providers.search.base import SearchProvider
 from backend.app.providers.search.factory import get_search_provider
 from backend.app.providers.search.sanitizer import results_to_evidence
@@ -36,6 +39,7 @@ class TaskProcessor:
         session: AsyncSession,
         task_message: TaskMessage,
         search_provider: SearchProvider | None = None,
+        llm_provider: LLMProvider | None = None,
     ) -> tuple[bool, str]:
         """
         Processes a research task message.
@@ -107,14 +111,24 @@ class TaskProcessor:
 
         await session.flush()
 
-        active_provider = search_provider or get_search_provider()
+        active_search = search_provider or get_search_provider()
+        active_llm = llm_provider or get_llm_provider()
+
+        # Query parent job to contextualize LLM synthesis
+        job = await session.scalar(select(Job).where(Job.id == task_message.job_id))
+        research_question = job.research_question if job else task_message.task_type
 
         # ----------------------------------------------------------------------
         # Step 3: Evidence Retrieval & Analysis (with Timeout)
         # ----------------------------------------------------------------------
         try:
             evidence_items, task_result = await asyncio.wait_for(
-                cls._execute_research(task_message, active_provider),
+                cls._execute_research(
+                    task_message,
+                    research_question,
+                    active_search,
+                    active_llm,
+                ),
                 timeout=float(settings.TASK_TIMEOUT_SECONDS),
             )
 
@@ -152,11 +166,13 @@ class TaskProcessor:
     async def _execute_research(
         cls,
         task_message: TaskMessage,
+        research_question: str,
         search_provider: SearchProvider,
+        llm_provider: LLMProvider,
     ) -> tuple[list[Evidence], TaskResult]:
         """
-        Retrieves evidence via the configured search provider and synthesizes
-        verifiable, source-cited findings.
+        Retrieves external evidence via SearchProvider and delegates grounded
+        analysis synthesis to the configured LLMProvider.
         """
         raw_results = await search_provider.search_batch(
             queries=task_message.search_queries,
@@ -187,36 +203,20 @@ class TaskProcessor:
                 )
             ]
 
-        key_findings = []
-        citations = []
-        for ev in evidence_items[:4]:
-            citations.append({"url": ev.source_url, "title": ev.source_title})
-            key_findings.append(
-                {
-                    "claim": (
-                        ev.snippet[:160] + "..."
-                        if len(ev.snippet) > 160
-                        else ev.snippet
-                    ),
-                    "source_url": ev.source_url,
-                    "confidence": round(
-                        float(ev.provider_metadata.get("relevance_score", 0.90)), 2
-                    ),
-                }
-            )
-
-        summary_text = (
-            f"Synthesized research for {task_message.task_type.replace('_', ' ').title()}. "
-            f"Analyzed {len(evidence_items)} evidence sources via {search_provider.provider_name.title()}."
+        # Delegate AI reasoning to LLMProvider
+        analysis = await llm_provider.analyze(
+            task_type=task_message.task_type,
+            research_question=research_question,
+            evidence_items=evidence_items,
         )
 
         task_result = TaskResult(
             task_id=task_message.task_id,
-            key_findings=key_findings,
-            grounded_summary=summary_text,
-            confidence_score=0.92,
-            citations=citations,
-            model_name=f"{search_provider.provider_name}-grounder-v1",
+            key_findings=[f.model_dump() for f in analysis.key_findings],
+            grounded_summary=analysis.grounded_summary,
+            confidence_score=analysis.confidence_score,
+            citations=[c.model_dump() for c in analysis.citations],
+            model_name=analysis.model_name,
         )
 
         return evidence_items, task_result
