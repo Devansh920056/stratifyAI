@@ -109,7 +109,7 @@ export function JobStatusTracker({
         if (onJobUpdate) onJobUpdate(updated);
 
         // Keep selectedTask in sync if updated
-        if (selectedTask) {
+        if (selectedTask && updated.tasks) {
           const matching = updated.tasks.find((t) => t.id === selectedTask.id);
           if (matching) setSelectedTask(matching);
         }
@@ -147,11 +147,11 @@ export function JobStatusTracker({
   };
 
   const completedTasksCount = useMemo(() => {
-    if (!job) return 0;
+    if (!job || !job.tasks) return 0;
     return job.tasks.filter((t) => t.status === "COMPLETED").length;
   }, [job]);
 
-  const totalTasksCount = job?.tasks.length || 4;
+  const totalTasksCount = job?.tasks?.length || job?.tasks_count || 4;
   const progressPercent = Math.round((completedTasksCount / totalTasksCount) * 100);
 
   const isCompleted =
@@ -299,17 +299,25 @@ export function JobStatusTracker({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {job?.tasks.map((task) => {
-            const config = VECTOR_CONFIG[task.task_type] || {
-              title: task.task_type,
-              subtitle: "Specialized research vector",
-              icon: Compass,
-              accentColor: "text-slate-300",
-              borderColor: "border-slate-800",
-              glowColor: "transparent",
-            };
-            const Icon = config.icon;
-            const hasResult = !!task.result;
+          {!job?.tasks || job.tasks.length === 0 ? (
+            <div className="col-span-1 md:col-span-2 glass-panel p-12 rounded-2xl flex flex-col items-center justify-center space-y-3 text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-cyan-400" />
+              <p className="text-xs text-slate-300 font-medium">
+                Decomposing inquiry into 4 research vectors...
+              </p>
+            </div>
+          ) : (
+            job.tasks.map((task) => {
+              const config = VECTOR_CONFIG[task.task_type] || {
+                title: task.task_type,
+                subtitle: "Specialized research vector",
+                icon: Compass,
+                accentColor: "text-slate-300",
+                borderColor: "border-slate-800",
+                glowColor: "transparent",
+              };
+              const Icon = config.icon;
+              const hasResult = !!task.result;
 
             return (
               <div
@@ -397,7 +405,7 @@ export function JobStatusTracker({
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
 

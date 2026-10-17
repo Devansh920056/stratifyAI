@@ -79,10 +79,13 @@ class OutboxRelayService:
                         event.status = OutboxStatus.PUBLISHED.value
                         event.published_at = utc_now()
 
-                        # Update corresponding task state to DISPATCHED
+                        # Update corresponding task state to DISPATCHED only if still PENDING
                         await db.execute(
                             update(Task)
-                            .where(Task.id == task_msg.task_id)
+                            .where(
+                                Task.id == task_msg.task_id,
+                                Task.status == TaskStatus.PENDING.value,
+                            )
                             .values(status=TaskStatus.DISPATCHED.value)
                         )
 

@@ -12,8 +12,16 @@ import {
   TelemetryResponse,
 } from "@/types/api";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== "undefined") {
+    const hostname = window.location.hostname || "localhost";
+    return `http://${hostname}:8000`;
+  }
+  return "http://127.0.0.1:8000";
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -23,7 +31,8 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE_URL}${path}`;
+  const baseUrl = getApiBaseUrl();
+  const url = `${baseUrl}${path}`;
   const headers = {
     "Content-Type": "application/json",
     ...options?.headers,
@@ -57,10 +66,18 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export async function createJob(data: JobCreateRequest): Promise<JobDetailResponse> {
-  return request<JobDetailResponse>("/api/v1/jobs", {
+  const job = await request<JobDetailResponse>("/api/v1/jobs", {
     method: "POST",
     body: JSON.stringify(data),
   });
+  if (!job.tasks || job.tasks.length === 0) {
+    try {
+      return await getJob(job.id);
+    } catch {
+      return { ...job, tasks: job.tasks || [], has_report: job.has_report || false };
+    }
+  }
+  return job;
 }
 
 export async function getJob(jobId: string): Promise<JobDetailResponse> {

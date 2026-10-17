@@ -9,7 +9,7 @@ from backend.app.schemas.job import (
     JobResponse,
 )
 from backend.app.schemas.report import CitationItem, ReportResponse
-from backend.app.schemas.task import TaskResultResponse, TaskSummaryResponse
+from backend.app.schemas.task import TaskSummaryResponse
 
 __all__ = [
     "CitationItem",
@@ -18,7 +18,6 @@ __all__ = [
     "JobDetailResponse",
     "JobResponse",
     "ReportResponse",
-    "TaskResultResponse",
     "TaskSummaryResponse",
     "TelemetryResponse",
 ]

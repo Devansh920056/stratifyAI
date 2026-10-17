@@ -4,25 +4,8 @@ Pydantic Schemas for Task Entities and Progress Tracking.
 
 import uuid
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
-
-
-class TaskResultResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    grounded_summary: str = Field(..., description="LLM synthesized grounded summary")
-    key_findings: list[dict[str, Any]] = Field(
-        default_factory=list, description="Extracted factual claims with citations"
-    )
-    confidence_score: float = Field(
-        1.0, description="Confidence assessment score between 0.0 and 1.0"
-    )
-    citations: list[dict[str, Any]] = Field(
-        default_factory=list, description="Verified web citations supporting findings"
-    )
-    model_name: str = Field(..., description="LLM model used for synthesis")
 
 
 class TaskSummaryResponse(BaseModel):
@@ -50,6 +33,3 @@ class TaskSummaryResponse(BaseModel):
         None, description="Diagnostic error details if failed"
     )
     created_at: datetime = Field(..., description="Creation timestamp")
-    result: TaskResultResponse | None = Field(
-        None, description="Detailed task findings and summary if completed"
-    )
