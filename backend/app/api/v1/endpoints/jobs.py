@@ -167,6 +167,15 @@ async def get_job_report(
 
     report = await JobService.get_job_report(db=db, job_id=job_id)
     if not report:
+        from backend.app.services.aggregator import ReportAggregatorService
+
+        report = await ReportAggregatorService.check_and_aggregate_job(
+            session=db, job_id=job_id
+        )
+        if report:
+            await db.commit()
+
+    if not report:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Report is not ready yet. Current job status: '{job.status}'.",

@@ -153,6 +153,21 @@ class TaskProcessor:
 
             await session.commit()
             logger.info(f"Task {task_id} successfully completed and committed.")
+
+            # Trigger automatic report aggregation check if all sub-tasks are complete
+            try:
+                from backend.app.services.aggregator import ReportAggregatorService
+
+                await ReportAggregatorService.check_and_aggregate_job(
+                    session=session,
+                    job_id=task_message.job_id,
+                )
+                await session.commit()
+            except Exception as agg_err:  # noqa: BLE001
+                logger.warning(
+                    f"Post-task aggregation check failed for job {task_message.job_id}: {agg_err!s}"
+                )
+
             return True, "completed"
 
         except Exception as exc:
@@ -254,4 +269,17 @@ class TaskProcessor:
                     f"Task {task.id} exceeded {task.max_attempts} attempts. "
                     f"Marked FAILED and routing to DLQ."
                 )
+
+                # Check if other tasks completed and this was the last remaining task
+                from contextlib import suppress
+
+                with suppress(Exception):
+                    from backend.app.services.aggregator import ReportAggregatorService
+
+                    await ReportAggregatorService.check_and_aggregate_job(
+                        session=session,
+                        job_id=task_message.job_id,
+                    )
+                    await session.commit()
+
                 return False, "dead_letter"

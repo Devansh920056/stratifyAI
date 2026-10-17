@@ -32,3 +32,15 @@ async def clean_database_tables():
             await dlq.purge()
 
     yield
+
+
+@pytest_asyncio.fixture
+async def api_client():
+    """Async HTTP test client bound directly to the FastAPI ASGI application."""
+    import httpx
+
+    from backend.app.main import app
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
