@@ -21,6 +21,7 @@ from backend.app.providers.llm.prompt import (
     build_analysis_prompt,
     validate_and_sanitize_grounding,
 )
+from backend.app.providers.llm.smart_web import SmartWebLLMProvider
 
 __all__ = [
     "SYSTEM_PROMPT",
@@ -35,6 +36,7 @@ __all__ = [
     "LLMSchemaValidationError",
     "LLMTimeoutError",
     "MockLLMProvider",
+    "SmartWebLLMProvider",
     "build_analysis_prompt",
     "get_llm_provider",
     "validate_and_sanitize_grounding",

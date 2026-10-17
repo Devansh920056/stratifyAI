@@ -62,6 +62,15 @@ def normalize_url(url: str) -> str:
         return url
 
 
+def validate_and_normalize_url(url: str) -> str | None:
+    """
+    Validates and normalizes a URL. Returns None if invalid.
+    """
+    if not validate_url(url):
+        return None
+    return normalize_url(url)
+
+
 def sanitize_snippet(raw_text: str, max_chars: int = 2000) -> str:
     """
     Strips HTML tags, collapses excessive whitespace, and bounds snippet length.

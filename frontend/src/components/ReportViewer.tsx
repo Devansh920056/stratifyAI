@@ -308,7 +308,7 @@ export function ReportViewer({
           <Scorecard
             label="Verified Evidence"
             value={`${totalCitationsCount} Sources`}
-            subtext="Tavily web retrieval"
+            subtext="Live web retrieval"
             color="text-cyan-400"
           />
           <Scorecard
@@ -483,7 +483,7 @@ export function ReportViewer({
                 Verified Web Evidence & Citations Index
               </h2>
               <p className="text-xs text-slate-400">
-                All claims are bound to real canonicalized URLs retrieved by Tavily.
+                All claims are bound to real canonicalized URLs retrieved from verified web sources.
               </p>
             </div>
 

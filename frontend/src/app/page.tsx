@@ -48,11 +48,11 @@ const INVARIANTS = [
   },
   {
     icon: FileCheck,
-    title: "Tavily Web Evidence",
+    title: "Live Web Evidence",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10 border-emerald-500/20",
     description:
-      "Real web retrieval with UTM stripping, URL canonicalization, and score-based deduplication for zero phantom citations.",
+      "Real-time web search with UTM stripping, URL canonicalization, and score-based deduplication for zero phantom citations.",
   },
 ];
 
@@ -127,7 +127,7 @@ export default function Home() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Tavily real-time web evidence
+                  Live real-time web search
                 </span>
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -244,8 +244,8 @@ export default function Home() {
           <div className="flex flex-wrap items-center gap-5">
             <Dot color="#34d399" label="PostgreSQL 16 · Port 5434" />
             <Dot color="#22d3ee" label="RabbitMQ 3.13 · AMQP 5672" />
-            <Dot color="#a78bfa" label="Google Gemini LLM" />
-            <Dot color="#f59e0b" label="Tavily Search API" />
+            <Dot color="#a78bfa" label="Gemini / Smart Extractor" />
+            <Dot color="#f59e0b" label="DuckDuckGo Live Search" />
           </div>
         </div>
       </footer>

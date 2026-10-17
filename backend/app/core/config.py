@@ -88,10 +88,14 @@ class Settings(BaseSettings):
     # --------------------------------------------------------------------------
     # Research Providers (Search & LLM)
     # --------------------------------------------------------------------------
-    SEARCH_PROVIDER: str = Field(default="mock", description="mock | tavily | serper")
+    SEARCH_PROVIDER: str = Field(
+        default="mock", description="duckduckgo | tavily | mock"
+    )
     TAVILY_API_KEY: str | None = Field(default=None)
 
-    LLM_PROVIDER: str = Field(default="mock", description="mock | gemini | openai")
+    LLM_PROVIDER: str = Field(
+        default="mock", description="gemini | smart | mock"
+    )
     GEMINI_API_KEY: str | None = Field(default=None)
     LLM_MODEL: str = Field(default="gemini-1.5-flash")
 

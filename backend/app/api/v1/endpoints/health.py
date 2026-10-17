@@ -140,9 +140,22 @@ async def system_telemetry() -> TelemetryResponse:
             "qos_prefetch_count": 2,
         },
         ai_providers={
-            "llm": f"{settings.LLM_PROVIDER} ({settings.LLM_MODEL})",
-            "search": f"{settings.SEARCH_PROVIDER} (Tavily Real-time Web Search)",
-            "anti_hallucination": "Active (Deterministic URL verification + Cross-claim canonicalization)",
+            "llm": (
+                f"Google Gemini Free Tier ({settings.LLM_MODEL})"
+                if settings.LLM_PROVIDER.lower() == "gemini" and settings.GEMINI_API_KEY
+                else "Smart Extractive Grounder (Live Web Evidence Synthesis)"
+                if settings.LLM_PROVIDER.lower() in ("smart", "smart-extractor")
+                or (settings.LLM_PROVIDER.lower() == "gemini" and not settings.GEMINI_API_KEY)
+                else f"{settings.LLM_PROVIDER} ({settings.LLM_MODEL})"
+            ),
+            "search": (
+                "DuckDuckGo (Live Real-Time Web Intelligence, Zero-Cost)"
+                if settings.SEARCH_PROVIDER.lower() in ("duckduckgo", "ddg", "real", "web")
+                else "Tavily (Real-Time External Search API)"
+                if settings.SEARCH_PROVIDER.lower() == "tavily"
+                else f"{settings.SEARCH_PROVIDER} (Offline Mock Evidence)"
+            ),
+            "anti_hallucination": "Active (Strict URL verification + Grounded Claim Extraction)",
         },
         metrics={
             "total_jobs": total_jobs,

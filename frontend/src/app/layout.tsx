@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Stratify AI — Multi-Agent Market Intelligence",
     description:
-      "Autonomous distributed market intelligence platform powered by Gemini AI and Tavily Search.",
+      "Autonomous distributed market intelligence platform powered by real-time web retrieval and AI reasoning.",
     type: "website",
   },
 };

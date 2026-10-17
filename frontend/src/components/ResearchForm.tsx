@@ -465,7 +465,7 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
           <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-xs text-slate-400 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>Grounded in Tavily web search with Gemini synthesis.</span>
+              <span>Grounded in live web search with anti-hallucination citations.</span>
             </div>
 
             <button

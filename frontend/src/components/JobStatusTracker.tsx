@@ -269,7 +269,7 @@ export function JobStatusTracker({
                 Executive Market Intelligence Report Compiled
               </h3>
               <p className="text-xs text-slate-400">
-                All 4 research vectors have converged with verified Tavily evidence & Gemini citations.
+                All 4 research vectors have converged with verified real web evidence & grounded citations.
               </p>
             </div>
           </div>
@@ -549,7 +549,7 @@ function TaskDetailModal({
           <div className="space-y-2">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
               <Search className="w-3.5 h-3.5 text-indigo-400" />
-              Tavily Web Search Queries
+              Live Web Search Queries
             </span>
             <div className="space-y-1.5">
               {task.search_queries.map((q, idx) => (
