@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.broker.schemas import TaskMessage
 from backend.app.core.config import get_settings
 from backend.app.db.base import utc_now
+from backend.app.db.session import AsyncSessionLocal
 from backend.app.models.enums import TaskStatus
 from backend.app.models.evidence import Evidence
 from backend.app.models.job import Job
@@ -158,11 +159,13 @@ class TaskProcessor:
             try:
                 from backend.app.services.aggregator import ReportAggregatorService
 
-                await ReportAggregatorService.check_and_aggregate_job(
-                    session=session,
-                    job_id=task_message.job_id,
-                )
-                await session.commit()
+                async with AsyncSessionLocal() as agg_session:
+                    await ReportAggregatorService.check_and_aggregate_job(
+                        session=agg_session,
+                        job_id=task_message.job_id,
+                        llm_provider=active_llm,
+                    )
+                    await agg_session.commit()
             except Exception as agg_err:  # noqa: BLE001
                 logger.warning(
                     f"Post-task aggregation check failed for job {task_message.job_id}: {agg_err!s}"
@@ -252,7 +255,9 @@ class TaskProcessor:
             if not task:
                 return False, "dead_letter"
 
+            task.attempt_count += 1
             if task.attempt_count < task.max_attempts:
+                task.status = TaskStatus.DISPATCHED.value
                 task.error_details = f"Attempt {task.attempt_count} failed: {error_msg}"
                 await session.commit()
                 logger.warning(

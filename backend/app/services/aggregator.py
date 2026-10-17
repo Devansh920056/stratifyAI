@@ -43,6 +43,9 @@ class ReportAggregatorService:
         :param llm_provider: Optional injected LLM provider for executive summary synthesis
         :return: Persisted Report instance, or None if tasks are still in-flight
         """
+        # Expire all cached objects to guarantee fresh state from PostgreSQL
+        session.expire_all()
+
         # Load Job with tasks, task results, evidence, and existing report
         stmt = (
             select(Job)
