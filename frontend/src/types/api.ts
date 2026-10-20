@@ -447,6 +447,58 @@ export interface WebhookDeliveryListResponse {
   total: number;
 }
 
+export interface SemanticSearchRequest {
+  query: string;
+  entity_types?: string[];
+  sector?: string;
+  min_similarity?: number;
+  limit?: number;
+  synthesize_insight?: boolean;
+}
+
+export interface SemanticMatchItem {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  title: string;
+  content_text: string;
+  sector?: string | null;
+  similarity_score: number;
+  match_percentage: number;
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface SemanticSearchResponse {
+  query: string;
+  total_matches: number;
+  matches: SemanticMatchItem[];
+  ai_insight?: string | null;
+  key_drivers: string[];
+  dimensions: number;
+  latency_ms: number;
+}
+
+export interface VectorIndexRequest {
+  reindex_all?: boolean;
+}
+
+export interface VectorIndexResponse {
+  indexed_count: number;
+  signals_indexed: number;
+  recommendations_indexed: number;
+  findings_indexed: number;
+  message: string;
+}
+
+export interface VectorMemoryStatsResponse {
+  total_embeddings: number;
+  by_entity_type: Record<string, number>;
+  dimensions: number;
+  supported_encoders: string[];
+  active_encoder: string;
+}
+
 
 
 

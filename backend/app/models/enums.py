@@ -78,3 +78,10 @@ class DecisionOutcomeStatus(str, Enum):
     INCONCLUSIVE = "INCONCLUSIVE"
 
 
+class VectorEntityType(str, Enum):
+    MARKET_SIGNAL = "MARKET_SIGNAL"
+    RECOMMENDATION = "RECOMMENDATION"
+    RESEARCH_FINDING = "RESEARCH_FINDING"
+    RESEARCH_REPORT = "RESEARCH_REPORT"
+
+

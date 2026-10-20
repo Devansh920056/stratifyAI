@@ -11,6 +11,7 @@ from backend.app.api.v1.endpoints import (
     jobs,
     pulse,
     recommendations,
+    semantic,
     watchlists,
     webhooks,
 )
@@ -24,3 +25,4 @@ api_router.include_router(pulse.router, tags=["Market Pulse"])
 api_router.include_router(watchlists.router, tags=["Competitor Watchlists & Alerts"])
 api_router.include_router(evaluations.router, tags=["Decision Evaluation & Backtesting"])
 api_router.include_router(webhooks.router, tags=["Webhook Notifications & Dispatcher"])
+api_router.include_router(semantic.router, tags=["Semantic Intelligence & Vector Memory"])

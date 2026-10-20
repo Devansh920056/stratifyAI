@@ -312,6 +312,36 @@ export async function fetchWebhookDeliveries(
   return request<import("@/types/api").WebhookDeliveryListResponse>(path);
 }
 
+export async function searchSemanticMemory(
+  data: import("@/types/api").SemanticSearchRequest
+): Promise<import("@/types/api").SemanticSearchResponse> {
+  return request<import("@/types/api").SemanticSearchResponse>(
+    "/api/v1/semantic/search",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function indexVectorMemory(
+  reindexAll = false
+): Promise<import("@/types/api").VectorIndexResponse> {
+  return request<import("@/types/api").VectorIndexResponse>(
+    "/api/v1/semantic/index",
+    {
+      method: "POST",
+      body: JSON.stringify({ reindex_all: reindexAll }),
+    }
+  );
+}
+
+export async function fetchVectorStats(): Promise<import("@/types/api").VectorMemoryStatsResponse> {
+  return request<import("@/types/api").VectorMemoryStatsResponse>(
+    "/api/v1/semantic/stats"
+  );
+}
+
 
 
 

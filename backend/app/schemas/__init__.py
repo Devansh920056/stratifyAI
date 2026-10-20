@@ -50,6 +50,14 @@ from backend.app.schemas.watchlist import (
     WatchlistListResponse,
     WatchlistResponse,
 )
+from backend.app.schemas.semantic import (
+    SemanticMatchItem,
+    SemanticSearchRequest,
+    SemanticSearchResponse,
+    VectorIndexRequest,
+    VectorIndexResponse,
+    VectorMemoryStatsResponse,
+)
 from backend.app.schemas.webhook import (
     WebhookCreateRequest,
     WebhookDeliveryListResponse,
@@ -92,9 +100,15 @@ __all__ = [
     "RecommendationStatusUpdateRequest",
     "ReportResponse",
     "SectorStatItem",
+    "SemanticMatchItem",
+    "SemanticSearchRequest",
+    "SemanticSearchResponse",
     "SourceDomainItem",
     "TaskSummaryResponse",
     "TelemetryResponse",
+    "VectorIndexRequest",
+    "VectorIndexResponse",
+    "VectorMemoryStatsResponse",
     "VectorScoreItem",
     "WatchlistCreateRequest",
     "WatchlistListResponse",

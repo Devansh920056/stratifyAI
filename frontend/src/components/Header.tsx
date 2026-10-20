@@ -6,14 +6,17 @@ import {
   Activity,
   BarChart3,
   Bell,
+  Brain,
   Clock,
   Compass,
   Layers,
   Radio,
+  Search,
   Sparkles,
   Target,
 } from "lucide-react";
 import { TelemetryModal } from "@/components/TelemetryModal";
+import { SemanticSearchModal } from "@/components/SemanticSearchModal";
 
 export type NavigationTab =
   | "research"
@@ -39,6 +42,7 @@ export function Header({
 }: HeaderProps) {
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
+  const [isSemanticSearchOpen, setIsSemanticSearchOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -58,12 +62,15 @@ export function Header({
     };
   }, []);
 
-  // Global keyboard shortcuts (Cmd+K for Recent, N for new inquiry)
+  // Global keyboard shortcuts (Cmd+K for Recent, Cmd+S for Semantic Search)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         onRecentClick();
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        setIsSemanticSearchOpen((prev) => !prev);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -158,6 +165,19 @@ export function Header({
               )}
             </button>
 
+            {/* Semantic Search & Vector Memory Button with Cmd+S hint */}
+            <button
+              onClick={() => setIsSemanticSearchOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 hover:border-cyan-500/60 transition-all cursor-pointer shadow-sm shadow-cyan-500/10"
+              title="Semantic Search & Vector Memory (⌘S)"
+            >
+              <Brain className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden sm:inline">Semantic Search</span>
+              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-cyan-400 bg-slate-900 border border-cyan-800">
+                ⌘S
+              </kbd>
+            </button>
+
             {/* Past Jobs button with Cmd+K hint */}
             <button
               onClick={onRecentClick}
@@ -187,6 +207,12 @@ export function Header({
       <TelemetryModal
         isOpen={isTelemetryOpen}
         onClose={() => setIsTelemetryOpen(false)}
+      />
+
+      {/* Semantic Search & Vector Memory Modal */}
+      <SemanticSearchModal
+        isOpen={isSemanticSearchOpen}
+        onClose={() => setIsSemanticSearchOpen(false)}
       />
     </>
   );
