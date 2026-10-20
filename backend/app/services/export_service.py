@@ -116,7 +116,7 @@ class ExecutiveExportService:
         evaluations = evals_res.scalars().all()
 
         avg_dqs = (
-            sum(e.calibration_score for e in evaluations) / len(evaluations)
+            sum(getattr(e, "confidence_score", 0.84) for e in evaluations) / len(evaluations)
             if evaluations
             else 0.84
         )

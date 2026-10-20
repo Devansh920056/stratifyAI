@@ -97,11 +97,12 @@ async def test_webhook_subscription_crud_and_cascade(db_session: AsyncSession):
 async def test_webhook_service_dispatch_and_hmac_signature(db_session: AsyncSession):
     """Verify HMAC-SHA256 signature generation and event payload dispatching."""
     secret = "my_custom_hmac_secret_456"
+    unique_event = f"alert.critical.{uuid.uuid4().hex[:6]}"
     req = WebhookCreateRequest(
         name=f"Enterprise SIEM {uuid.uuid4().hex[:6]}",
         target_url="https://siem.example.com/api/v1/stratify-events",
         secret_token=secret,
-        event_types=["alert.critical"],
+        event_types=[unique_event],
         is_active=True,
     )
     sub_resp = await WebhookService.create_subscription(session=db_session, req=req)
@@ -112,7 +113,7 @@ async def test_webhook_service_dispatch_and_hmac_signature(db_session: AsyncSess
 
         deliveries = await WebhookService.dispatch_event(
             session=db_session,
-            event_type="alert.critical",
+            event_type=unique_event,
             payload={"severity": "CRITICAL", "entity": "CompetitorX"},
         )
 
@@ -125,7 +126,7 @@ async def test_webhook_service_dispatch_and_hmac_signature(db_session: AsyncSess
         mock_post.assert_called()
         call_kwargs = mock_post.call_args.kwargs
         headers = call_kwargs["headers"]
-        assert headers["X-Stratify-Event"] == "alert.critical"
+        assert headers["X-Stratify-Event"] == unique_event
         assert "X-Stratify-Signature" in headers
 
         # Verify HMAC signature calculation

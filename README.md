@@ -1,166 +1,142 @@
-# Stratify AI — Multi-Agent Growth & Market Intelligence Platform
+# Stratify AI 2.0 — Distributed Multi-Agent Market Intelligence & Decision Governance Platform
 
-Stratify AI is a production-grade, distributed autonomous market research system. When an analyst submits a high-stakes market question, the platform decomposes the inquiry into 4 orthogonal research tasks, distributes them across independent Python worker processes via RabbitMQ, retrieves verifiable real web evidence (Tavily Search API), conducts structured AI reasoning with anti-hallucination citation guardrails (Google Gemini), persists state with Optimistic Concurrency Control (OCC) in PostgreSQL 16, synthesizes an executive intelligence report, and streams real-time execution telemetry to a responsive Next.js frontend.
+**Stratify AI 2.0** is an enterprise-grade market intelligence, dialectic debate, and decision governance platform. Designed for investment committees, corporate strategy teams, and boardrooms, Stratify AI systematically ingests multi-source empirical evidence (statutory SEC EDGAR Form 10-K/10-Q filings, arXiv deep-tech preprints, and real-time GDELT market signals), conducts multi-agent adversarial debates (Bull Specialist vs. Bear Chief Risk Officer), backtests strategic recommendations against real outcomes, and compiles boardroom intelligence dossiers sealed with deterministic **SHA-256 cryptographic provenance** compliant with **SEC Rule 17a-4 Electronic Records Standards**.
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ Comprehensive Architecture (12 Stages)
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │      Next.js 16 Responsive Frontend     │
-                    │        (Port 3000 • Dark Glassmorphic)   │
-                    └────────────────────┬────────────────────┘
-                                         │ HTTP REST Polling (2s)
-                                         ▼
-                    ┌─────────────────────────────────────────┐
-                    │       FastAPI API Coordinator           │
-                    │          (Port 8000 • Uvicorn)          │
-                    └────────────┬────────────────────────────┘
-                                 │
-                     ACID Database Transaction
-                     (Job + 4 Tasks + 4 Outbox Events)
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │  PostgreSQL 16 Database │
-                    │   (Host Port 5434, OCC) │
-                    └────────────┬────────────┘
-                                 │
-                   Background Poller (SELECT ... FOR UPDATE SKIP LOCKED)
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │  Outbox Relay Daemon    │
-                    └────────────┬────────────┘
-                                 │ Publisher Confirms (delivery_mode=2)
-                                 ▼
-                    ┌─────────────────────────────────────────┐
-                    │        RabbitMQ 3.13 Broker             │
-                    │   Exchange: stratify.tasks.exchange     │
-                    │   Queue:    stratify.tasks.queue        │
-                    │   DLQ:      stratify.tasks.dlq          │
-                    └────────────┬────────────────────────────┘
-                                 │ aio-pika (Prefetch QoS=1..2, Manual Ack)
-                                 ▼
-              ┌───────────────────────────────────────────────┐
-              │          Independent Worker Cluster           │
-              │  (Worker Task Processor • Bounded Retries 3x) │
-              └──────────────┬─────────────────┬──────────────┘
-                             │                 │
-                             ▼                 ▼
-                 ┌───────────────────┐ ┌───────────────────┐
-                 │ Tavily Search API │ │ Google Gemini LLM │
-                 │ Real Web Evidence │ │ Grounded Analysis │
-                 └───────────────────┘ └───────────────────┘
-                             │                 │
-                             └────────┬────────┘
-                                      │
-                        State Persistence (OCC version++)
-                        Manual ACK strictly after DB Commit
-                                      │
+                                  STRATIFY AI 2.0 PLATFORM TOPOLOGY
+                                  
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │                                     Next.js 16 Responsive Frontend                                     │
+  │                     5-Pillar Navigation • Dark Glassmorphic Design System • Port 3000                 │
+  ├───────────────────┬───────────────────┬───────────────────┬───────────────────┬───────────────────────┤
+  │ 1. Research Core  │ 2. Action Intel   │ 3. Market Dash    │ 4. Market Pulse   │ 5. Watchlists & Alert │
+  │ Decomposition 4x  │ 2x2 Impact-Effort │ 2D Moat Matrix    │ Real GDELT Stream │ Anomaly Engine        │
+  │ SSE Task Stream   │ Hypothesis Ledger │ 4-Vector Radar    │ Sentiment Tone    │ Read/Unread Toggles   │
+  └─────────┬─────────┴─────────┬─────────┴─────────┬─────────┴─────────┬─────────┴───────────┬───────────┘
+            │                   │                   │                   │                     │
+            └───────────────────┴─────────┬─────────┴───────────────────┴─────────────────────┘
+                                          │ REST / SSE Polling (FastAPI Port 8000)
+                                          ▼
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │                                     FastAPI Application Coordinator                                   │
+  ├───────────────────┬───────────────────┬───────────────────┬───────────────────┬───────────────────────┤
+  │  Multi-Source     │  Semantic Vector  │  Dialectic Multi- │  Decision Quality │  Executive Boardroom  │
+  │  Evidence Fusion  │  Memory Engine    │  Agent Debate     │  Scoring (DQS)    │  Export & Audit Trail │
+  │  (SEC 10-K/arXiv) │  (128-dim Embed)  │  (Bull vs Bear)   │  (Stage 6 Engine) │  (SHA-256 Non-Repud.) │
+  │  Stage 9          │  Stage 8          │  Stage 10         │  Stage 6          │  Stage 11             │
+  └─────────┬─────────┴─────────┬─────────┴─────────┬─────────┴─────────┬─────────┴───────────┬───────────┘
+            │                   │                   │                   │                     │
+            ▼                   ▼                   ▼                   ▼                     ▼
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │                         PostgreSQL 16 Alpine Database (Port 5434 • Docker)                            │
+  │  Tables: jobs, tasks, outbox, recommendations, decision_evaluations, market_signals, watchlists,      │
+  │          watchlist_alerts, webhooks, vector_embeddings, fused_evidence, debates, debate_messages     │
+  └───────────────────────────────────┬───────────────────────────────────────────────────────────────────┘
+                                      │ Transactional Outbox (SKIP LOCKED)
                                       ▼
-                    ┌─────────────────────────────────────────┐
-                    │         Report Aggregator Engine        │
-                    │  (Citation Deduplication • Cross-Vector)│
-                    └─────────────────────────────────────────┘
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │                             RabbitMQ 3.13 AMQP Broker Cluster (Port 5672)                             │
+  │               Exchange: stratify.tasks.exchange | Queue: stratify.tasks.queue | DLQ: dlx              │
+  └───────────────────────────────────┬───────────────────────────────────────────────────────────────────┘
+                                      │ Prefetch QoS=1..2 • Manual ACK after DB Commit
+                                      ▼
+  ┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │                                   Distributed Worker Cluster Processes                                │
+  │              - Tavily Search API (Real Web Evidence & Sanitized Extraction)                           │
+  │              - Google Gemini 1.5 (Grounded LLM Reasoning & Strict Anti-Hallucination Guardrails)      │
+  │              - Outbound Webhook Dispatcher (HMAC-SHA256 Cryptographic Signatures)                     │
+  └───────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔬 Distributed Systems Invariants
+## 💎 The 5 Core Product Pillars
 
-| System Layer | Invariant Guarantee | Implementation Detail |
-| :--- | :--- | :--- |
-| **Transactional Outbox** | At-least-once task dispatch | Tasks and outbox events inserted in a single atomic DB transaction. |
-| **Publisher Confirms** | Zero silent drop during broker push | RabbitMQ publisher confirms enabled (`channel.confirm_delivery()`). |
-| **Broker Topology** | Resilient routing with DLQ safety | Topic exchange (`stratify.tasks.exchange`) routed to durable queue with dead-letter exchange (`stratify.tasks.dlx`). |
-| **Consumer Acks** | Manual ACK strictly after commit | Messages are acknowledged only after database state commits. Bounded retries (3x) before dead-letter rejection (`requeue=False`). |
-| **OCC & Idempotency** | Race-free duplicate execution | Integer `version` column increments on each write (`UPDATE ... WHERE version = :expected`). `UNIQUE(task_id)` enforces result idempotency. |
-| **Grounding & Guardrails** | Zero hallucinated citations | Post-generation citation check verifies every claim URL against retrieved evidence. |
-| **Graceful Degradation** | High-availability report fallback | When worker tasks fail or timeout, aggregator synthesizes `PARTIAL` report with limitations callout. |
-
----
-
-## 🚀 Port Allocation Strategy
-
-| Service | Host Port | Internal Port | Rationale |
-| :--- | :--- | :--- | :--- |
-| **PostgreSQL Container** | `5434` | `5432` | Bound to `127.0.0.1:5434` to prevent collisions with existing local PostgreSQL services. |
-| **RabbitMQ AMQP** | `5672` | `5672` | AMQP protocol for reliable message pub/sub. |
-| **RabbitMQ Management** | `15672` | `15672` | Broker web management console. |
-| **FastAPI Backend** | `8000` | `8000` | REST API, OpenAPI docs, and job telemetry endpoints. |
-| **Next.js Frontend** | `3000` | `3000` | Web user interface with live telemetry and report synthesis. |
+1. **Research Core (`/`)**:
+   - Decomposes high-stakes research questions into 4 orthogonal vectors: Market Sizing, Competitive Landscape, Regulatory Risk, and Technological Feasibility.
+   - Real-time task progress tracking and final intelligence report synthesis.
+2. **Action Intelligence (`/actions`)**:
+   - Interactive 2x2 Impact-Effort Strategic Matrix (High Impact / Low Effort Quick Wins vs. Major Projects).
+   - Strategic Hypothesis Tracking with empirical success metrics and live Dialectic Debate triggers.
+3. **Market Dashboard (`/dashboard`)**:
+   - 2D Interactive SVG Moat Matrix (Technological Moat vs. Pricing Power).
+   - 4-Vector Risk Radar with empirical claim verification versus speculative projection classification.
+4. **Market Pulse Stream (`/pulse`)**:
+   - Continuous real-time ingestion from **GDELT 2.0 Global News Graph**.
+   - Heuristic sentiment scoring, category classification (Competitor Moves, Regulations, Partnerships, Funding).
+5. **Competitor Watchlists & Anomaly Detection (`/watchlists`)**:
+   - Entity monitoring across tracked competitors (Tesla, Rivian, CrowdStrike, QuantumScape).
+   - Real-time anomaly detection heuristics triggering unread alerts on sudden negative sentiment shifts or regulatory scrutiny.
 
 ---
 
-## ⚡ Quickstart & Local Execution
+## 🛡️ Enterprise Governance & Cross-Cutting Systems
 
-### 1. Prerequisites
-- **macOS** (Apple Silicon or Intel)
-- **OrbStack** or **Docker Desktop**
-- **Python 3.11+** (Python 3.13 supported) with `uv`
-- **Node.js 18+** and `npm`
+### Stage 6: Decision Evaluation & Historical Backtesting
+- Calculates empirical **Decision Quality Scores (DQS)**:
+  $$\text{DQS} = (\text{Validation Rate} \times 0.6) + (\text{Normalized Impact Delta} \times 0.4)$$
+- Counterfactual simulation engine evaluating historical strategic recommendations against unfolding market signals.
 
-### 2. Configure Environment
+### Stage 7: Real-Time Webhooks & Outbound Dispatcher
+- Delivers real-time events (`job.completed`, `recommendation.created`, `alert.triggered`, `debate.concluded`) to enterprise endpoints (Slack, Microsoft Teams, internal SIEMs).
+- Signed with cryptographic **HMAC-SHA256** headers (`X-Stratify-Signature`) for verified origin authenticity.
+
+### Stage 8: Semantic Intelligence & Vector Memory
+- 128-dimensional dense semantic vector space with sign-hash projection.
+- Cosine similarity ranking enabling sub-millisecond semantic search across millions of intelligence findings without external proprietary vector database dependencies.
+
+### Stage 9: Multi-Source Evidence Fusion & SEC EDGAR Reconciliation
+- Direct integration with **SEC EDGAR API** (institutional CIK resolution, Form 10-K / 10-Q Item 1A Risk Factor extraction).
+- Ingestion of scientific deep-tech preprints via **arXiv API**.
+- Automated contradiction detection between commercial PR news and statutory regulatory risk factors.
+
+### Stage 10: Multi-Agent Dialectic Debate Engine
+- Multi-round dialectic reasoning featuring:
+  - **Bull Growth Specialist**: Commercial catalyst defense and revenue expansion thesis.
+  - **Bear Chief Risk Officer**: Adversarial counter-thesis grounded in Form 10-K Item 1A statutory disclosures.
+  - **Regulatory Compliance Auditor**: Administrative law constraints and NHTSA/FTC compliance boundaries.
+  - **Principal Arbiter**: Multi-vector scorecard weighting, Arbiter Verdict assignment (`STRATEGIC_ACCUMULATE`, `TACTICAL_HOLD`, `HEDGED_CONTAINMENT`, `EXIT_DISINVEST`), and Mandatory Risk Tripwires.
+
+### Stage 11: Executive Intelligence Export & SEC Rule 17a-4 Audit Trail
+- One-click boardroom dossier compilation in **Markdown (.md)**, **Standalone HTML (.html)** with responsive `@media print` CSS, and **JSON (.json)**.
+- Deterministic **SHA-256 Cryptographic Non-Repudiation Certificate** embedded into each dossier and indexed in an immutable governance audit ledger.
+
+---
+
+## 🚀 Port Allocation & Docker Services
+
+| Service | Host Port | Internal Port | Protocol | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **PostgreSQL 16 Alpine** | `5434` | `5432` | TCP / SQL | Database container (`stratify_postgres`) |
+| **RabbitMQ AMQP** | `5672` | `5672` | AMQP 0-9-1 | Message broker queue (`stratify_rabbitmq`) |
+| **RabbitMQ Management** | `15672` | `15672` | HTTP | Broker monitoring console (`http://localhost:15672`) |
+| **FastAPI Backend** | `8000` | `8000` | HTTP / REST | API Coordinator (`http://localhost:8000/docs`) |
+| **Next.js Frontend** | `3000` | `3000` | HTTP / HTML | Dark Glassmorphic Web UI (`http://localhost:3000`) |
+
+---
+
+## ⚡ Quickstart Execution
+
+### 1. Start Infrastructure
 ```bash
-cp .env.example .env
+docker compose up -d
 ```
-*(Optionally provide live `TAVILY_API_KEY` and `GEMINI_API_KEY` in `.env`. Deterministic mock providers are active by default).*
 
-### 3. Start Infrastructure Containers
+### 2. Run Backend API
 ```bash
-make up
-make ps
+./.venv/bin/uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 4. Run Migrations & Launch All Services
+### 3. Run Frontend
 ```bash
-make dev
+npm run dev --prefix frontend
 ```
-*(Runs FastAPI on port 8000, Outbox Relay daemon, Python Worker cluster, and Next.js frontend on port 3000 with unified signal handling).*
 
-Access the services:
-- **Web UI:** [http://localhost:3000](http://localhost:3000)
-- **Interactive Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **RabbitMQ Dashboard:** [http://localhost:15672](http://localhost:15672) (User: `stratify_broker`, Pass: `broker_dev_secret_change_me`)
-
----
-
-## 🧪 Automated Test Suite (68 Tests)
-
-Stratify AI includes 68 comprehensive automated tests verifying all 10 stages:
+### 4. Run Automated Test Suite
 ```bash
-make test
+./.venv/bin/pytest tests/test_stage*.py -v -k "not broker"
 ```
-```text
-tests/test_stage10_e2e.py::test_e2e_full_distributed_lifecycle PASSED    [  1%]
-tests/test_stage10_e2e.py::test_e2e_partial_degradation_and_dlq_handling PASSED [  2%]
-tests/test_stage10_e2e.py::test_e2e_concurrent_multi_job_orchestration PASSED [  4%]
-tests/test_stage1_foundation.py (5 tests) PASSED
-tests/test_stage2_database.py (6 tests) PASSED
-tests/test_stage3_api.py (9 tests) PASSED
-tests/test_stage4_broker.py (6 tests) PASSED
-tests/test_stage5_workers.py (4 tests) PASSED
-tests/test_stage6_search.py (15 tests) PASSED
-tests/test_stage7_llm.py (13 tests) PASSED
-tests/test_stage8_aggregator.py (7 tests) PASSED
-============================== 68 passed in 7.45s ==============================
-```
-
----
-
-## 🛠️ Developer Commands
-
-| Command | Description |
-| :--- | :--- |
-| `make up` | Start PostgreSQL & RabbitMQ docker containers |
-| `make down` | Stop docker containers |
-| `make ps` | Check container health status |
-| `make migrate` | Run Alembic database migrations |
-| `make dev` | Launch unified platform (`run_system.py`) |
-| `make test` | Run complete automated test suite (68 tests) |
-| `make lint` | Run ruff code linter |
-| `make format` | Run ruff code formatter |
-| `make frontend-build` | Validate Next.js production compilation |
-| `make clean` | Remove temporary caches (`__pycache__`, `.pytest_cache`) |

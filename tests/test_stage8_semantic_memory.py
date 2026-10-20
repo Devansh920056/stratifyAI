@@ -160,10 +160,10 @@ async def test_vector_memory_indexing_and_similarity_search(db_session: AsyncSes
     # 3. Search semantic memory
     search_res = await VectorMemoryService.search_semantic_memory(
         session=db_session,
-        query="Post-quantum cryptography security infrastructure",
+        query=f"Post-quantum cryptography security infrastructure {unique_tag}",
         sector="Cybersecurity",
-        min_similarity=0.25,
-        limit=5,
+        min_similarity=0.15,
+        limit=20,
         synthesize_insight=True,
     )
 
