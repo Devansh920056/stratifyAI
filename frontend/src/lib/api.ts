@@ -141,3 +141,12 @@ export async function updateRecommendationStatus(
   );
 }
 
+export async function getJobDashboard(
+  jobId: string
+): Promise<import("@/types/api").JobDashboardResponse> {
+  return request<import("@/types/api").JobDashboardResponse>(
+    `/api/v1/jobs/${jobId}/dashboard`
+  );
+}
+
+

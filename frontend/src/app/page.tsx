@@ -7,6 +7,7 @@ import { JobStatusTracker } from "@/components/JobStatusTracker";
 import { ReportViewer } from "@/components/ReportViewer";
 import { RecentJobs } from "@/components/RecentJobs";
 import { ActionIntelWorkspace } from "@/components/ActionIntelWorkspace";
+import { DashboardWorkspace } from "@/components/DashboardWorkspace";
 import { JobDetailResponse } from "@/types/api";
 import {
   AlertTriangle,
@@ -245,69 +246,11 @@ export default function Home() {
             PILLAR 3: MARKET INTELLIGENCE DASHBOARD (Stage 3)
         ════════════════════════════════════════════════════ */}
         {currentTab === "dashboard" && (
-          <div className="space-y-8 animate-fade-in">
-            <div className="pb-6 border-b border-slate-800">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 mb-3">
-                <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Stage 3 Blueprint · Grounded Visualizations & Competitive Moats</span>
-              </div>
-              <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-                Market Intelligence Dashboard
-              </h1>
-              <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                Real-data visualization modules. Strictly separating verified data from inferred estimates,
-                with zero hallucinated metrics or fabricated pie charts.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-cyan-400" />
-                    Competitive Moat Matrix
-                  </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-400">
-                    STAGE 3
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  2D positioning matrix mapping competitors by <strong>Pricing Power</strong> vs.{" "}
-                  <strong>Technological Moat</strong>, backed directly by findings in Vector 2 (Competitive Analysis).
-                </p>
-                <div className="h-44 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col items-center justify-center text-center p-4">
-                  <BarChart3 className="w-8 h-8 text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-400 font-medium">Interactive Scatter Plot</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Plots verified entities extracted from synthesis findings
-                  </p>
-                </div>
-              </div>
-
-              <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-violet-400" />
-                    4-Vector Sentiment & Risk Distribution
-                  </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-950/80 border border-violet-500/30 text-violet-400">
-                    STAGE 3
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Radar analysis of market risk posture across Macro Headwinds, Regulatory Friction,
-                  Customer Churn pressure, and Moat Durability.
-                </p>
-                <div className="h-44 rounded-xl bg-slate-900/80 border border-slate-800/80 flex flex-col items-center justify-center text-center p-4">
-                  <Compass className="w-8 h-8 text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-400 font-medium">Radar Risk Map</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Calibrated from confidence scores of each research vector
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DashboardWorkspace
+            activeJob={activeJob}
+            onSelectJob={(job) => setActiveJob(job)}
+            onNewInquiry={handleNewInquiry}
+          />
         )}
 
         {/* ════════════════════════════════════════════════════

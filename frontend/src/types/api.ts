@@ -171,3 +171,51 @@ export interface RecommendationListResponse {
   items: RecommendationItem[];
 }
 
+export interface MoatCompetitorPoint {
+  name: string;
+  technological_moat: number;
+  pricing_power: number;
+  quadrant: string;
+  summary: string;
+  confidence: number;
+  source_url?: string | null;
+}
+
+export interface VectorScoreItem {
+  vector_key: string;
+  label: string;
+  confidence: number;
+  risk_level: "LOW" | "MEDIUM" | "HIGH";
+  evidence_count: number;
+  summary_snippet: string;
+}
+
+export interface ClaimClassification {
+  claim: string;
+  source_url?: string | null;
+  is_empirical: boolean;
+  confidence: number;
+  vector_type: string;
+}
+
+export interface SourceDomainItem {
+  domain: string;
+  count: number;
+  percentage: number;
+}
+
+export interface JobDashboardResponse {
+  job_id: string;
+  target_market: string;
+  geography: string;
+  overall_confidence: number;
+  moat_matrix: MoatCompetitorPoint[];
+  vector_scores: VectorScoreItem[];
+  claims_breakdown: ClaimClassification[];
+  empirical_facts_count: number;
+  inferred_projections_count: number;
+  source_domains: SourceDomainItem[];
+  total_citations: number;
+}
+
+
