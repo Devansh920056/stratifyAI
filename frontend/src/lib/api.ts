@@ -413,6 +413,28 @@ export async function fetchDebateDetail(
   );
 }
 
+// ─── Stage 11 Executive Intelligence Export & Governance Audit ───
+export async function exportDossier(
+  data: import("@/types/api").DossierExportRequest
+): Promise<import("@/types/api").DossierExportResponse> {
+  return request<import("@/types/api").DossierExportResponse>(
+    "/api/v1/export/dossier",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function fetchGovernanceAuditHistory(
+  entityName: string
+): Promise<import("@/types/api").AuditHistoryResponse> {
+  return request<import("@/types/api").AuditHistoryResponse>(
+    `/api/v1/export/audit/${encodeURIComponent(entityName)}`
+  );
+}
+
+
 
 
 

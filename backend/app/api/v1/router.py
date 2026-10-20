@@ -8,6 +8,7 @@ from backend.app.api.v1.endpoints import (
     dashboard,
     debates,
     evaluations,
+    export,
     fusion,
     health,
     jobs,
@@ -30,3 +31,4 @@ api_router.include_router(webhooks.router, tags=["Webhook Notifications & Dispat
 api_router.include_router(semantic.router, tags=["Semantic Intelligence & Vector Memory"])
 api_router.include_router(fusion.router, tags=["Multi-Source Evidence Fusion & SEC Reconciliation"])
 api_router.include_router(debates.router, tags=["Dialectic Debate Engine"])
+api_router.include_router(export.router, tags=["Executive Export & Governance"])

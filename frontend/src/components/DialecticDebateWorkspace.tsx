@@ -26,6 +26,7 @@ import {
   Clock,
   Compass,
   ExternalLink,
+  FileCheck2,
   Flame,
   Gavel,
   History,
@@ -46,6 +47,7 @@ import {
   UserCheck,
   Zap,
 } from "lucide-react";
+import { ExecutiveDossierModal } from "@/components/ExecutiveDossierModal";
 
 const SUGGESTED_DEBATES = [
   {
@@ -85,6 +87,7 @@ export function DialecticDebateWorkspace() {
   const [roundsCount, setRoundsCount] = useState<number>(3);
   const [isLoading, setIsLoading] = useState(false);
   const [isDebating, setIsDebating] = useState(false);
+  const [isDossierOpen, setIsDossierOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadDebates = async (entity?: string) => {
@@ -360,6 +363,16 @@ export function DialecticDebateWorkspace() {
                 </span>
                 {getVerdictBadge(activeDebate.arbiter_verdict)}
               </div>
+
+              {/* Stage 11 Export Dossier Trigger */}
+              <button
+                onClick={() => setIsDossierOpen(true)}
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-emerald-300 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 hover:border-emerald-500/60 transition shadow-sm cursor-pointer"
+                title="Export SHA-256 Verified Executive Dossier"
+              >
+                <FileCheck2 className="w-4 h-4 text-emerald-400" />
+                <span>Export Dossier (SHA-256)</span>
+              </button>
             </div>
           </div>
 
@@ -813,6 +826,14 @@ export function DialecticDebateWorkspace() {
           </div>
         </div>
       )}
+
+      {/* Executive Intelligence Dossier & Governance Audit Modal */}
+      <ExecutiveDossierModal
+        isOpen={isDossierOpen}
+        onClose={() => setIsDossierOpen(false)}
+        defaultEntity={activeDebate?.entity_name || targetEntity}
+        defaultDebateId={activeDebate?.id}
+      />
     </div>
   );
 }

@@ -48,6 +48,12 @@ from backend.app.schemas.evaluation import (
     DecisionEvaluationResponse,
     MetricEvidenceItem,
 )
+from backend.app.schemas.export import (
+    AuditHistoryResponse,
+    DossierExportRequest,
+    DossierExportResponse,
+    GovernanceAuditRecord,
+)
 from backend.app.schemas.report import CitationItem, ReportResponse
 from backend.app.schemas.task import TaskSummaryResponse
 from backend.app.schemas.watchlist import (
@@ -88,6 +94,7 @@ __all__ = [
     "AlertMarkReadRequest",
     "AlertResponse",
     "AlertSimulateRequest",
+    "AuditHistoryResponse",
     "BacktestFindingItem",
     "BacktestResultResponse",
     "BacktestSimulationRequest",
@@ -104,10 +111,13 @@ __all__ = [
     "DecisionEvaluationListResponse",
     "DecisionEvaluationResponse",
     "DomainStatItem",
+    "DossierExportRequest",
+    "DossierExportResponse",
     "EvidenceQueryRequest",
     "EvidenceReconciliationSummary",
     "FusedEvidenceItem",
     "FusedEvidenceListResponse",
+    "GovernanceAuditRecord",
     "HealthResponse",
     "JobCreateRequest",
     "JobDashboardResponse",

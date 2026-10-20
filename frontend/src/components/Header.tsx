@@ -9,6 +9,7 @@ import {
   Brain,
   Clock,
   Compass,
+  FileCheck2,
   Layers,
   Radio,
   Search,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { TelemetryModal } from "@/components/TelemetryModal";
 import { SemanticSearchModal } from "@/components/SemanticSearchModal";
+import { ExecutiveDossierModal } from "@/components/ExecutiveDossierModal";
 
 export type NavigationTab =
   | "research"
@@ -43,6 +45,7 @@ export function Header({
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isSemanticSearchOpen, setIsSemanticSearchOpen] = useState(false);
+  const [isDossierOpen, setIsDossierOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -62,7 +65,7 @@ export function Header({
     };
   }, []);
 
-  // Global keyboard shortcuts (Cmd+K for Recent, Cmd+S for Semantic Search)
+  // Global keyboard shortcuts (Cmd+K for Recent, Cmd+S for Semantic Search, Cmd+E for Executive Dossier)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -71,6 +74,9 @@ export function Header({
       } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         setIsSemanticSearchOpen((prev) => !prev);
+      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "e") {
+        e.preventDefault();
+        setIsDossierOpen((prev) => !prev);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -178,6 +184,19 @@ export function Header({
               </kbd>
             </button>
 
+            {/* Stage 11 Executive Intelligence Dossier Button with Cmd+E hint */}
+            <button
+              onClick={() => setIsDossierOpen(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-emerald-300 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 hover:border-emerald-500/60 transition-all cursor-pointer shadow-sm shadow-emerald-500/10"
+              title="Executive Intelligence Dossier & SEC Rule 17a-4 Audit (⌘E)"
+            >
+              <FileCheck2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Executive Dossier</span>
+              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-emerald-400 bg-slate-900 border border-emerald-800">
+                ⌘E
+              </kbd>
+            </button>
+
             {/* Past Jobs button with Cmd+K hint */}
             <button
               onClick={onRecentClick}
@@ -213,6 +232,13 @@ export function Header({
       <SemanticSearchModal
         isOpen={isSemanticSearchOpen}
         onClose={() => setIsSemanticSearchOpen(false)}
+      />
+
+      {/* Executive Intelligence Dossier & Governance Audit Modal */}
+      <ExecutiveDossierModal
+        isOpen={isDossierOpen}
+        onClose={() => setIsDossierOpen(false)}
+        defaultJobId={activeJobId}
       />
     </>
   );

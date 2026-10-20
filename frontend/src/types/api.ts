@@ -638,6 +638,48 @@ export interface DebateInitiateRequest {
   rounds_count?: number;
 }
 
+// Stage 11: Executive Intelligence Export & Governance Audit Trail
+export type DossierFormat = "MARKDOWN" | "HTML" | "JSON";
+
+export interface DossierExportRequest {
+  entity_name: string;
+  job_id?: string | null;
+  debate_id?: string | null;
+  format?: DossierFormat;
+  include_citations?: boolean;
+}
+
+export interface GovernanceAuditRecord {
+  dossier_id: string;
+  entity_name: string;
+  sha256_hash: string;
+  content_length_bytes: number;
+  total_citations: number;
+  sec_accessions: string[];
+  arxiv_ids: string[];
+  gdelt_sources: string[];
+  arbiter_verdict?: string | null;
+  conviction_score?: number | null;
+  dqs_score?: number | null;
+  generated_at: string;
+}
+
+export interface DossierExportResponse {
+  dossier_id: string;
+  entity_name: string;
+  format: DossierFormat;
+  filename: string;
+  content: string;
+  governance_audit: GovernanceAuditRecord;
+}
+
+export interface AuditHistoryResponse {
+  entity_name: string;
+  audit_records: GovernanceAuditRecord[];
+  total: number;
+}
+
+
 
 
 
