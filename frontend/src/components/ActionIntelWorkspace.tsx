@@ -45,12 +45,14 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Swords,
   Target,
   TrendingDown,
   TrendingUp,
   XCircle,
   Zap,
 } from "lucide-react";
+import { DialecticDebateWorkspace } from "./DialecticDebateWorkspace";
 
 interface ActionIntelWorkspaceProps {
   activeJob: JobDetailResponse | null;
@@ -58,7 +60,7 @@ interface ActionIntelWorkspaceProps {
   onNewInquiry: () => void;
 }
 
-type SubTab = "matrix" | "backtest" | "audit";
+type SubTab = "matrix" | "debate" | "backtest" | "audit";
 
 export function ActionIntelWorkspace({
   activeJob,
@@ -406,6 +408,21 @@ export function ActionIntelWorkspace({
         </button>
 
         <button
+          onClick={() => setCurrentSubTab("debate")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition ${
+            currentSubTab === "debate"
+              ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30"
+              : "text-slate-400 hover:text-white hover:bg-slate-900"
+          }`}
+        >
+          <Swords className="w-3.5 h-3.5 text-pink-400" />
+          <span>Dialectic Debate Arena</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-purple-950 text-purple-300 border border-purple-500/30">
+            Stage 10
+          </span>
+        </button>
+
+        <button
           onClick={() => {
             setCurrentSubTab("backtest");
             if (!backtestResult) handleRunBacktest();
@@ -440,8 +457,11 @@ export function ActionIntelWorkspace({
         </div>
       )}
 
+      {/* ─── Stage 10: Dialectic Debate Arena ─────────────────── */}
+      {currentSubTab === "debate" && <DialecticDebateWorkspace />}
+
       {/* ─── State: No active job selected ───────────────────── */}
-      {!activeJob && (
+      {!activeJob && currentSubTab !== "debate" && (
         <div className="glass-panel p-12 rounded-2xl border border-slate-800 text-center space-y-4">
           <Compass className="w-12 h-12 text-slate-500 mx-auto" />
           <h3 className="text-base font-semibold text-slate-200">

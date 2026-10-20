@@ -541,6 +541,104 @@ export interface FusedEvidenceListResponse {
   summary?: EvidenceReconciliationSummary | null;
 }
 
+// ─── Stage 10 Dialectic Debate Contracts ───────────────────────
+export type AgentDebateRoleType =
+  | "BULL_SPECIALIST"
+  | "BEAR_RISK_OFFICER"
+  | "REGULATORY_AUDITOR"
+  | "PRINCIPAL_ARBITER";
+
+export type ArgumentType =
+  | "THESIS"
+  | "ANTITHESIS"
+  | "REBUTTAL"
+  | "REGULATORY_CHALLENGE"
+  | "SYNTHESIS";
+
+export type ArbiterVerdictType =
+  | "STRONG_BUY"
+  | "STRATEGIC_ACCUMULATE"
+  | "NEUTRAL_HOLD"
+  | "DEFENSIVE_HEDGE"
+  | "DIVEST_AVOID";
+
+export type DebateStatusType = "IN_PROGRESS" | "CONCLUDED" | "ARCHIVED";
+
+export interface EvidenceCitationItem {
+  source_type: string;
+  title: string;
+  reference_id?: string | null;
+  url?: string | null;
+  reconciliation_impact?: string | null;
+}
+
+export interface DebateMessageItem {
+  id: string;
+  debate_id: string;
+  agent_role: AgentDebateRoleType;
+  agent_name: string;
+  round_number: number;
+  argument_type: ArgumentType;
+  content: string;
+  evidence_citations: EvidenceCitationItem[];
+  confidence_score: number;
+  created_at: string;
+}
+
+export interface DebateSynthesisMatrix {
+  bull_score: number;
+  bear_score: number;
+  regulatory_risk_score: number;
+  primary_growth_vector: string;
+  primary_vulnerability: string;
+  tripwires: string[];
+  evidence_weighting?: {
+    statutory_sec_weight: number;
+    scientific_arxiv_weight: number;
+    commercial_news_weight: number;
+  };
+}
+
+export interface DebateListItem {
+  id: string;
+  topic: string;
+  entity_name: string;
+  status: DebateStatusType;
+  rounds_count: number;
+  arbiter_verdict?: ArbiterVerdictType | null;
+  conviction_score?: number | null;
+  executive_summary?: string | null;
+  created_at: string;
+}
+
+export interface DebateDetailResponse {
+  id: string;
+  topic: string;
+  entity_name: string;
+  status: DebateStatusType;
+  rounds_count: number;
+  arbiter_verdict?: ArbiterVerdictType | null;
+  conviction_score?: number | null;
+  executive_summary?: string | null;
+  synthesis_matrix: DebateSynthesisMatrix;
+  created_at: string;
+  updated_at: string;
+  messages: DebateMessageItem[];
+}
+
+export interface DebateListResponse {
+  debates: DebateListItem[];
+  total: number;
+}
+
+export interface DebateInitiateRequest {
+  topic: string;
+  entity_name: string;
+  focus_areas?: string[];
+  rounds_count?: number;
+}
+
+
 
 
 

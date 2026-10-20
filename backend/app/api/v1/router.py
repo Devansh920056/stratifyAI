@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from backend.app.api.v1.endpoints import (
     dashboard,
+    debates,
     evaluations,
     fusion,
     health,
@@ -28,3 +29,4 @@ api_router.include_router(evaluations.router, tags=["Decision Evaluation & Backt
 api_router.include_router(webhooks.router, tags=["Webhook Notifications & Dispatcher"])
 api_router.include_router(semantic.router, tags=["Semantic Intelligence & Vector Memory"])
 api_router.include_router(fusion.router, tags=["Multi-Source Evidence Fusion & SEC Reconciliation"])
+api_router.include_router(debates.router, tags=["Dialectic Debate Engine"])

@@ -379,6 +379,41 @@ export async function reconcileEntityEvidence(
   );
 }
 
+// ─── Stage 10 Dialectic Debate API Methods ─────────────────────
+export async function initiateDebate(
+  data: import("@/types/api").DebateInitiateRequest
+): Promise<import("@/types/api").DebateDetailResponse> {
+  return request<import("@/types/api").DebateDetailResponse>(
+    "/api/v1/debates/initiate",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function fetchDebates(
+  entityName?: string,
+  limit = 20
+): Promise<import("@/types/api").DebateListResponse> {
+  const params = new URLSearchParams();
+  if (entityName) params.append("entity_name", entityName);
+  params.append("limit", limit.toString());
+
+  return request<import("@/types/api").DebateListResponse>(
+    `/api/v1/debates?${params.toString()}`
+  );
+}
+
+export async function fetchDebateDetail(
+  debateId: string
+): Promise<import("@/types/api").DebateDetailResponse> {
+  return request<import("@/types/api").DebateDetailResponse>(
+    `/api/v1/debates/${debateId}`
+  );
+}
+
+
 
 
 

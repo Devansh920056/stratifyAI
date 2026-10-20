@@ -3,7 +3,11 @@ SQLAlchemy Domain Models for Stratify AI.
 """
 
 from backend.app.models.enums import (
+    AgentDebateRole,
     AlertSeverity,
+    ArbiterVerdict,
+    ArgumentType,
+    DebateStatus,
     DecisionOutcomeStatus,
     DivergenceStatus,
     EvidenceSourceType,
@@ -17,6 +21,7 @@ from backend.app.models.enums import (
     TimeHorizon,
     VectorEntityType,
 )
+from backend.app.models.debate import Debate, DebateMessage
 from backend.app.models.decision_evaluation import DecisionEvaluation
 from backend.app.models.evidence import Evidence
 from backend.app.models.fused_evidence import FusedEvidence
@@ -32,8 +37,14 @@ from backend.app.models.watchlist import Alert, Watchlist
 from backend.app.models.webhook import WebhookDelivery, WebhookSubscription
 
 __all__ = [
+    "AgentDebateRole",
     "Alert",
     "AlertSeverity",
+    "ArbiterVerdict",
+    "ArgumentType",
+    "Debate",
+    "DebateMessage",
+    "DebateStatus",
     "DecisionEvaluation",
     "DecisionOutcomeStatus",
     "DivergenceStatus",
@@ -61,4 +72,5 @@ __all__ = [
     "WebhookDelivery",
     "WebhookSubscription",
 ]
+
 

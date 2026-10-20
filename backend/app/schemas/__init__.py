@@ -9,6 +9,15 @@ from backend.app.schemas.dashboard import (
     SourceDomainItem,
     VectorScoreItem,
 )
+from backend.app.schemas.debate import (
+    DebateDetailResponse,
+    DebateInitiateRequest,
+    DebateListItem,
+    DebateListResponse,
+    DebateMessageItem,
+    DebateSynthesisMatrix,
+    EvidenceCitationItem,
+)
 from backend.app.schemas.health import HealthResponse, TelemetryResponse
 from backend.app.schemas.job import (
     JobCreateRequest,
@@ -84,6 +93,12 @@ __all__ = [
     "BacktestSimulationRequest",
     "CitationItem",
     "ClaimClassification",
+    "DebateDetailResponse",
+    "DebateInitiateRequest",
+    "DebateListItem",
+    "DebateListResponse",
+    "DebateMessageItem",
+    "DebateSynthesisMatrix",
     "DecisionAnalyticsSummaryResponse",
     "DecisionEvaluationCreateRequest",
     "DecisionEvaluationListResponse",
