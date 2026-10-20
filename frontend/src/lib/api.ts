@@ -110,3 +110,34 @@ export async function checkBackendHealth(): Promise<HealthResponse> {
 export async function getSystemTelemetry(): Promise<TelemetryResponse> {
   return request<TelemetryResponse>("/api/v1/health/telemetry");
 }
+
+export async function fetchRecommendations(
+  jobId: string
+): Promise<import("@/types/api").RecommendationListResponse> {
+  return request<import("@/types/api").RecommendationListResponse>(
+    `/api/v1/jobs/${jobId}/recommendations`
+  );
+}
+
+export async function generateRecommendations(
+  jobId: string
+): Promise<import("@/types/api").RecommendationListResponse> {
+  return request<import("@/types/api").RecommendationListResponse>(
+    `/api/v1/jobs/${jobId}/recommendations/generate`,
+    { method: "POST" }
+  );
+}
+
+export async function updateRecommendationStatus(
+  recommendationId: string,
+  status: import("@/types/api").RecommendationStatusType
+): Promise<import("@/types/api").RecommendationItem> {
+  return request<import("@/types/api").RecommendationItem>(
+    `/api/v1/recommendations/${recommendationId}/status`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }
+  );
+}
+

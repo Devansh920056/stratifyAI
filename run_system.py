@@ -106,7 +106,7 @@ def main():
     # 1. API Coordinator
     start_process(
         name="FastAPI Coordinator",
-        cmd=[VENV_PYTHON, "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"],
+        cmd=[VENV_PYTHON, "-m", "uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
     )
 
     # 2. Outbox Relay

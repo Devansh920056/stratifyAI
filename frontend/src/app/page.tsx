@@ -6,6 +6,7 @@ import { ResearchForm } from "@/components/ResearchForm";
 import { JobStatusTracker } from "@/components/JobStatusTracker";
 import { ReportViewer } from "@/components/ReportViewer";
 import { RecentJobs } from "@/components/RecentJobs";
+import { ActionIntelWorkspace } from "@/components/ActionIntelWorkspace";
 import { JobDetailResponse } from "@/types/api";
 import {
   AlertTriangle,
@@ -233,112 +234,11 @@ export default function Home() {
             PILLAR 2: ACTION INTELLIGENCE WORKSPACE (Stage 2)
         ════════════════════════════════════════════════════ */}
         {currentTab === "actions" && (
-          <div className="space-y-8 animate-fade-in">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-950/60 border border-indigo-500/30 text-indigo-300 mb-3">
-                  <Target className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>Stage 2 Blueprint · Action Intelligence & Decision Matrix</span>
-                </div>
-                <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-                  Executive Recommendations Engine
-                </h1>
-                <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                  Transform raw research reports into prioritized strategic initiatives with explicit
-                  effort vs. impact matrices, measurable hypotheses, and strict provenance evidence linking.
-                </p>
-              </div>
-
-              {activeJob && (
-                <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2.5 rounded-xl">
-                  <FileText className="w-4 h-4 text-cyan-400" />
-                  <div className="text-xs">
-                    <p className="text-slate-400 font-medium">Active Report Focus</p>
-                    <p className="text-slate-200 font-mono font-semibold truncate max-w-[200px]">
-                      {activeJob.target_market}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Architecture Architecture Specifications Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="glass-panel p-6 rounded-2xl space-y-4 border border-slate-800/80">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                  <Target className="w-5 h-5 text-indigo-400" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-100">
-                  Prioritized Action Items
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Synthesizes structured strategic initiatives scored by <strong>Impact (1–10)</strong>, 
-                  <strong>Effort (1–10)</strong>, and <strong>Time Horizon</strong> (Immediate, Near-term, Long-term).
-                </p>
-                <div className="pt-2 text-xs font-mono text-indigo-400/90 bg-indigo-950/30 p-2.5 rounded-lg border border-indigo-500/20">
-                  Priority = (Impact × 0.7) - (Effort × 0.3)
-                </div>
-              </div>
-
-              <div className="glass-panel p-6 rounded-2xl space-y-4 border border-slate-800/80">
-                <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-violet-400" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-100">
-                  Outcome Hypotheses
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Every recommendation defines a testable outcome metric (e.g., &quot;Enterprise churn reduction of 15% within 2 quarters&quot;) to evaluate decision efficacy over time.
-                </p>
-                <div className="pt-2 text-xs font-mono text-violet-400/90 bg-violet-950/30 p-2.5 rounded-lg border border-violet-500/20">
-                  Lifecycle: Draft → Approved → Implemented → Reviewed
-                </div>
-              </div>
-
-              <div className="glass-panel p-6 rounded-2xl space-y-4 border border-slate-800/80">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                </div>
-                <h3 className="text-base font-semibold text-slate-100">
-                  Direct Evidence Provenance
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  No floating recommendations. Each action item maps directly to underlying
-                  verified web sources via foreign keys into the research findings table.
-                </p>
-                <div className="pt-2 text-xs font-mono text-emerald-400/90 bg-emerald-950/30 p-2.5 rounded-lg border border-emerald-500/20">
-                  FK: recommendations.evidence_ids → findings.id
-                </div>
-              </div>
-            </div>
-
-            {/* Stage 2 Schema Readiness Banner */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-indigo-500/30 flex flex-col sm:flex-row items-center justify-between gap-6">
-              <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-slate-200">
-                  Ready to deploy Stage 2: Action Engine & Recommendations Schema
-                </h4>
-                <p className="text-xs text-slate-400">
-                  Stage 1 foundation established. Stage 2 will introduce the database migration,
-                  the AI recommendation generator endpoint, and the interactive Prioritization Matrix UI.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  if (activeJob?.has_report) {
-                    setViewMode("report");
-                    setCurrentTab("research");
-                  } else {
-                    handleNewInquiry();
-                  }
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 transition shadow-lg shadow-indigo-600/30 whitespace-nowrap cursor-pointer"
-              >
-                <span>{activeJob ? "Inspect Active Report" : "Launch Baseline Inquiry"}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+          <ActionIntelWorkspace
+            activeJob={activeJob}
+            onSelectJob={(job) => setActiveJob(job)}
+            onNewInquiry={handleNewInquiry}
+          />
         )}
 
         {/* ════════════════════════════════════════════════════

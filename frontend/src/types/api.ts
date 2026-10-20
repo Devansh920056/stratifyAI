@@ -132,3 +132,42 @@ export interface TelemetryResponse {
     total_tasks: number;
   };
 }
+
+export type RecommendationStatusType =
+  | "DRAFT"
+  | "APPROVED"
+  | "IMPLEMENTED"
+  | "REVIEWED"
+  | "DISMISSED";
+
+export type TimeHorizonType =
+  | "IMMEDIATE"
+  | "NEAR_TERM"
+  | "MEDIUM_TERM"
+  | "LONG_TERM";
+
+export interface RecommendationItem {
+  id: string;
+  job_id: string;
+  title: string;
+  description: string;
+  rationale: string;
+  estimated_impact: number;
+  estimated_effort: number;
+  priority_score: number;
+  time_horizon: TimeHorizonType;
+  outcome_hypothesis: string;
+  success_metric: string;
+  target_metric_value: string | null;
+  status: RecommendationStatusType;
+  evidence_ids: any[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RecommendationListResponse {
+  job_id: string;
+  total: number;
+  items: RecommendationItem[];
+}
+

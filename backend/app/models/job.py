@@ -14,6 +14,7 @@ from backend.app.db.base import Base, utc_now
 from backend.app.models.enums import JobStatus
 
 if TYPE_CHECKING:
+    from backend.app.models.recommendation import Recommendation
     from backend.app.models.report import Report
     from backend.app.models.task import Task
 
@@ -71,6 +72,13 @@ class Job(Base):
         back_populates="job",
         uselist=False,
         cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    recommendations: Mapped[list["Recommendation"]] = relationship(
+        "Recommendation",
+        back_populates="job",
+        cascade="all, delete-orphan",
+        order_by="Recommendation.created_at",
         lazy="selectin",
     )
 

@@ -39,3 +39,18 @@ class OutboxStatus(str, Enum):
     PENDING = "PENDING"
     PUBLISHED = "PUBLISHED"
     FAILED = "FAILED"
+
+
+class RecommendationStatus(str, Enum):
+    DRAFT = "DRAFT"
+    APPROVED = "APPROVED"
+    IMPLEMENTED = "IMPLEMENTED"
+    REVIEWED = "REVIEWED"
+    DISMISSED = "DISMISSED"
+
+
+class TimeHorizon(str, Enum):
+    IMMEDIATE = "IMMEDIATE"      # 0 to 30 days
+    NEAR_TERM = "NEAR_TERM"      # 1 to 3 months
+    MEDIUM_TERM = "MEDIUM_TERM"  # 3 to 6 months
+    LONG_TERM = "LONG_TERM"      # 6+ months
