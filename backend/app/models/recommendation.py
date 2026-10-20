@@ -14,6 +14,7 @@ from backend.app.db.base import Base, utc_now
 from backend.app.models.enums import RecommendationStatus, TimeHorizon
 
 if TYPE_CHECKING:
+    from backend.app.models.decision_evaluation import DecisionEvaluation
     from backend.app.models.job import Job
 
 
@@ -75,6 +76,13 @@ class Recommendation(Base):
 
     # Relationships
     job: Mapped["Job"] = relationship("Job", back_populates="recommendations")
+    evaluations: Mapped[list["DecisionEvaluation"]] = relationship(
+        "DecisionEvaluation",
+        back_populates="recommendation",
+        cascade="all, delete-orphan",
+        order_by="DecisionEvaluation.evaluated_at.desc()",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<Recommendation id={self.id} job_id={self.job_id} title='{self.title[:30]}' status={self.status}>"

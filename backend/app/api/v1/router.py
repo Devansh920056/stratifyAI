@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from backend.app.api.v1.endpoints import (
     dashboard,
+    evaluations,
     health,
     jobs,
     pulse,
@@ -20,3 +21,4 @@ api_router.include_router(recommendations.router, tags=["Action Intelligence"])
 api_router.include_router(dashboard.router, tags=["Market Dashboard"])
 api_router.include_router(pulse.router, tags=["Market Pulse"])
 api_router.include_router(watchlists.router, tags=["Competitor Watchlists & Alerts"])
+api_router.include_router(evaluations.router, tags=["Decision Evaluation & Backtesting"])

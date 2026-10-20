@@ -29,6 +29,16 @@ from backend.app.schemas.recommendation import (
     RecommendationResponse,
     RecommendationStatusUpdateRequest,
 )
+from backend.app.schemas.evaluation import (
+    BacktestFindingItem,
+    BacktestResultResponse,
+    BacktestSimulationRequest,
+    DecisionAnalyticsSummaryResponse,
+    DecisionEvaluationCreateRequest,
+    DecisionEvaluationListResponse,
+    DecisionEvaluationResponse,
+    MetricEvidenceItem,
+)
 from backend.app.schemas.report import CitationItem, ReportResponse
 from backend.app.schemas.task import TaskSummaryResponse
 from backend.app.schemas.watchlist import (
@@ -46,8 +56,15 @@ __all__ = [
     "AlertMarkReadRequest",
     "AlertResponse",
     "AlertSimulateRequest",
+    "BacktestFindingItem",
+    "BacktestResultResponse",
+    "BacktestSimulationRequest",
     "CitationItem",
     "ClaimClassification",
+    "DecisionAnalyticsSummaryResponse",
+    "DecisionEvaluationCreateRequest",
+    "DecisionEvaluationListResponse",
+    "DecisionEvaluationResponse",
     "DomainStatItem",
     "HealthResponse",
     "JobCreateRequest",
@@ -58,6 +75,7 @@ __all__ = [
     "MarketPulseStatsResponse",
     "MarketPulseSyncRequest",
     "MarketSignalItem",
+    "MetricEvidenceItem",
     "MoatCompetitorPoint",
     "RecommendationCreateRequest",
     "RecommendationListResponse",

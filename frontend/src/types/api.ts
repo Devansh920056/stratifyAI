@@ -322,6 +322,87 @@ export interface AlertSimulateRequest {
   severity?: AlertSeverityType;
 }
 
+export type DecisionOutcomeStatusType =
+  | "VALIDATED"
+  | "PARTIALLY_VALIDATED"
+  | "INVALIDATED"
+  | "IN_PROGRESS"
+  | "INCONCLUSIVE";
+
+export interface MetricEvidenceItem {
+  metric: string;
+  projected: string;
+  actual: string;
+  status: string;
+}
+
+export interface DecisionEvaluationCreateRequest {
+  outcome_status: DecisionOutcomeStatusType;
+  evaluator_notes: string;
+  actual_outcome: string;
+  actual_metric_value?: string | null;
+  impact_delta?: number;
+  confidence_score?: number;
+  metric_evidence?: MetricEvidenceItem[];
+  linked_signal_ids?: string[];
+}
+
+export interface DecisionEvaluationItem {
+  id: string;
+  recommendation_id: string;
+  outcome_status: DecisionOutcomeStatusType;
+  evaluator_notes: string;
+  actual_outcome: string;
+  actual_metric_value?: string | null;
+  impact_delta: number;
+  confidence_score: number;
+  metric_evidence: MetricEvidenceItem[];
+  linked_signal_ids: string[];
+  evaluated_at: string;
+  created_at: string;
+  updated_at: string;
+  recommendation_title?: string | null;
+}
+
+export interface DecisionEvaluationListResponse {
+  evaluations: DecisionEvaluationItem[];
+  total: number;
+}
+
+export interface DecisionAnalyticsSummaryResponse {
+  total_evaluated: number;
+  validated_count: number;
+  partially_validated_count: number;
+  invalidated_count: number;
+  in_progress_count: number;
+  validation_rate: number;
+  average_impact_delta: number;
+  average_confidence: number;
+  top_validated_hypotheses: string[];
+  top_failing_hypotheses: string[];
+}
+
+export interface BacktestFindingItem {
+  recommendation_id: string;
+  title: string;
+  original_hypothesis: string;
+  estimated_impact: number;
+  market_signal_count: number;
+  market_sentiment_trend: number;
+  backtest_verdict: "STRONGLY_ALIGNED" | "MODERATELY_ALIGNED" | "DIVERGENT" | "NEUTRAL";
+  confidence: number;
+  key_market_evidence: string[];
+}
+
+export interface BacktestResultResponse {
+  total_recommendations: number;
+  aligned_recommendations: number;
+  divergent_recommendations: number;
+  alignment_score: number;
+  findings: BacktestFindingItem[];
+}
+
+
 
 
 

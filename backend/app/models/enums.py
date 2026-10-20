@@ -70,3 +70,11 @@ class AlertSeverity(str, Enum):
     CRITICAL = "CRITICAL"
 
 
+class DecisionOutcomeStatus(str, Enum):
+    VALIDATED = "VALIDATED"
+    PARTIALLY_VALIDATED = "PARTIALLY_VALIDATED"
+    INVALIDATED = "INVALIDATED"
+    IN_PROGRESS = "IN_PROGRESS"
+    INCONCLUSIVE = "INCONCLUSIVE"
+
+

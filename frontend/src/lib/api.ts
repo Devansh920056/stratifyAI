@@ -234,6 +234,47 @@ export async function simulateAlert(
   });
 }
 
+export async function recordEvaluation(
+  recommendationId: string,
+  data: import("@/types/api").DecisionEvaluationCreateRequest
+): Promise<import("@/types/api").DecisionEvaluationItem> {
+  return request<import("@/types/api").DecisionEvaluationItem>(
+    `/api/v1/recommendations/${recommendationId}/evaluations`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function fetchEvaluationsForRecommendation(
+  recommendationId: string
+): Promise<import("@/types/api").DecisionEvaluationItem[]> {
+  return request<import("@/types/api").DecisionEvaluationItem[]>(
+    `/api/v1/recommendations/${recommendationId}/evaluations`
+  );
+}
+
+export async function fetchDecisionAnalytics(): Promise<import("@/types/api").DecisionAnalyticsSummaryResponse> {
+  return request<import("@/types/api").DecisionAnalyticsSummaryResponse>(
+    "/api/v1/evaluations/analytics"
+  );
+}
+
+export async function runBacktestSimulation(
+  jobId?: string,
+  lookbackDays = 60
+): Promise<import("@/types/api").BacktestResultResponse> {
+  return request<import("@/types/api").BacktestResultResponse>(
+    "/api/v1/evaluations/backtest",
+    {
+      method: "POST",
+      body: JSON.stringify({ job_id: jobId, lookback_days: lookbackDays }),
+    }
+  );
+}
+
+
 
 
 
