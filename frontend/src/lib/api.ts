@@ -342,6 +342,43 @@ export async function fetchVectorStats(): Promise<import("@/types/api").VectorMe
   );
 }
 
+export async function queryAndFuseEvidence(
+  data: import("@/types/api").EvidenceQueryRequest
+): Promise<import("@/types/api").FusedEvidenceListResponse> {
+  return request<import("@/types/api").FusedEvidenceListResponse>(
+    "/api/v1/fusion/query",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function fetchFusedEvidence(
+  entity?: string,
+  sourceType?: string,
+  divergence?: string,
+  limit = 50
+): Promise<import("@/types/api").FusedEvidenceListResponse> {
+  const params = new URLSearchParams();
+  if (entity) params.append("entity", entity);
+  if (sourceType && sourceType !== "ALL") params.append("source_type", sourceType);
+  if (divergence && divergence !== "ALL") params.append("divergence", divergence);
+  params.append("limit", limit.toString());
+
+  return request<import("@/types/api").FusedEvidenceListResponse>(
+    `/api/v1/fusion/evidence?${params.toString()}`
+  );
+}
+
+export async function reconcileEntityEvidence(
+  entityName: string
+): Promise<import("@/types/api").FusedEvidenceListResponse> {
+  return request<import("@/types/api").FusedEvidenceListResponse>(
+    `/api/v1/fusion/reconcile/${encodeURIComponent(entityName)}`
+  );
+}
+
 
 
 

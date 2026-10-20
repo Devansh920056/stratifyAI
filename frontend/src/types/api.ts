@@ -499,6 +499,48 @@ export interface VectorMemoryStatsResponse {
   active_encoder: string;
 }
 
+export interface EvidenceQueryRequest {
+  entity_name: string;
+  topic?: string | null;
+  include_sec?: boolean;
+  include_arxiv?: boolean;
+  reconcile?: boolean;
+}
+
+export interface FusedEvidenceItem {
+  id: string;
+  entity_name: string;
+  source_type: string;
+  filing_type: string;
+  title: string;
+  content_excerpt: string;
+  source_url: string;
+  reliability_score: number;
+  divergence_status: "ALIGNED" | "DIVERGENT" | "CONTRADICTORY" | "UNVERIFIED";
+  reconciliation_notes?: string | null;
+  fiscal_period?: string | null;
+  metadata: Record<string, any>;
+  created_at: string;
+}
+
+export interface EvidenceReconciliationSummary {
+  entity_name: string;
+  total_fused_sources: number;
+  sec_filings_count: number;
+  arxiv_preprints_count: number;
+  divergent_claims_count: number;
+  contradictory_claims_count: number;
+  evidence_reliability_index: number;
+  reconciliation_takeaway: string;
+}
+
+export interface FusedEvidenceListResponse {
+  entity_name: string;
+  items: FusedEvidenceItem[];
+  total: number;
+  summary?: EvidenceReconciliationSummary | null;
+}
+
 
 
 

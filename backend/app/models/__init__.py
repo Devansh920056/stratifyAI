@@ -5,6 +5,8 @@ SQLAlchemy Domain Models for Stratify AI.
 from backend.app.models.enums import (
     AlertSeverity,
     DecisionOutcomeStatus,
+    DivergenceStatus,
+    EvidenceSourceType,
     JobStatus,
     OutboxStatus,
     RecommendationStatus,
@@ -17,6 +19,7 @@ from backend.app.models.enums import (
 )
 from backend.app.models.decision_evaluation import DecisionEvaluation
 from backend.app.models.evidence import Evidence
+from backend.app.models.fused_evidence import FusedEvidence
 from backend.app.models.job import Job
 from backend.app.models.market_signal import MarketSignal
 from backend.app.models.outbox import OutboxEvent
@@ -33,7 +36,10 @@ __all__ = [
     "AlertSeverity",
     "DecisionEvaluation",
     "DecisionOutcomeStatus",
+    "DivergenceStatus",
     "Evidence",
+    "EvidenceSourceType",
+    "FusedEvidence",
     "Job",
     "JobStatus",
     "MarketSignal",

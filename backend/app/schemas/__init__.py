@@ -50,6 +50,12 @@ from backend.app.schemas.watchlist import (
     WatchlistListResponse,
     WatchlistResponse,
 )
+from backend.app.schemas.fusion import (
+    EvidenceQueryRequest,
+    EvidenceReconciliationSummary,
+    FusedEvidenceItem,
+    FusedEvidenceListResponse,
+)
 from backend.app.schemas.semantic import (
     SemanticMatchItem,
     SemanticSearchRequest,
@@ -83,6 +89,10 @@ __all__ = [
     "DecisionEvaluationListResponse",
     "DecisionEvaluationResponse",
     "DomainStatItem",
+    "EvidenceQueryRequest",
+    "EvidenceReconciliationSummary",
+    "FusedEvidenceItem",
+    "FusedEvidenceListResponse",
     "HealthResponse",
     "JobCreateRequest",
     "JobDashboardResponse",

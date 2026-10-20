@@ -32,6 +32,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+import { EvidenceFusionPanel } from "./EvidenceFusionPanel";
 
 const SECTORS = [
   "ALL",
@@ -51,6 +52,7 @@ const SIGNAL_TYPES: { id: string; label: string }[] = [
 ];
 
 export function MarketPulseWorkspace() {
+  const [activeTab, setActiveTab] = useState<"stream" | "fusion">("stream");
   const [signals, setSignals] = useState<MarketSignalItem[]>([]);
   const [stats, setStats] = useState<MarketPulseStatsResponse | null>(null);
   const [selectedSector, setSelectedSector] = useState("ALL");
@@ -169,36 +171,70 @@ export function MarketPulseWorkspace() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 mb-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>GDELT 2.0 Real-Time Ingestion Stream Online</span>
+            <span>GDELT 2.0 & SEC EDGAR Ingestion Pipeline Online</span>
           </div>
           <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-            Live Market Pulse & Signal Stream
+            Market Pulse & Evidence Intelligence
           </h1>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Continuous intelligence feed detecting competitor announcements, regulatory directives,
-            and market tone shifts across global news feeds before they reach quarterly reports.
+            Continuous intelligence feed detecting competitor announcements, cross-verifying commercial news against statutory SEC Form 10-K/10-Q disclosures and academic research.
           </p>
         </div>
 
-        {/* Sync Trigger CTA */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 shadow-md shadow-emerald-600/20 transition cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-            <span>{isSyncing ? "Ingesting Feeds..." : "Sync Latest Signals"}</span>
-          </button>
+        {/* Tab Switcher & CTA */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
+            <button
+              onClick={() => setActiveTab("stream")}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition ${
+                activeTab === "stream"
+                  ? "bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 border border-transparent"
+              }`}
+            >
+              <Radio className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Live News Signals</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("fusion")}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition ${
+                activeTab === "fusion"
+                  ? "bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200 border border-transparent"
+              }`}
+            >
+              <Scale className="w-3.5 h-3.5 text-cyan-400" />
+              <span>SEC Evidence Fusion</span>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+                Stage 9
+              </span>
+            </button>
+          </div>
+
+          {activeTab === "stream" && (
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 shadow-md shadow-emerald-600/20 transition cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              <span>{isSyncing ? "Ingesting Feeds..." : "Sync Latest Signals"}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
+      {activeTab === "fusion" ? (
+        <EvidenceFusionPanel />
+      ) : (
+        <>
+          {error && (
+            <div className="p-4 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
 
       {/* ─── Stream Stats Bar ──────────────────────────────── */}
       {stats && (
@@ -378,6 +414,8 @@ export function MarketPulseWorkspace() {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
