@@ -27,7 +27,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_async_session)]
 
 @router.post(
     "",
-    response_model=JobResponse,
+    response_model=JobDetailResponse,
     status_code=status.HTTP_202_ACCEPTED,
     summary="Submit Market Research Inquiry",
     description="Validates request, persists research Job, and decomposes inquiry into orthogonal tasks.",
@@ -36,13 +36,15 @@ async def create_research_job(
     request: JobCreateRequest,
     response: Response,
     db: SessionDep,
-) -> JobResponse:
+) -> JobDetailResponse:
     job = await JobService.create_job(db=db, request=request)
 
     # Set standard HTTP 202 Location header for polling
     response.headers["Location"] = f"/api/v1/jobs/{job.id}"
 
-    return JobResponse(
+    task_summaries = [TaskSummaryResponse.from_task(t) for t in job.tasks]
+
+    return JobDetailResponse(
         id=job.id,
         research_question=job.research_question,
         target_market=job.target_market,
@@ -50,11 +52,13 @@ async def create_research_job(
         time_range=job.time_range,
         focus_areas=job.focus_areas,
         status=job.status,
-        tasks_count=len(job.tasks),
+        tasks_count=len(task_summaries),
         error_summary=job.error_summary,
         created_at=job.created_at,
         updated_at=job.updated_at,
         completed_at=job.completed_at,
+        has_report=False,
+        tasks=task_summaries,
     )
 
 
@@ -106,7 +110,7 @@ async def get_job_detail(
             detail=f"Research job '{job_id}' not found.",
         )
 
-    task_summaries = [TaskSummaryResponse.model_validate(t) for t in job.tasks]
+    task_summaries = [TaskSummaryResponse.from_task(t) for t in job.tasks]
 
     return JobDetailResponse(
         id=job.id,
@@ -116,12 +120,12 @@ async def get_job_detail(
         time_range=job.time_range,
         focus_areas=job.focus_areas,
         status=job.status,
-        tasks_count=len(job.tasks),
+        tasks_count=len(task_summaries),
         error_summary=job.error_summary,
         created_at=job.created_at,
         updated_at=job.updated_at,
         completed_at=job.completed_at,
-        has_report=(job.report is not None),
+        has_report=bool(job.__dict__.get("report")),
         tasks=task_summaries,
     )
 
@@ -145,7 +149,7 @@ async def get_job_tasks(
         )
 
     tasks = await JobService.get_job_tasks(db=db, job_id=job_id)
-    return [TaskSummaryResponse.model_validate(t) for t in tasks]
+    return [TaskSummaryResponse.from_task(t) for t in tasks]
 
 
 @router.get(

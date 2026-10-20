@@ -6,6 +6,7 @@ import uuid
 
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from backend.app.models.enums import JobStatus, OutboxStatus
 from backend.app.models.job import Job
@@ -42,7 +43,8 @@ class JobService:
         for spec in task_specs:
             task = Task(
                 id=spec["id"],
-                job_id=spec["job_id"],
+                job=job,
+                job_id=job_id,
                 task_type=spec["task_type"],
                 search_queries=spec["search_queries"],
                 status=spec["status"],
@@ -68,30 +70,50 @@ class JobService:
             )
             db.add(outbox_event)
 
-        # Flush to persist entities and trigger relationship loading
+        # Flush to persist entities
         await db.flush()
-        await db.refresh(job)
         return job
 
     @staticmethod
     async def get_job(db: AsyncSession, job_id: uuid.UUID) -> Job | None:
-        """Fetch a Job by UUID with related tasks and report."""
-        stmt = select(Job).where(Job.id == job_id)
+        """Fetch a Job by UUID with related tasks, results, and report eagerly loaded."""
+        stmt = (
+            select(Job)
+            .options(
+                selectinload(Job.tasks).selectinload(Task.result),
+                selectinload(Job.report),
+            )
+            .where(Job.id == job_id)
+        )
         return await db.scalar(stmt)
 
     @staticmethod
     async def list_jobs(
         db: AsyncSession, limit: int = 50, offset: int = 0
     ) -> list[Job]:
-        """Fetch recent jobs ordered by creation date descending."""
-        stmt = select(Job).order_by(desc(Job.created_at)).limit(limit).offset(offset)
+        """Fetch recent jobs ordered by creation date descending with tasks eagerly loaded."""
+        stmt = (
+            select(Job)
+            .options(
+                selectinload(Job.tasks).selectinload(Task.result),
+                selectinload(Job.report),
+            )
+            .order_by(desc(Job.created_at))
+            .limit(limit)
+            .offset(offset)
+        )
         result = await db.scalars(stmt)
         return list(result.all())
 
     @staticmethod
     async def get_job_tasks(db: AsyncSession, job_id: uuid.UUID) -> list[Task]:
-        """Fetch all child tasks for a given Job."""
-        stmt = select(Task).where(Task.job_id == job_id).order_by(Task.created_at)
+        """Fetch all child tasks for a given Job with results eagerly loaded."""
+        stmt = (
+            select(Task)
+            .options(selectinload(Task.result))
+            .where(Task.job_id == job_id)
+            .order_by(Task.created_at)
+        )
         result = await db.scalars(stmt)
         return list(result.all())
 

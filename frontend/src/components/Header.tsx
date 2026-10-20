@@ -2,16 +2,37 @@
 
 import React, { useEffect, useState } from "react";
 import { checkBackendHealth } from "@/lib/api";
-import { Activity, Clock, Layers, Sparkles } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Bell,
+  Clock,
+  Compass,
+  Layers,
+  Radio,
+  Sparkles,
+  Target,
+} from "lucide-react";
 import { TelemetryModal } from "@/components/TelemetryModal";
 
+export type NavigationTab =
+  | "research"
+  | "actions"
+  | "dashboard"
+  | "pulse"
+  | "watchlists";
+
 interface HeaderProps {
+  currentTab: NavigationTab;
+  onTabChange: (tab: NavigationTab) => void;
   onNewInquiryClick: () => void;
   onRecentClick: () => void;
   activeJobId: string | null;
 }
 
 export function Header({
+  currentTab,
+  onTabChange,
   onNewInquiryClick,
   onRecentClick,
   activeJobId,
@@ -77,6 +98,37 @@ export function Header({
               </p>
             </div>
           </div>
+
+          {/* Navigation Pill Switcher (Stratify AI 2.0 Core Pillars) */}
+          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-md">
+            {[
+              { id: "research", label: "Research Core", icon: Compass },
+              { id: "actions", label: "Action Intel", icon: Target },
+              { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+              { id: "pulse", label: "Market Pulse", icon: Radio },
+              { id: "watchlists", label: "Watchlists", icon: Bell },
+            ].map(({ id, label, icon: Icon }) => {
+              const isActive = currentTab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => onTabChange(id as NavigationTab)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent"
+                  }`}
+                >
+                  <Icon
+                    className={`w-3.5 h-3.5 ${
+                      isActive ? "text-cyan-400" : "text-slate-400"
+                    }`}
+                  />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </nav>
 
           {/* Right Controls */}
           <div className="flex items-center gap-2.5 sm:gap-4">
