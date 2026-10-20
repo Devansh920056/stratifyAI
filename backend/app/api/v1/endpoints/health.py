@@ -2,6 +2,7 @@
 Health, Readiness, and System Telemetry Probes.
 """
 
+import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, status
@@ -16,6 +17,7 @@ from backend.app.models.job import Job
 from backend.app.models.task import Task
 from backend.app.schemas.health import HealthResponse, TelemetryResponse
 
+logger = logging.getLogger("stratify.api.health")
 router = APIRouter()
 settings = get_settings()
 
@@ -110,8 +112,7 @@ async def system_telemetry() -> TelemetryResponse:
                 ) or 0
                 total_tasks = (await session.scalar(select(func.count(Task.id)))) or 0
         except (SQLAlchemyError, OSError) as exc:
-            import logging
-            logging.getLogger("stratify.api").warning("Telemetry metrics query error: %s", exc)
+            logger.warning("Telemetry metrics query error: %s", exc)
 
     return TelemetryResponse(
         status="healthy" if db_healthy else "degraded",

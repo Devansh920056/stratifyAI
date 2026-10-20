@@ -9,15 +9,12 @@ import html
 import logging
 import re
 import urllib.parse
-from typing import Any
 
 import httpx
 
 from backend.app.providers.search.base import (
     SearchProvider,
-    SearchProviderError,
     SearchResult,
-    SearchTimeoutError,
 )
 from backend.app.providers.search.sanitizer import (
     sanitize_snippet,

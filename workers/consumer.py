@@ -16,14 +16,12 @@ from backend.app.broker.schemas import TaskMessage
 from backend.app.broker.topology import setup_broker_topology
 from backend.app.core.config import get_settings
 from backend.app.db.session import AsyncSessionLocal
+from backend.app.providers.llm.base import LLMProvider
+from backend.app.providers.search.base import SearchProvider
 from workers.processor import TaskProcessor
 
 logger = logging.getLogger("stratify.workers.consumer")
 settings = get_settings()
-
-
-from backend.app.providers.llm.base import LLMProvider
-from backend.app.providers.search.base import SearchProvider
 
 
 class WorkerConsumer:

@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Stratify AI — Multi-Agent Market Intelligence",
   description:
-    "Autonomous distributed market intelligence platform. Submit research inquiries and receive executive-grade reports grounded in real web evidence, synthesized by Google Gemini.",
+    "Autonomous distributed market intelligence platform. Submit research inquiries and receive executive-grade reports grounded in live real web evidence with AI-powered synthesis and anti-hallucination citations.",
   keywords: [
     "market intelligence",
     "AI research",

@@ -8,7 +8,6 @@ import { ReportViewer } from "@/components/ReportViewer";
 import { RecentJobs } from "@/components/RecentJobs";
 import { JobDetailResponse } from "@/types/api";
 import {
-  AlertTriangle,
   CheckCircle2,
   Cpu,
   Database,
@@ -40,11 +39,11 @@ const INVARIANTS = [
   },
   {
     icon: Cpu,
-    title: "Gemini LLM Reasoning",
+    title: "AI Intelligence Synthesis",
     color: "text-violet-400",
     bg: "bg-violet-500/10 border-violet-500/20",
     description:
-      "Structured JSON synthesis with confidence scoring, strict post-generation anti-hallucination citation guardrails.",
+      "Grounded factual extraction with structured JSON synthesis, confidence scoring, and strict anti-hallucination citation guardrails — zero API cost.",
   },
   {
     icon: FileCheck,

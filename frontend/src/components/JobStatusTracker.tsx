@@ -7,23 +7,19 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowRight,
-  BarChart3,
   CheckCircle2,
   ChevronRight,
   Clock,
   Compass,
   Copy,
   ExternalLink,
-  Flame,
   Globe,
-  Info,
   Layers,
   Loader2,
   RefreshCw,
   Search,
   Shield,
   Sparkles,
-  Tag,
   Target,
   TrendingUp,
   Users,
@@ -501,7 +497,7 @@ function TaskDetailModal({
             <div className="space-y-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                Gemini Synthesized Vector Summary
+                AI-Synthesized Vector Summary
               </span>
               <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
                 {result.grounded_summary}

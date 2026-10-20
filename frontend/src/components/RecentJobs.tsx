@@ -11,8 +11,6 @@ import {
   Clock,
   Compass,
   FileText,
-  Filter,
-  Globe,
   Loader2,
   RefreshCw,
   Search,

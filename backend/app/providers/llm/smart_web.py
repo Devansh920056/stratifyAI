@@ -6,7 +6,6 @@ metrics, and market drivers with verifiable citations at zero cost and without A
 
 import logging
 import re
-from typing import Any
 
 from backend.app.models.evidence import Evidence
 from backend.app.providers.llm.base import (

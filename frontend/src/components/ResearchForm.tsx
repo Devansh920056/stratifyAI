@@ -8,7 +8,6 @@ import {
   Check,
   Compass,
   Globe,
-  HelpCircle,
   Lightbulb,
   Loader2,
   Plus,
