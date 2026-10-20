@@ -10,6 +10,7 @@ from backend.app.api.v1.endpoints import (
     jobs,
     pulse,
     recommendations,
+    watchlists,
 )
 
 api_router = APIRouter()
@@ -18,3 +19,4 @@ api_router.include_router(jobs.router, prefix="/jobs", tags=["Research Jobs"])
 api_router.include_router(recommendations.router, tags=["Action Intelligence"])
 api_router.include_router(dashboard.router, tags=["Market Dashboard"])
 api_router.include_router(pulse.router, tags=["Market Pulse"])
+api_router.include_router(watchlists.router, tags=["Competitor Watchlists & Alerts"])

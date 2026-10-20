@@ -3,6 +3,7 @@ SQLAlchemy Domain Models for Stratify AI.
 """
 
 from backend.app.models.enums import (
+    AlertSeverity,
     JobStatus,
     OutboxStatus,
     RecommendationStatus,
@@ -20,8 +21,11 @@ from backend.app.models.recommendation import Recommendation
 from backend.app.models.report import Report
 from backend.app.models.task import Task
 from backend.app.models.task_result import TaskResult
+from backend.app.models.watchlist import Alert, Watchlist
 
 __all__ = [
+    "Alert",
+    "AlertSeverity",
     "Evidence",
     "Job",
     "JobStatus",
@@ -38,5 +42,6 @@ __all__ = [
     "TaskStatus",
     "TaskType",
     "TimeHorizon",
+    "Watchlist",
 ]
 

@@ -9,6 +9,7 @@ import { RecentJobs } from "@/components/RecentJobs";
 import { ActionIntelWorkspace } from "@/components/ActionIntelWorkspace";
 import { DashboardWorkspace } from "@/components/DashboardWorkspace";
 import { MarketPulseWorkspace } from "@/components/MarketPulseWorkspace";
+import { WatchlistsWorkspace } from "@/components/WatchlistsWorkspace";
 import { JobDetailResponse } from "@/types/api";
 import {
   AlertTriangle,
@@ -262,41 +263,10 @@ export default function Home() {
         )}
 
         {/* ════════════════════════════════════════════════════
-            PILLAR 5: WATCHLISTS & ALERTS (Stage 6 & 7)
+            PILLAR 5: WATCHLISTS & ALERTS (Stage 5)
         ════════════════════════════════════════════════════ */}
         {currentTab === "watchlists" && (
-          <div className="space-y-8 animate-fade-in">
-            <div className="pb-6 border-b border-slate-800">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-950/60 border border-amber-500/30 text-amber-300 mb-3">
-                <Bell className="w-3.5 h-3.5 text-amber-400" />
-                <span>Stage 6 & 7 Blueprint · Proactive Alerts & Decision Evaluation</span>
-              </div>
-              <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-                Competitor Watchlists & Alerting
-              </h1>
-              <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                Define target companies, products, or regulatory frameworks to monitor.
-                Receive proactive alert dispatches when significant strategic shifts or competitor milestones occur.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 className="text-sm font-semibold text-slate-200">Competitor Watch Targets</h3>
-                <p className="text-xs text-slate-400">
-                  Track specific market leaders and high-growth disruptors across pricing changes,
-                  executive moves, and patent filings.
-                </p>
-              </div>
-              <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-3">
-                <h3 className="text-sm font-semibold text-slate-200">Alert Rule Engine</h3>
-                <p className="text-xs text-slate-400">
-                  Configure sensitivity thresholds for sentiment shifts, negative news spikes,
-                  and regulatory compliance updates.
-                </p>
-              </div>
-            </div>
-          </div>
+          <WatchlistsWorkspace />
         )}
 
       </main>

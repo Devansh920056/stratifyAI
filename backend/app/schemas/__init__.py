@@ -31,8 +31,21 @@ from backend.app.schemas.recommendation import (
 )
 from backend.app.schemas.report import CitationItem, ReportResponse
 from backend.app.schemas.task import TaskSummaryResponse
+from backend.app.schemas.watchlist import (
+    AlertListResponse,
+    AlertMarkReadRequest,
+    AlertResponse,
+    AlertSimulateRequest,
+    WatchlistCreateRequest,
+    WatchlistListResponse,
+    WatchlistResponse,
+)
 
 __all__ = [
+    "AlertListResponse",
+    "AlertMarkReadRequest",
+    "AlertResponse",
+    "AlertSimulateRequest",
     "CitationItem",
     "ClaimClassification",
     "DomainStatItem",
@@ -56,4 +69,7 @@ __all__ = [
     "TaskSummaryResponse",
     "TelemetryResponse",
     "VectorScoreItem",
+    "WatchlistCreateRequest",
+    "WatchlistListResponse",
+    "WatchlistResponse",
 ]

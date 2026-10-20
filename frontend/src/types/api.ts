@@ -268,5 +268,60 @@ export interface MarketPulseStatsResponse {
   top_domains: DomainStatItem[];
 }
 
+export type AlertSeverityType = "INFO" | "WARNING" | "CRITICAL";
+
+export interface AlertItem {
+  id: string;
+  watchlist_id: string;
+  signal_id?: string | null;
+  title: string;
+  message: string;
+  severity: AlertSeverityType;
+  is_read: boolean;
+  triggered_at: string;
+  watchlist_name?: string | null;
+}
+
+export interface AlertListResponse {
+  alerts: AlertItem[];
+  total: number;
+  unread_count: number;
+}
+
+export interface WatchlistCreateRequest {
+  name: string;
+  sector: string;
+  target_entities: string[];
+  alert_threshold?: number;
+  is_active?: boolean;
+}
+
+export interface WatchlistResponse {
+  id: string;
+  name: string;
+  sector: string;
+  target_entities: string[];
+  alert_threshold: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  alert_count: number;
+  unread_alert_count: number;
+  recent_alerts: AlertItem[];
+}
+
+export interface WatchlistListResponse {
+  watchlists: WatchlistResponse[];
+  total: number;
+}
+
+export interface AlertSimulateRequest {
+  watchlist_id?: string | null;
+  title?: string | null;
+  message?: string | null;
+  severity?: AlertSeverityType;
+}
+
+
 
 

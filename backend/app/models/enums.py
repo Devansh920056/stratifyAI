@@ -63,3 +63,10 @@ class SignalType(str, Enum):
     PARTNERSHIP = "PARTNERSHIP"
     FUNDING = "FUNDING"
 
+
+class AlertSeverity(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    CRITICAL = "CRITICAL"
+
+

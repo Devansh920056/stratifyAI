@@ -194,6 +194,13 @@ class MarketPulseService:
                 await session.refresh(s)
             logger.info(f"Ingested {len(inserted_signals)} new market signals for '{sector}'.")
 
+            # Trigger automated competitor watchlist alerts
+            try:
+                from backend.app.services.watchlist_service import WatchlistService
+                await WatchlistService.evaluate_signals_against_watchlists(session, inserted_signals)
+            except Exception as ex:
+                logger.warning(f"Error evaluating alerts for ingested signals: {ex}")
+
         # Return latest signals for this sector
         signals, _ = await cls.get_signals(session=session, sector=sector, limit=max_records)
         return signals

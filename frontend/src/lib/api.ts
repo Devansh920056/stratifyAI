@@ -182,5 +182,58 @@ export async function fetchMarketPulseStats(): Promise<import("@/types/api").Mar
   );
 }
 
+export async function fetchWatchlists(): Promise<import("@/types/api").WatchlistListResponse> {
+  return request<import("@/types/api").WatchlistListResponse>("/api/v1/watchlists");
+}
+
+export async function createWatchlist(
+  data: import("@/types/api").WatchlistCreateRequest
+): Promise<import("@/types/api").WatchlistResponse> {
+  return request<import("@/types/api").WatchlistResponse>("/api/v1/watchlists", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteWatchlist(id: string): Promise<void> {
+  return request<void>(`/api/v1/watchlists/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchAlerts(
+  unreadOnly = false,
+  severity?: string,
+  watchlistId?: string
+): Promise<import("@/types/api").AlertListResponse> {
+  const params = new URLSearchParams();
+  if (unreadOnly) params.append("unread_only", "true");
+  if (severity && severity !== "ALL") params.append("severity", severity);
+  if (watchlistId) params.append("watchlist_id", watchlistId);
+  return request<import("@/types/api").AlertListResponse>(
+    `/api/v1/alerts?${params.toString()}`
+  );
+}
+
+export async function markAlertRead(
+  id: string,
+  isRead = true
+): Promise<import("@/types/api").AlertItem> {
+  return request<import("@/types/api").AlertItem>(`/api/v1/alerts/${id}/read`, {
+    method: "PATCH",
+    body: JSON.stringify({ is_read: isRead }),
+  });
+}
+
+export async function simulateAlert(
+  data: import("@/types/api").AlertSimulateRequest
+): Promise<import("@/types/api").AlertItem> {
+  return request<import("@/types/api").AlertItem>("/api/v1/alerts/simulate", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+
 
 
