@@ -348,6 +348,26 @@ class WatchlistService:
                 await session.refresh(a)
             logger.info(f"Triggered {len(new_alerts)} automated alerts across active watchlists.")
 
+            # Outbound webhook notification dispatch
+            try:
+                from backend.app.services.webhook_service import WebhookService
+                for a in new_alerts:
+                    event_name = f"alert.{a.severity.lower()}"
+                    await WebhookService.dispatch_event(
+                        session=session,
+                        event_type=event_name,
+                        payload={
+                            "alert_id": str(a.id),
+                            "watchlist_id": str(a.watchlist_id),
+                            "title": a.title,
+                            "message": a.message,
+                            "severity": a.severity,
+                            "triggered_at": a.triggered_at.isoformat(),
+                        },
+                    )
+            except Exception as ex:
+                logger.warning(f"Error dispatching webhooks for new alerts: {ex}")
+
         return new_alerts
 
     @classmethod

@@ -402,6 +402,52 @@ export interface BacktestResultResponse {
   findings: BacktestFindingItem[];
 }
 
+export interface WebhookCreateRequest {
+  name: string;
+  target_url: string;
+  event_types?: string[];
+  secret_token?: string | null;
+  is_active?: boolean;
+}
+
+export interface WebhookSubscriptionItem {
+  id: string;
+  name: string;
+  target_url: string;
+  event_types: string[];
+  is_active: boolean;
+  total_deliveries: number;
+  successful_deliveries: number;
+  failed_deliveries: number;
+  success_rate: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WebhookListResponse {
+  subscriptions: WebhookSubscriptionItem[];
+  total: number;
+}
+
+export interface WebhookDeliveryItem {
+  id: string;
+  subscription_id: string;
+  event_type: string;
+  payload: Record<string, any>;
+  status_code?: number | null;
+  response_body?: string | null;
+  error_message?: string | null;
+  duration_ms: number;
+  is_success: boolean;
+  delivered_at: string;
+}
+
+export interface WebhookDeliveryListResponse {
+  deliveries: WebhookDeliveryItem[];
+  total: number;
+}
+
+
 
 
 

@@ -50,6 +50,15 @@ from backend.app.schemas.watchlist import (
     WatchlistListResponse,
     WatchlistResponse,
 )
+from backend.app.schemas.webhook import (
+    WebhookCreateRequest,
+    WebhookDeliveryListResponse,
+    WebhookDeliveryResponse,
+    WebhookListResponse,
+    WebhookResponse,
+    WebhookTestRequest,
+    WebhookUpdateRequest,
+)
 
 __all__ = [
     "AlertListResponse",
@@ -90,4 +99,11 @@ __all__ = [
     "WatchlistCreateRequest",
     "WatchlistListResponse",
     "WatchlistResponse",
+    "WebhookCreateRequest",
+    "WebhookDeliveryListResponse",
+    "WebhookDeliveryResponse",
+    "WebhookListResponse",
+    "WebhookResponse",
+    "WebhookTestRequest",
+    "WebhookUpdateRequest",
 ]

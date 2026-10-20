@@ -274,6 +274,45 @@ export async function runBacktestSimulation(
   );
 }
 
+export async function fetchWebhooks(): Promise<import("@/types/api").WebhookListResponse> {
+  return request<import("@/types/api").WebhookListResponse>("/api/v1/webhooks");
+}
+
+export async function createWebhook(
+  data: import("@/types/api").WebhookCreateRequest
+): Promise<import("@/types/api").WebhookSubscriptionItem> {
+  return request<import("@/types/api").WebhookSubscriptionItem>("/api/v1/webhooks", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteWebhook(id: string): Promise<void> {
+  return request<void>(`/api/v1/webhooks/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function testWebhookDispatch(
+  id: string,
+  eventType = "alert.critical"
+): Promise<import("@/types/api").WebhookDeliveryItem> {
+  return request<import("@/types/api").WebhookDeliveryItem>(`/api/v1/webhooks/${id}/test`, {
+    method: "POST",
+    body: JSON.stringify({ event_type: eventType }),
+  });
+}
+
+export async function fetchWebhookDeliveries(
+  subscriptionId?: string
+): Promise<import("@/types/api").WebhookDeliveryListResponse> {
+  const path = subscriptionId
+    ? `/api/v1/webhooks/${subscriptionId}/deliveries`
+    : "/api/v1/webhooks/deliveries/all";
+  return request<import("@/types/api").WebhookDeliveryListResponse>(path);
+}
+
+
 
 
 

@@ -24,6 +24,7 @@ from backend.app.models.report import Report
 from backend.app.models.task import Task
 from backend.app.models.task_result import TaskResult
 from backend.app.models.watchlist import Alert, Watchlist
+from backend.app.models.webhook import WebhookDelivery, WebhookSubscription
 
 __all__ = [
     "Alert",
@@ -47,5 +48,7 @@ __all__ = [
     "TaskType",
     "TimeHorizon",
     "Watchlist",
+    "WebhookDelivery",
+    "WebhookSubscription",
 ]
 
