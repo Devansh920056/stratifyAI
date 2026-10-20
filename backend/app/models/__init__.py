@@ -7,12 +7,14 @@ from backend.app.models.enums import (
     OutboxStatus,
     RecommendationStatus,
     ReportStatus,
+    SignalType,
     TaskStatus,
     TaskType,
     TimeHorizon,
 )
 from backend.app.models.evidence import Evidence
 from backend.app.models.job import Job
+from backend.app.models.market_signal import MarketSignal
 from backend.app.models.outbox import OutboxEvent
 from backend.app.models.recommendation import Recommendation
 from backend.app.models.report import Report
@@ -23,15 +25,18 @@ __all__ = [
     "Evidence",
     "Job",
     "JobStatus",
+    "MarketSignal",
     "OutboxEvent",
     "OutboxStatus",
     "Recommendation",
     "RecommendationStatus",
     "Report",
     "ReportStatus",
+    "SignalType",
     "Task",
     "TaskResult",
     "TaskStatus",
     "TaskType",
     "TimeHorizon",
 ]
+

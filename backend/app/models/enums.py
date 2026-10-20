@@ -54,3 +54,12 @@ class TimeHorizon(str, Enum):
     NEAR_TERM = "NEAR_TERM"      # 1 to 3 months
     MEDIUM_TERM = "MEDIUM_TERM"  # 3 to 6 months
     LONG_TERM = "LONG_TERM"      # 6+ months
+
+
+class SignalType(str, Enum):
+    COMPETITOR_MOVE = "COMPETITOR_MOVE"
+    REGULATORY_UPDATE = "REGULATORY_UPDATE"
+    MARKET_SHIFT = "MARKET_SHIFT"
+    PARTNERSHIP = "PARTNERSHIP"
+    FUNDING = "FUNDING"
+

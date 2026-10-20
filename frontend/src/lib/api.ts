@@ -149,4 +149,38 @@ export async function getJobDashboard(
   );
 }
 
+export async function fetchMarketPulse(
+  sector?: string,
+  signalType?: string,
+  limit = 40
+): Promise<import("@/types/api").MarketPulseResponse> {
+  const params = new URLSearchParams();
+  if (sector && sector !== "ALL") params.append("sector", sector);
+  if (signalType && signalType !== "ALL") params.append("signal_type", signalType);
+  params.append("limit", limit.toString());
+  return request<import("@/types/api").MarketPulseResponse>(
+    `/api/v1/pulse?${params.toString()}`
+  );
+}
+
+export async function syncMarketPulse(
+  sector: string,
+  maxSignals = 15
+): Promise<import("@/types/api").MarketPulseResponse> {
+  return request<import("@/types/api").MarketPulseResponse>(
+    "/api/v1/pulse/sync",
+    {
+      method: "POST",
+      body: JSON.stringify({ sector, max_signals: maxSignals }),
+    }
+  );
+}
+
+export async function fetchMarketPulseStats(): Promise<import("@/types/api").MarketPulseStatsResponse> {
+  return request<import("@/types/api").MarketPulseStatsResponse>(
+    "/api/v1/pulse/stats"
+  );
+}
+
+
 

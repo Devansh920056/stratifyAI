@@ -8,6 +8,7 @@ import { ReportViewer } from "@/components/ReportViewer";
 import { RecentJobs } from "@/components/RecentJobs";
 import { ActionIntelWorkspace } from "@/components/ActionIntelWorkspace";
 import { DashboardWorkspace } from "@/components/DashboardWorkspace";
+import { MarketPulseWorkspace } from "@/components/MarketPulseWorkspace";
 import { JobDetailResponse } from "@/types/api";
 import {
   AlertTriangle,
@@ -257,38 +258,7 @@ export default function Home() {
             PILLAR 4: MARKET PULSE STREAM (Stage 4)
         ════════════════════════════════════════════════════ */}
         {currentTab === "pulse" && (
-          <div className="space-y-8 animate-fade-in">
-            <div className="pb-6 border-b border-slate-800">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950/60 border border-emerald-500/30 text-emerald-300 mb-3">
-                <Radio className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Stage 4 Blueprint · Continuous Market Pulse Ingestion</span>
-              </div>
-              <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-                Live Market Pulse & Signal Detection
-              </h1>
-              <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                Continuous ingestion pipeline utilizing GDELT 2.0 DOC API and financial RSS streams,
-                clustering real-time market shifts before they appear in quarterly reports.
-              </p>
-            </div>
-
-            <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                  <h3 className="text-sm font-semibold text-slate-200">
-                    Continuous News Stream Architecture
-                  </h3>
-                </div>
-                <span className="text-xs text-slate-500 font-mono">Poll Interval: 300s</span>
-              </div>
-              <p className="text-xs text-slate-400 leading-relaxed max-w-3xl">
-                Stratify AI 2.0 transforms static inquiries into dynamic continuous monitoring. 
-                Workers query GDELT API with normalized entity tokens, deduplicate articles by canonical URL hash,
-                and extract tone & article volume spikes to flag emergent market risks.
-              </p>
-            </div>
-          </div>
+          <MarketPulseWorkspace />
         )}
 
         {/* ════════════════════════════════════════════════════

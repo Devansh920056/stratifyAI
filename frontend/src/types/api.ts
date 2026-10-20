@@ -218,4 +218,55 @@ export interface JobDashboardResponse {
   total_citations: number;
 }
 
+export type SignalCategoryType =
+  | "COMPETITOR_MOVE"
+  | "REGULATORY_UPDATE"
+  | "MARKET_SHIFT"
+  | "PARTNERSHIP"
+  | "FUNDING";
+
+export interface MarketSignalItem {
+  id: string;
+  market_sector: string;
+  headline: string;
+  summary: string;
+  source_url: string;
+  canonical_url: string;
+  source_domain: string;
+  sentiment_score: number;
+  relevance_score: number;
+  signal_type: SignalCategoryType;
+  published_at: string;
+  created_at: string;
+}
+
+export interface MarketPulseResponse {
+  signals: MarketSignalItem[];
+  total: number;
+  sector?: string | null;
+  signal_type?: string | null;
+}
+
+export interface SectorStatItem {
+  sector: string;
+  count: number;
+  avg_sentiment: number;
+}
+
+export interface DomainStatItem {
+  domain: string;
+  count: number;
+}
+
+export interface MarketPulseStatsResponse {
+  total_signals: number;
+  positive_signals: number;
+  neutral_signals: number;
+  negative_signals: number;
+  average_sentiment: number;
+  top_sectors: SectorStatItem[];
+  top_domains: DomainStatItem[];
+}
+
+
 

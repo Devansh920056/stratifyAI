@@ -15,6 +15,14 @@ from backend.app.schemas.job import (
     JobDetailResponse,
     JobResponse,
 )
+from backend.app.schemas.pulse import (
+    DomainStatItem,
+    MarketPulseResponse,
+    MarketPulseStatsResponse,
+    MarketPulseSyncRequest,
+    MarketSignalItem,
+    SectorStatItem,
+)
 from backend.app.schemas.recommendation import (
     RecommendationCreateRequest,
     RecommendationListResponse,
@@ -27,17 +35,23 @@ from backend.app.schemas.task import TaskSummaryResponse
 __all__ = [
     "CitationItem",
     "ClaimClassification",
+    "DomainStatItem",
     "HealthResponse",
     "JobCreateRequest",
     "JobDashboardResponse",
     "JobDetailResponse",
     "JobResponse",
+    "MarketPulseResponse",
+    "MarketPulseStatsResponse",
+    "MarketPulseSyncRequest",
+    "MarketSignalItem",
     "MoatCompetitorPoint",
     "RecommendationCreateRequest",
     "RecommendationListResponse",
     "RecommendationResponse",
     "RecommendationStatusUpdateRequest",
     "ReportResponse",
+    "SectorStatItem",
     "SourceDomainItem",
     "TaskSummaryResponse",
     "TelemetryResponse",
