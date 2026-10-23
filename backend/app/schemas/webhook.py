@@ -4,9 +4,9 @@ Pydantic Schemas for Outbound Webhook Subscriptions and Delivery Logs.
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WebhookCreateRequest(BaseModel):
@@ -16,17 +16,17 @@ class WebhookCreateRequest(BaseModel):
         default=["*"],
         description="Event filters: alert.critical, alert.warning, recommendation.approved, or '*' for all",
     )
-    secret_token: Optional[str] = Field(
+    secret_token: str | None = Field(
         None, description="HMAC-SHA256 signature secret; generated automatically if omitted"
     )
     is_active: bool = Field(default=True, description="Active dispatch status")
 
 
 class WebhookUpdateRequest(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=150)
-    target_url: Optional[str] = Field(None, min_length=8, max_length=1024)
-    event_types: Optional[list[str]] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(None, min_length=2, max_length=150)
+    target_url: str | None = Field(None, min_length=8, max_length=1024)
+    event_types: list[str] | None = None
+    is_active: bool | None = None
 
 
 class WebhookResponse(BaseModel):
@@ -57,9 +57,9 @@ class WebhookDeliveryResponse(BaseModel):
     subscription_id: uuid.UUID = Field(..., description="Subscription UUID")
     event_type: str = Field(..., description="Event type dispatched")
     payload: dict[str, Any] = Field(default_factory=dict, description="Dispatched JSON payload")
-    status_code: Optional[int] = Field(None, description="HTTP response code")
-    response_body: Optional[str] = Field(None, description="Truncated response text")
-    error_message: Optional[str] = Field(None, description="Network / timeout error detail")
+    status_code: int | None = Field(None, description="HTTP response code")
+    response_body: str | None = Field(None, description="Truncated response text")
+    error_message: str | None = Field(None, description="Network / timeout error detail")
     duration_ms: int = Field(..., description="Round-trip latency in milliseconds")
     is_success: bool = Field(..., description="Whether response code was 2xx")
     delivered_at: datetime = Field(..., description="Dispatch timestamp")

@@ -6,7 +6,7 @@ research findings, and report documents for similarity search and AI insight gen
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import DateTime, Float, Integer, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
@@ -46,7 +46,7 @@ class VectorEmbedding(Base):
         nullable=False,
         comment="Raw or normalized text representation used to compute the embedding",
     )
-    sector: Mapped[Optional[str]] = mapped_column(
+    sector: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         index=True,

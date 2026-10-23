@@ -16,7 +16,6 @@ Verifies:
 
 import hashlib
 import hmac
-import json
 import uuid
 from unittest.mock import AsyncMock, patch
 
@@ -26,7 +25,6 @@ import pytest_asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.db.base import utc_now
 from backend.app.db.session import AsyncSessionLocal
 from backend.app.main import app
 from backend.app.models.webhook import WebhookDelivery, WebhookSubscription

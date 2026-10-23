@@ -3,7 +3,7 @@ REST API Endpoints for Multi-Agent Dialectic Debate & Cross-Vector Synthesis (St
 """
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +40,7 @@ async def initiate_debate(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to execute dialectic debate: {str(e)}",
+            detail=f"Failed to execute dialectic debate: {e!s}",
         )
 
 
@@ -52,7 +52,7 @@ async def initiate_debate(
 )
 async def list_debates(
     session: SessionDep,
-    entity_name: Optional[str] = Query(None, description="Filter by company or entity"),
+    entity_name: str | None = Query(None, description="Filter by company or entity"),
     limit: int = Query(20, ge=1, le=100, description="Max debates to return"),
 ):
     return await MultiAgentDebateService.list_debates(

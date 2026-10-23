@@ -174,7 +174,7 @@ class DashboardService:
                 source_url=citations[1].get("url") if len(citations) > 1 else default_url,
             ),
             MoatCompetitorPoint(
-                name=f"Horizontal Cloud Ecosystems",
+                name="Horizontal Cloud Ecosystems",
                 technological_moat=58.0,
                 pricing_power=84.0,
                 quadrant="Price Leaders",
@@ -183,7 +183,7 @@ class DashboardService:
                 source_url=default_url,
             ),
             MoatCompetitorPoint(
-                name=f"Legacy Point-Solutions",
+                name="Legacy Point-Solutions",
                 technological_moat=38.0,
                 pricing_power=34.0,
                 quadrant="Disrupted Challengers",
@@ -247,7 +247,7 @@ class DashboardService:
             )
             claims.append(
                 ClaimClassification(
-                    claim=f"Projected 5-year CAGR estimates synthesized from multi-model industry forecasts.",
+                    claim="Projected 5-year CAGR estimates synthesized from multi-model industry forecasts.",
                     source_url=None,
                     is_empirical=False,
                     confidence=0.81,

@@ -2,7 +2,9 @@
 Main FastAPI Application Entrypoint.
 """
 
+import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
@@ -46,9 +48,64 @@ async def lifespan(app: FastAPI):
             f"RabbitMQ connection not available on startup: {broker_err}. Outbox relay will retry."
         )
 
+    relay_task = None
+    worker_task = None
+    stop_event = asyncio.Event()
+
+    # Automatically run integrated outbox relay loop and worker consumer in background
+    if (
+        settings.AUTO_START_WORKERS
+        and settings.ENVIRONMENT != "test"
+        and not os.environ.get("PYTEST_CURRENT_TEST")
+    ):
+        from backend.app.services.outbox_relay import OutboxRelayService
+        from workers.consumer import WorkerConsumer
+
+        logger.info("Spawning integrated Outbox Relay loop...")
+        relay_task = asyncio.create_task(
+            OutboxRelayService.run_relay_loop(stop_event=stop_event),
+            name="outbox-relay-loop",
+        )
+
+        consumer = WorkerConsumer(
+            worker_id="embedded-worker",
+            prefetch_count=settings.WORKER_CONCURRENCY,
+        )
+
+        async def run_resilient_consumer():
+            while not stop_event.is_set():
+                try:
+                    await consumer.start(stop_event=stop_event)
+                    break
+                except asyncio.CancelledError:
+                    break
+                except Exception as exc:
+                    logger.warning(
+                        f"Embedded worker broker connection deferred: {exc}. Retrying in 3s..."
+                    )
+                    try:
+                        await asyncio.wait_for(stop_event.wait(), timeout=3.0)
+                    except asyncio.TimeoutError:
+                        pass
+
+        logger.info("Spawning integrated Worker Consumer...")
+        worker_task = asyncio.create_task(
+            run_resilient_consumer(),
+            name="worker-consumer-loop",
+        )
+
     yield
 
     logger.info("Shutting down Stratify AI API Coordinator...")
+    stop_event.set()
+    if relay_task:
+        relay_task.cancel()
+    if worker_task:
+        worker_task.cancel()
+    if relay_task or worker_task:
+        tasks = [t for t in (relay_task, worker_task) if t is not None]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
     await async_engine.dispose()
     logger.info("Database engine connections disposed.")
 

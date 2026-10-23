@@ -13,16 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.session import AsyncSessionLocal
 from backend.app.main import app
-from backend.app.models.debate import Debate, DebateMessage
+from backend.app.models.debate import Debate
 from backend.app.models.enums import (
-    AgentDebateRole,
     ArbiterVerdict,
-    ArgumentType,
     DebateStatus,
     EvidenceSourceType,
 )
 from backend.app.models.fused_evidence import FusedEvidence
-from backend.app.models.market_signal import MarketSignal
 from backend.app.schemas.export import DossierExportRequest
 from backend.app.services.export_service import ExecutiveExportService
 

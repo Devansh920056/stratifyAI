@@ -5,7 +5,7 @@ and running historical market backtests.
 """
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,7 +72,7 @@ async def get_evaluations_for_recommendation(
 )
 async def list_evaluations(
     db: SessionDep,
-    outcome_status: Optional[str] = Query(None, description="VALIDATED, PARTIALLY_VALIDATED, INVALIDATED, IN_PROGRESS"),
+    outcome_status: str | None = Query(None, description="VALIDATED, PARTIALLY_VALIDATED, INVALIDATED, IN_PROGRESS"),
     limit: int = Query(50, ge=1, le=100, description="Max evaluations to retrieve"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
 ) -> DecisionEvaluationListResponse:

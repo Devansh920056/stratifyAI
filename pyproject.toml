@@ -38,3 +38,17 @@ pythonpath = ["."]
 
 [tool.hatch.build.targets.wheel]
 packages = ["backend", "workers"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "UP"]
+ignore = [
+    "E501",    # Line length (handled gracefully, allows descriptive strings/queries)
+    "E712",    # SQLAlchemy comparison to True/False (Model.col == True is idiomatic SQLAlchemy)
+    "B008",    # FastAPI Query/Depends in argument defaults
+    "BLE001",  # Blind exception catching in resilient fallback and scrapers
+    "UP042",   # Enum inheritance (str, Enum) preserved for SQLAlchemy/Pydantic serialization
+]

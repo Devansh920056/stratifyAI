@@ -4,7 +4,6 @@ Pydantic Schemas for Market Pulse Continuous Ingestion Pipeline.
 
 import uuid
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 

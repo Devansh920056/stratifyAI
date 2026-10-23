@@ -1,25 +1,35 @@
 /* ─── Google Fonts ──────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @import "tailwindcss";
 
-/* ─── Design Tokens ─────────────────────────────────────────── */
+@theme {
+  --color-sand: #FCF1D0;
+  --color-sand-hover: #fae8b4;
+  --color-navy-deep: #010736;
+  --color-navy-card: #0D1C42;
+  --color-navy-surface: #142554;
+  --color-navy-border: #22396F;
+}
+
+/* ─── Design Tokens (#010736, #0D1C42, #22396F, #FCF1D0) ──── */
 :root {
-  --bg-base:        #080c14;
-  --bg-elevated:    #0e1420;
-  --bg-surface:     #131928;
-  --border-subtle:  rgba(51, 65, 85, 0.40);
-  --border-muted:   rgba(71, 85, 105, 0.30);
-  --text-primary:   #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted:     #64748b;
-  --cyan-400:       #22d3ee;
-  --cyan-500:       #06b6d4;
-  --indigo-500:     #6366f1;
-  --violet-500:     #8b5cf6;
+  --bg-base:        #010736;
+  --bg-elevated:    #0D1C42;
+  --bg-surface:     #142554;
+  --border-subtle:  #22396F;
+  --border-muted:   rgba(34, 57, 111, 0.45);
+  --color-sand:     #FCF1D0;
+  --color-sand-hover: #fae8b4;
+  --text-primary:   #FCF1D0;
+  --text-body:      #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted:     #6D82A6;
+  --cyan-400:       #38bdf8;
+  --cyan-500:       #0284c7;
   --emerald-400:    #34d399;
-  --amber-400:      #fbbf24;
-  --rose-400:       #fb7185;
+  --amber-400:      #f59e0b;
+  --rose-400:       #f43f5e;
 }
 
 /* ─── Base Reset & Typography ───────────────────────────────── */
@@ -38,43 +48,42 @@ html {
 
 body {
   background: var(--bg-base);
-  color: var(--text-primary);
+  color: var(--text-body);
   min-height: 100vh;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-feature-settings: 'cv11', 'ss01', 'ss03';
   overflow-x: hidden;
   line-height: 1.6;
 }
 
 /* Mono utility for code/IDs */
 .font-mono {
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace !important;
+  font-family: 'JetBrains Mono', monospace !important;
 }
 
 /* ─── Scrollbars ────────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #010736;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.5);
+  background: #22396F;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 0.7);
+  background: #2d4c94;
 }
 
-/* ─── Background Noise Texture ──────────────────────────────── */
+/* ─── Minimal Background Ambient Glow ───────────────────────── */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background-image:
-    radial-gradient(ellipse 80% 50% at 10% 0%, rgba(6, 182, 212, 0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
+    radial-gradient(circle 600px at 20% 0%, rgba(34, 57, 111, 0.35) 0%, transparent 70%),
+    radial-gradient(circle 500px at 80% 80%, rgba(13, 28, 66, 0.45) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -83,19 +92,17 @@ body > * {
   z-index: 1;
 }
 
-/* ─── Glassmorphism Panels ──────────────────────────────────── */
+/* ─── Minimal Luxury Cards & Panels ─────────────────────────── */
 .glass-panel {
-  background: rgba(14, 20, 32, 0.75);
+  background: rgba(13, 28, 66, 0.94);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid #22396F;
 }
 
 .glass-card {
-  background: rgba(19, 25, 40, 0.60);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-muted);
+  background: #0D1C42;
+  border: 1px solid #22396F;
 }
 
 /* ─── Glow Effects ──────────────────────────────────────────── */
@@ -146,13 +153,13 @@ body > * {
 
 /* ─── Interactive Focus Ring ────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid rgba(6, 182, 212, 0.7);
+  outline: 2px solid #FCF1D0;
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 /* ─── Selection ─────────────────────────────────────────────── */
 ::selection {
-  background: rgba(6, 182, 212, 0.25);
-  color: var(--cyan-400);
+  background: #22396F;
+  color: #FCF1D0;
 }

@@ -4,7 +4,6 @@ Webhook Subscription and Delivery Models for Real-Time External Event Dispatches
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -25,7 +24,7 @@ class WebhookSubscription(Base):
     name: Mapped[str] = mapped_column(String(150), nullable=False)
     target_url: Mapped[str] = mapped_column(String(1024), nullable=False)
     secret_token: Mapped[str] = mapped_column(String(255), nullable=False)
-    
+
     # List of subscribed event keys: e.g. ["alert.critical", "alert.warning", "recommendation.approved"]
     event_types: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
@@ -72,9 +71,9 @@ class WebhookDelivery(Base):
     )
     event_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
-    status_code: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    response_body: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status_code: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    response_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_success: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
 

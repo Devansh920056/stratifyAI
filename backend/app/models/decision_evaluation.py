@@ -4,7 +4,7 @@ Decision Evaluation Model representing historical outcome tracking and backtesti
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -40,7 +40,7 @@ class DecisionEvaluation(Base):
     )
     evaluator_notes: Mapped[str] = mapped_column(Text, nullable=False)
     actual_outcome: Mapped[str] = mapped_column(Text, nullable=False)
-    actual_metric_value: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    actual_metric_value: Mapped[str | None] = mapped_column(String(100), nullable=True)
     impact_delta: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     confidence_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.85)
 

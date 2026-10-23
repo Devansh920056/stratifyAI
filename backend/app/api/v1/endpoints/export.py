@@ -4,7 +4,7 @@ REST API Endpoints for Executive Intelligence Export & Governance Audit Trail (S
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.session import get_async_session
@@ -39,7 +39,7 @@ async def generate_dossier(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate executive dossier: {str(e)}",
+            detail=f"Failed to generate executive dossier: {e!s}",
         )
 
 

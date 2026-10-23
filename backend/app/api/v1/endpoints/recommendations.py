@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.session import get_async_session
-from backend.app.models.enums import RecommendationStatus
 from backend.app.schemas.recommendation import (
     RecommendationListResponse,
     RecommendationResponse,

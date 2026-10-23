@@ -14,14 +14,13 @@ import hashlib
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from backend.app.models.debate import Debate, DebateMessage
+from backend.app.models.debate import Debate
 from backend.app.models.decision_evaluation import DecisionEvaluation
 from backend.app.models.enums import EvidenceSourceType
 from backend.app.models.fused_evidence import FusedEvidence
@@ -37,7 +36,7 @@ from backend.app.schemas.export import (
 logger = logging.getLogger("stratify.export_service")
 
 # In-memory governance audit registry for non-repudiation tracking
-_GOVERNANCE_AUDIT_LOG: Dict[str, List[GovernanceAuditRecord]] = {}
+_GOVERNANCE_AUDIT_LOG: dict[str, list[GovernanceAuditRecord]] = {}
 
 
 class ExecutiveExportService:
@@ -137,7 +136,7 @@ class ExecutiveExportService:
 
         # 6. Generate Dossier ID & Timestamps
         dossier_id = uuid.uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         now_iso = now.strftime("%Y-%m-%d %H:%M:%S UTC")
 
         # 7. Render Content
@@ -269,7 +268,7 @@ class ExecutiveExportService:
             arx = p.metadata_json.get("arxiv_id", "ARXIV-PAPER") if p.metadata_json else "ARXIV-PAPER"
             md += f"| arXiv Research | {p.title[:65]} | `arXiv:{arx}` | {p.reliability_score:.0%} | **{p.divergence_status}** |\n"
 
-        md += f"""
+        md += """
 ---
 
 ## 4. Real-Time Market Pulse Signals (GDELT Ingestion)
@@ -402,9 +401,9 @@ NON-REPUDIATION: Complies with SEC Rule 17a-4 Electronic Records Governance Stan
       </div>
     </div>
     <div style="margin-top: 16px; font-size: 12px; color: #94a3b8;">
-      <strong>Target Entity:</strong> {entity} | 
-      <strong>Dossier ID:</strong> {dossier_id} | 
-      <strong>Generated:</strong> {now_iso} | 
+      <strong>Target Entity:</strong> {entity} |
+      <strong>Dossier ID:</strong> {dossier_id} |
+      <strong>Generated:</strong> {now_iso} |
       <strong>Conviction:</strong> {conviction}
     </div>
   </div>
@@ -424,7 +423,7 @@ NON-REPUDIATION: Complies with SEC Rule 17a-4 Electronic Records Governance Stan
         for tw in tripwires:
             html += f'<div class="tripwire">⚠️ <strong>Tripwire:</strong> {tw}</div>\n'
 
-        html += f"""
+        html += """
   </div>
 
   <div class="dossier-card">

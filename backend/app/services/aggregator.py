@@ -230,8 +230,15 @@ class ReportAggregatorService:
             research_limitations=research_limitations,
             status=report_status,
         )
-        session.add(report)
-        await session.flush()
+        try:
+            session.add(report)
+            await session.flush()
+        except Exception:
+            await session.rollback()
+            existing = await session.scalar(select(Report).where(Report.job_id == job.id))
+            if existing is not None:
+                return existing
+            raise
 
         logger.info(
             f"Successfully aggregated report for job {job_id} (status={report_status}, "

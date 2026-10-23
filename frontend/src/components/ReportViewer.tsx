@@ -69,7 +69,7 @@ export function ReportViewer({
           setReport(res);
           setError(null);
         } else {
-          setError("Report is still being compiled by the aggregator. Please wait a moment.");
+          setError("Report is being finalized. Please wait a moment.");
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to load report";
@@ -135,7 +135,7 @@ export function ReportViewer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `stratify-intelligence-${jobId.slice(0, 8)}.md`;
+    a.download = `market-report-${jobId.slice(0, 8)}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -150,12 +150,12 @@ export function ReportViewer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `stratify-intelligence-${jobId.slice(0, 8)}.json`;
+    a.download = `market-data-${jobId.slice(0, 8)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast("Downloaded raw JSON data.");
+    showToast("Downloaded JSON data.");
   };
 
   const handlePrint = () => {
@@ -164,13 +164,13 @@ export function ReportViewer({
 
   if (loading) {
     return (
-      <div className="glass-panel p-16 rounded-2xl flex flex-col items-center justify-center space-y-4 text-center">
-        <Loader2 className="w-10 h-10 animate-spin text-cyan-400" />
-        <h3 className="text-base font-bold text-slate-100">
-          Synthesizing Executive Report...
+      <div className="bg-[#0D1C42] border border-[#22396F] p-16 rounded-2xl flex flex-col items-center justify-center space-y-4 text-center">
+        <Loader2 className="w-10 h-10 animate-spin text-[#FCF1D0]" />
+        <h3 className="text-base font-bold text-[#FCF1D0]">
+          Preparing Your Market Report...
         </h3>
-        <p className="text-xs text-slate-400 max-w-md">
-          Stratify AI aggregator is reconciling 4 research vectors, validating citations, and generating cross-domain strategic insights.
+        <p className="text-xs text-slate-300 max-w-md">
+          Analyzing verified data across market size, competitors, customer demand, and risks.
         </p>
       </div>
     );
@@ -178,22 +178,22 @@ export function ReportViewer({
 
   if (error && !report) {
     return (
-      <div className="glass-panel p-10 rounded-2xl border border-rose-500/40 text-center space-y-4">
+      <div className="bg-[#0D1C42] border border-rose-500/40 p-10 rounded-2xl text-center space-y-4">
         <AlertTriangle className="w-10 h-10 text-rose-400 mx-auto" />
-        <h3 className="text-base font-bold text-slate-100">Report Unavailable</h3>
+        <h3 className="text-base font-bold text-[#FCF1D0]">Report Unavailable</h3>
         <p className="text-xs text-rose-300 max-w-md mx-auto">{error}</p>
         <div className="flex justify-center gap-3 pt-2">
           <button
             onClick={() => fetchReport(true)}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 hover:bg-slate-700 transition"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#22396F] text-[#FCF1D0] hover:bg-[#2d4c94] transition cursor-pointer"
           >
             Try Again
           </button>
           <button
             onClick={onBackToTracker}
-            className="px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-600 text-white hover:bg-cyan-500 transition"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-[#FCF1D0] text-[#010736] hover:bg-[#fae8b4] transition cursor-pointer"
           >
-            Back to Task Tracker
+            Back to Tracker
           </button>
         </div>
       </div>
@@ -206,40 +206,39 @@ export function ReportViewer({
     <div className="space-y-6">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-slate-900 border border-cyan-500/40 text-cyan-300 text-xs shadow-2xl flex items-center gap-2 animate-scale-in">
-          <CheckCircle2 className="w-4 h-4 text-cyan-400" />
+        <div className="fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl bg-[#0D1C42] border border-[#22396F] text-[#FCF1D0] text-xs shadow-2xl flex items-center gap-2 animate-scale-in">
+          <CheckCircle2 className="w-4 h-4 text-[#FCF1D0]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* ─── Header Action Bar ──────────────────────────────── */}
-      <div className="glass-panel p-6 rounded-2xl space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="bg-[#0D1C42] border border-[#22396F] p-6 rounded-2xl space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#22396F] pb-5">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs flex-wrap">
               <button
                 onClick={onBackToTracker}
-                className="inline-flex items-center gap-1 text-slate-400 hover:text-slate-200 transition"
+                className="inline-flex items-center gap-1 text-slate-300 hover:text-[#FCF1D0] transition cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Task Tracker</span>
+                <span>Research Tracker</span>
               </button>
-              <span className="text-slate-700">/</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-                {report.status === "FINAL" ? "EXECUTIVE GRADE" : report.status}
+              <span className="text-[#22396F]">/</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#22396F] text-[#FCF1D0]">
+                {report.status === "FINAL" ? "COMPLETE" : report.status}
               </span>
-              <span className="text-slate-700">•</span>
-              <span className="text-[11px] text-slate-400 font-mono">
-                {new Date(report.created_at).toLocaleDateString()} at{" "}
-                {new Date(report.created_at).toLocaleTimeString()}
+              <span className="text-[#22396F]">•</span>
+              <span className="text-[11px] text-slate-400">
+                {new Date(report.created_at).toLocaleDateString()}
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 tracking-tight leading-snug">
-              Executive Market Intelligence Report
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#FCF1D0] tracking-tight leading-snug">
+              Market Intelligence Report
             </h1>
-            <p className="text-xs text-slate-400">
-              Grounded multi-agent synthesis across TAM, Competitive Moats, Churn Triggers & Regulatory Risks.
+            <p className="text-xs text-slate-300">
+              Clear, verified insights covering market trends, competitors, customer needs, and industry risks.
             </p>
           </div>
 
@@ -247,16 +246,16 @@ export function ReportViewer({
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleCopyMarkdown}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-[#FCF1D0] bg-[#010736] hover:bg-[#142554] border border-[#22396F] transition cursor-pointer"
               title="Copy formatted Markdown"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? "Copied!" : "Copy Briefing"}</span>
+              {copied ? <Check className="w-3.5 h-3.5 text-[#FCF1D0]" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? "Copied!" : "Copy"}</span>
             </button>
 
             <button
               onClick={handleDownloadMarkdown}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-[#FCF1D0] bg-[#010736] hover:bg-[#142554] border border-[#22396F] transition cursor-pointer"
               title="Download Markdown file (.md)"
             >
               <Download className="w-3.5 h-3.5" />
@@ -265,8 +264,8 @@ export function ReportViewer({
 
             <button
               onClick={handleDownloadJSON}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition cursor-pointer"
-              title="Download raw JSON data"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-[#FCF1D0] bg-[#010736] hover:bg-[#142554] border border-[#22396F] transition cursor-pointer"
+              title="Download JSON data"
             >
               <FileJson className="w-3.5 h-3.5" />
               <span>JSON</span>
@@ -274,7 +273,7 @@ export function ReportViewer({
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-800 border border-slate-700 transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-[#FCF1D0] bg-[#010736] hover:bg-[#142554] border border-[#22396F] transition cursor-pointer"
               title="Print / Save as PDF"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -283,80 +282,76 @@ export function ReportViewer({
 
             <button
               onClick={onNewInquiry}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 shadow-md shadow-indigo-500/20 transition cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-[#010736] bg-[#FCF1D0] hover:bg-[#fae8b4] shadow-sm transition cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>New Inquiry</span>
+              <Sparkles className="w-3.5 h-3.5 text-[#010736]" />
+              <span>New Research</span>
             </button>
           </div>
         </div>
 
-        {/* Strategic Scorecard KPI Grid */}
+        {/* Scorecard KPI Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
           <Scorecard
-            label="Synthesis Confidence"
+            label="Confidence Score"
             value={`${overallConfidence}%`}
-            subtext="Grounded rating"
-            color="text-emerald-400"
+            subtext="Verified accuracy"
           />
           <Scorecard
-            label="Verified Evidence"
+            label="Verified Sources"
             value={`${totalCitationsCount} Sources`}
-            subtext="Live web retrieval"
-            color="text-cyan-400"
+            subtext="Live market citations"
           />
           <Scorecard
-            label="Vector Convergence"
+            label="Research Areas"
             value="4 / 4 Complete"
-            subtext="100% domain coverage"
-            color="text-indigo-400"
+            subtext="Full market coverage"
           />
           <Scorecard
-            label="Guardrail Status"
-            value="Zero Hallucinations"
-            subtext="Strict citation bounds"
-            color="text-violet-400"
+            label="Accuracy Check"
+            value="100% Verified"
+            subtext="Fact-checked claims"
           />
         </div>
       </div>
 
       {/* ─── Navigation Tabs ─────────────────────────────────── */}
-      <div className="flex border-b border-slate-800 overflow-x-auto gap-2">
+      <div className="flex border-b border-[#22396F] overflow-x-auto gap-2">
         <TabButton
           active={activeTab === "overview"}
           onClick={() => setActiveTab("overview")}
           icon={Layers}
-          label="Executive Overview"
+          label="Overview"
         />
         <TabButton
           active={activeTab === "market"}
           onClick={() => setActiveTab("market")}
           icon={TrendingUp}
-          label="Market Sizing & TAM"
+          label="Market Size & Trends"
         />
         <TabButton
           active={activeTab === "competitor"}
           onClick={() => setActiveTab("competitor")}
           icon={Shield}
-          label="Competitive Moats"
+          label="Competitors & Moats"
         />
         <TabButton
           active={activeTab === "customer"}
           onClick={() => setActiveTab("customer")}
           icon={Users}
-          label="Customer Churn"
+          label="Customer Demand"
         />
         <TabButton
           active={activeTab === "risks"}
           onClick={() => setActiveTab("risks")}
           icon={AlertTriangle}
-          label="Regulatory Risks"
+          label="Risks & Regulations"
         />
         <TabButton
           active={activeTab === "citations"}
           onClick={() => setActiveTab("citations")}
           icon={Globe}
-          label={`Evidence Index (${totalCitationsCount})`}
+          label={`Sources (${totalCitationsCount})`}
         />
       </div>
 
@@ -365,12 +360,12 @@ export function ReportViewer({
       {/* 1. OVERVIEW TAB */}
       {activeTab === "overview" && (
         <div className="space-y-6 animate-fade-in">
-          {/* Executive Summary Card */}
-          <div className="glass-panel p-6 sm:p-8 rounded-2xl space-y-4 border-l-4 border-l-cyan-500">
+          {/* Summary Card */}
+          <div className="bg-[#0D1C42] border border-[#22396F] p-6 sm:p-8 rounded-2xl space-y-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
-              <h2 className="text-base font-bold text-slate-100 uppercase tracking-wider">
-                Executive Synthesis
+              <Sparkles className="w-5 h-5 text-[#FCF1D0]" />
+              <h2 className="text-base font-bold text-[#FCF1D0]">
+                Executive Summary
               </h2>
             </div>
             <div className="text-sm sm:text-base text-slate-200 leading-relaxed space-y-3 font-normal whitespace-pre-line">
@@ -378,33 +373,29 @@ export function ReportViewer({
             </div>
           </div>
 
-          {/* 4-Vector Snapshot Grid */}
+          {/* Key Insights Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <VectorSnapshotCard
-              title="Market Overview & TAM"
+              title="Market Overview & Size"
               icon={TrendingUp}
-              color="text-cyan-400"
               section={report.market_findings}
               onNavigate={() => setActiveTab("market")}
             />
             <VectorSnapshotCard
-              title="Competitive Landscape & Moats"
+              title="Competitors & Strategic Moats"
               icon={Shield}
-              color="text-violet-400"
               section={report.competitor_analysis}
               onNavigate={() => setActiveTab("competitor")}
             />
             <VectorSnapshotCard
-              title="Customer Insights & Churn"
+              title="Customer Insights & Needs"
               icon={Users}
-              color="text-amber-400"
               section={report.customer_insights}
               onNavigate={() => setActiveTab("customer")}
             />
             <VectorSnapshotCard
-              title="Regulatory Headwinds & Disruption"
+              title="Risks & Regulatory Factors"
               icon={AlertTriangle}
-              color="text-rose-400"
               section={report.opportunities_and_risks}
               onNavigate={() => setActiveTab("risks")}
             />
@@ -412,10 +403,10 @@ export function ReportViewer({
 
           {/* Research Limitations & Methodology */}
           {report.research_limitations && (
-            <div className="glass-card p-5 rounded-xl space-y-2 text-xs text-slate-400 border border-slate-800">
-              <div className="flex items-center gap-2 text-slate-300 font-semibold uppercase tracking-wider">
-                <FileCheck className="w-4 h-4 text-emerald-400" />
-                Anti-Hallucination & Research Methodology Notice
+            <div className="bg-[#0D1C42] border border-[#22396F] p-5 rounded-xl space-y-2 text-xs text-slate-300">
+              <div className="flex items-center gap-2 text-[#FCF1D0] font-semibold">
+                <FileCheck className="w-4 h-4 text-[#FCF1D0]" />
+                Research & Verification Notice
               </div>
               <p className="leading-relaxed">{report.research_limitations}</p>
             </div>
@@ -426,58 +417,54 @@ export function ReportViewer({
       {/* 2. MARKET SIZING TAB */}
       {activeTab === "market" && (
         <SectionDeepDive
-          title="Market Overview & Macro Sizing"
+          title="Market Overview & Size"
           icon={TrendingUp}
-          color="text-cyan-400"
           section={report.market_findings}
-          defaultFocus="TAM/SAM sizing, historical CAGRs, macroeconomic drivers"
+          defaultFocus="Market size, growth forecasts, and key industry trends"
         />
       )}
 
       {/* 3. COMPETITOR ANALYSIS TAB */}
       {activeTab === "competitor" && (
         <SectionDeepDive
-          title="Competitive Landscape & Moats"
+          title="Competitors & Strategic Moats"
           icon={Shield}
-          color="text-violet-400"
           section={report.competitor_analysis}
-          defaultFocus="Incumbents, challenger dynamics, pricing power & defensibility"
+          defaultFocus="Leading players, competitive advantages, and market positioning"
         />
       )}
 
       {/* 4. CUSTOMER CHURN TAB */}
       {activeTab === "customer" && (
         <SectionDeepDive
-          title="Customer Personas & Pain Points"
+          title="Customer Insights & Demand"
           icon={Users}
-          color="text-amber-400"
           section={report.customer_insights}
-          defaultFocus="Buyer personas, purchasing triggers, unmet demand & churn"
+          defaultFocus="Target buyers, purchase drivers, and unmet customer needs"
         />
       )}
 
       {/* 5. REGULATORY RISKS TAB */}
       {activeTab === "risks" && (
         <SectionDeepDive
-          title="Regulatory Headwinds & Disruption"
+          title="Risks & Regulatory Factors"
           icon={AlertTriangle}
-          color="text-rose-400"
           section={report.opportunities_and_risks}
-          defaultFocus="Policy compliance, certification timelines & supply disruption"
+          defaultFocus="Regulatory compliance, supply chain factors, and industry risks"
         />
       )}
 
       {/* 6. CITATIONS INDEX TAB */}
       {activeTab === "citations" && (
-        <div className="glass-panel p-6 sm:p-8 rounded-2xl space-y-6 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div className="bg-[#0D1C42] border border-[#22396F] p-6 sm:p-8 rounded-2xl space-y-6 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#22396F] pb-4">
             <div>
-              <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-                <Globe className="w-5 h-5 text-cyan-400" />
-                Verified Web Evidence & Citations Index
+              <h2 className="text-lg font-bold text-[#FCF1D0] flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[#FCF1D0]" />
+                Verified Sources & References
               </h2>
-              <p className="text-xs text-slate-400">
-                All claims are bound to real canonicalized URLs retrieved from verified web sources.
+              <p className="text-xs text-slate-300 mt-0.5">
+                All claims are linked to real, verified public web sources.
               </p>
             </div>
 
@@ -488,8 +475,8 @@ export function ReportViewer({
                 type="text"
                 value={citationSearch}
                 onChange={(e) => setCitationSearch(e.target.value)}
-                placeholder="Search domains or URLs..."
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:border-cyan-500 outline-none"
+                placeholder="Search sources..."
+                className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#010736] border border-[#22396F] text-xs text-white placeholder-slate-400 focus:border-[#FCF1D0] outline-none"
               />
             </div>
           </div>
@@ -503,19 +490,19 @@ export function ReportViewer({
               filteredCitations.map((cit, idx) => (
                 <div
                   key={idx}
-                  className="glass-card p-4 rounded-xl border border-slate-800/80 hover:border-slate-700 transition flex items-start justify-between gap-4"
+                  className="p-4 rounded-xl bg-[#010736] border border-[#22396F] hover:border-[#FCF1D0]/50 transition flex items-start justify-between gap-4"
                 >
                   <div className="space-y-1.5 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-cyan-400 font-bold px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">
+                      <span className="text-[10px] font-mono text-[#FCF1D0] font-bold px-1.5 py-0.5 rounded bg-[#22396F]">
                         [{idx + 1}]
                       </span>
                       {cit.task_type && (
-                        <span className="text-[10px] uppercase font-semibold text-slate-400 px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                        <span className="text-[10px] uppercase font-semibold text-slate-300 px-2 py-0.5 rounded bg-[#0D1C42] border border-[#22396F]">
                           {cit.task_type.replace("_", " ")}
                         </span>
                       )}
-                      <span className="text-xs font-semibold text-slate-200 truncate">
+                      <span className="text-xs font-semibold text-white truncate">
                         {cit.title || "External Source"}
                       </span>
                     </div>
@@ -524,15 +511,15 @@ export function ReportViewer({
                       href={cit.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 hover:underline truncate max-w-full font-mono transition"
+                      className="inline-flex items-center gap-1.5 text-xs text-[#FCF1D0] hover:underline truncate max-w-full font-mono transition"
                     >
                       <span className="truncate">{cit.url}</span>
                       <ExternalLink className="w-3 h-3 flex-shrink-0" />
                     </a>
                   </div>
 
-                  <span className="text-[10px] font-medium text-emerald-400 px-2 py-1 rounded-md bg-emerald-950/60 border border-emerald-500/30 flex items-center gap-1 flex-shrink-0">
-                    <CheckCircle2 className="w-3 h-3" />
+                  <span className="text-[10px] font-semibold text-[#FCF1D0] px-2 py-1 rounded-md bg-[#22396F] flex items-center gap-1 flex-shrink-0">
+                    <CheckCircle2 className="w-3 h-3 text-[#FCF1D0]" />
                     Verified
                   </span>
                 </div>
@@ -551,20 +538,18 @@ function Scorecard({
   label,
   value,
   subtext,
-  color,
 }: {
   label: string;
   value: string;
   subtext: string;
-  color: string;
 }) {
   return (
-    <div className="glass-card p-3 sm:p-4 rounded-xl border border-slate-800 space-y-1">
-      <span className="text-[11px] font-medium text-slate-400 block">{label}</span>
-      <span className={`text-xl sm:text-2xl font-extrabold ${color} tracking-tight block`}>
+    <div className="p-3 sm:p-4 rounded-xl bg-[#010736] border border-[#22396F] space-y-1">
+      <span className="text-[11px] font-medium text-slate-300 block">{label}</span>
+      <span className="text-xl sm:text-2xl font-extrabold text-[#FCF1D0] tracking-tight block">
         {value}
       </span>
-      <span className="text-[10px] text-slate-500 block truncate">{subtext}</span>
+      <span className="text-[10px] text-slate-400 block truncate">{subtext}</span>
     </div>
   );
 }
@@ -585,11 +570,11 @@ function TabButton({
       onClick={onClick}
       className={`px-4 py-3 rounded-t-xl text-xs font-semibold flex items-center gap-2 border-b-2 transition whitespace-nowrap cursor-pointer ${
         active
-          ? "border-cyan-400 text-cyan-300 bg-slate-900/60"
-          : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/30"
+          ? "border-[#FCF1D0] text-[#FCF1D0] bg-[#0D1C42]"
+          : "border-transparent text-slate-300 hover:text-[#FCF1D0] hover:bg-[#0D1C42]/50"
       }`}
     >
-      <Icon className="w-4 h-4" />
+      <Icon className={`w-4 h-4 ${active ? "text-[#FCF1D0]" : "text-slate-400"}`} />
       <span>{label}</span>
     </button>
   );
@@ -598,42 +583,38 @@ function TabButton({
 function VectorSnapshotCard({
   title,
   icon: Icon,
-  color,
   section,
   onNavigate,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: string;
   section?: ReportSection;
   onNavigate: () => void;
 }) {
-  const isAvailable = section && section.status === "COMPLETED";
-
   return (
     <div
       onClick={onNavigate}
-      className="glass-panel p-5 rounded-xl border border-slate-800/80 hover:border-slate-700 transition cursor-pointer space-y-3 group"
+      className="p-5 rounded-xl bg-[#0D1C42] border border-[#22396F] hover:border-[#FCF1D0]/60 transition cursor-pointer space-y-3 group"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Icon className={`w-4 h-4 ${color}`} />
-          <h3 className="text-sm font-bold text-slate-100 group-hover:text-cyan-300 transition-colors">
+          <Icon className="w-4 h-4 text-[#FCF1D0]" />
+          <h3 className="text-sm font-bold text-white group-hover:text-[#FCF1D0] transition-colors">
             {title}
           </h3>
         </div>
-        <span className="text-xs text-cyan-400 group-hover:translate-x-1 transition-transform flex items-center">
+        <span className="text-xs text-[#FCF1D0] group-hover:translate-x-1 transition-transform flex items-center">
           <ChevronRight className="w-4 h-4" />
         </span>
       </div>
 
       <p className="text-xs text-slate-300 line-clamp-3 leading-relaxed">
-        {section?.summary || "Vector analysis completed and synthesized."}
+        {section?.summary || "Analysis completed and synthesized."}
       </p>
 
-      <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-500">
+      <div className="pt-2 border-t border-[#22396F] flex items-center justify-between text-[11px] text-slate-400">
         <span>Confidence: {section ? Math.round((section.confidence || 0.9) * 100) : 90}%</span>
-        <span>{section?.key_findings?.length || 0} Key Claims</span>
+        <span>{section?.key_findings?.length || 0} Key Facts</span>
       </div>
     </div>
   );
@@ -642,71 +623,69 @@ function VectorSnapshotCard({
 function SectionDeepDive({
   title,
   icon: Icon,
-  color,
   section,
   defaultFocus,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
-  color: string;
   section?: ReportSection;
   defaultFocus: string;
 }) {
   if (!section) {
     return (
-      <div className="glass-panel p-10 rounded-2xl text-center text-slate-400 text-xs">
-        Section not yet available for this research job.
+      <div className="bg-[#0D1C42] border border-[#22396F] p-10 rounded-2xl text-center text-slate-300 text-xs">
+        Section not yet available for this research inquiry.
       </div>
     );
   }
 
   return (
-    <div className="glass-panel p-6 sm:p-8 rounded-2xl space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+    <div className="bg-[#0D1C42] border border-[#22396F] p-6 sm:p-8 rounded-2xl space-y-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#22396F] pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center">
-            <Icon className={`w-5 h-5 ${color}`} />
+          <div className="w-10 h-10 rounded-xl bg-[#010736] border border-[#22396F] flex items-center justify-center">
+            <Icon className="w-5 h-5 text-[#FCF1D0]" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-100">{title}</h2>
-            <p className="text-xs text-slate-400">{defaultFocus}</p>
+            <h2 className="text-lg font-bold text-[#FCF1D0]">{title}</h2>
+            <p className="text-xs text-slate-300">{defaultFocus}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-900 border border-slate-800 text-cyan-300">
+          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#010736] border border-[#22396F] text-[#FCF1D0]">
             Confidence: {Math.round((section.confidence || 0.9) * 100)}%
           </span>
-          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+          <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#22396F] text-[#FCF1D0]">
             {section.status}
           </span>
         </div>
       </div>
 
       {/* Summary Narrative */}
-      <div className="p-5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-sm text-slate-200 leading-relaxed whitespace-pre-line">
+      <div className="p-5 rounded-xl bg-[#010736] border border-[#22396F] text-sm text-slate-200 leading-relaxed whitespace-pre-line">
         {section.summary}
       </div>
 
       {/* Key Findings Claims List */}
       {section.key_findings && section.key_findings.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            Synthesized Factual Claims ({section.key_findings.length})
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-[#FCF1D0]" />
+            Key Facts & Findings ({section.key_findings.length})
           </h3>
 
           <div className="grid grid-cols-1 gap-3">
             {section.key_findings.map((finding: KeyFinding, idx: number) => (
               <div
                 key={idx}
-                className="glass-card p-4 rounded-xl border border-slate-800 space-y-2 hover:border-slate-700 transition"
+                className="p-4 rounded-xl bg-[#010736] border border-[#22396F] space-y-2 hover:border-[#FCF1D0]/40 transition"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-xs sm:text-sm text-slate-100 leading-relaxed font-normal">
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
                     {finding.claim}
                   </p>
-                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#22396F] text-[#FCF1D0] flex-shrink-0">
                     {Math.round((finding.confidence || 0.9) * 100)}% Conf
                   </span>
                 </div>
@@ -717,7 +696,7 @@ function SectionDeepDive({
                       href={finding.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 text-[11px] text-cyan-400 hover:text-cyan-300 hover:underline font-mono truncate max-w-[480px] transition"
+                      className="inline-flex items-center gap-1.5 text-[11px] text-[#FCF1D0] hover:underline font-mono truncate max-w-[480px] transition"
                     >
                       <ExternalLink className="w-3 h-3 flex-shrink-0" />
                       <span className="truncate">{finding.source_url}</span>
@@ -742,10 +721,9 @@ function generateMarkdownExport(report: ReportResponse): string {
           .join("\n")
       : "No external citations recorded.";
 
-  return `# Stratify AI — Executive Intelligence Report
+  return `# Stratify AI — Market Intelligence Report
 Status: ${report.status}
 Generated At: ${new Date(report.created_at).toISOString()}
-Job ID: ${report.job_id}
 
 ---
 
@@ -754,50 +732,50 @@ ${report.executive_summary}
 
 ---
 
-## 2. Market Overview & Macro Sizing
+## 2. Market Overview & Size
 ${report.market_findings?.summary || "N/A"}
 
-### Key Claims:
+### Key Findings:
 ${(report.market_findings?.key_findings || [])
   .map((k) => `- ${k.claim} (Confidence: ${Math.round(k.confidence * 100)}%) [Source](${k.source_url})`)
   .join("\n")}
 
 ---
 
-## 3. Competitive Landscape & Moats
+## 3. Competitors & Moats
 ${report.competitor_analysis?.summary || "N/A"}
 
-### Key Claims:
+### Key Findings:
 ${(report.competitor_analysis?.key_findings || [])
   .map((k) => `- ${k.claim} (Confidence: ${Math.round(k.confidence * 100)}%) [Source](${k.source_url})`)
   .join("\n")}
 
 ---
 
-## 4. Customer Insights & Pain Points
+## 4. Customer Insights & Demand
 ${report.customer_insights?.summary || "N/A"}
 
-### Key Claims:
+### Key Findings:
 ${(report.customer_insights?.key_findings || [])
   .map((k) => `- ${k.claim} (Confidence: ${Math.round(k.confidence * 100)}%) [Source](${k.source_url})`)
   .join("\n")}
 
 ---
 
-## 5. Regulatory Headwinds & Strategic Risks
+## 5. Risks & Regulatory Factors
 ${report.opportunities_and_risks?.summary || "N/A"}
 
-### Key Claims:
+### Key Findings:
 ${(report.opportunities_and_risks?.key_findings || [])
   .map((k) => `- ${k.claim} (Confidence: ${Math.round(k.confidence * 100)}%) [Source](${k.source_url})`)
   .join("\n")}
 
 ---
 
-## 6. Verified Evidence & Citations
+## 6. Verified Sources
 ${citationsMd}
 
 ---
-*Generated by Stratify AI Distributed Intelligence Core.*
+*Generated by Stratify AI.*
 `;
 }

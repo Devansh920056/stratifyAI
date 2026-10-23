@@ -5,6 +5,7 @@ Async Database Session & Engine Management using SQLAlchemy 2.x and Psycopg 3.
 from collections.abc import AsyncGenerator
 
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -51,9 +52,6 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
-
-
-from sqlalchemy.exc import SQLAlchemyError
 
 
 async def check_database_health() -> bool:

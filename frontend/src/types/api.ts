@@ -160,7 +160,7 @@ export interface RecommendationItem {
   success_metric: string;
   target_metric_value: string | null;
   status: RecommendationStatusType;
-  evidence_ids: any[];
+  evidence_ids: unknown[];
   created_at: string;
   updated_at: string;
 }
@@ -433,7 +433,7 @@ export interface WebhookDeliveryItem {
   id: string;
   subscription_id: string;
   event_type: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   status_code?: number | null;
   response_body?: string | null;
   error_message?: string | null;
@@ -465,7 +465,7 @@ export interface SemanticMatchItem {
   sector?: string | null;
   similarity_score: number;
   match_percentage: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 
@@ -519,7 +519,7 @@ export interface FusedEvidenceItem {
   divergence_status: "ALIGNED" | "DIVERGENT" | "CONTRADICTORY" | "UNVERIFIED";
   reconciliation_notes?: string | null;
   fiscal_period?: string | null;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   created_at: string;
 }
 

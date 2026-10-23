@@ -2,6 +2,8 @@
 SQLAlchemy Domain Models for Stratify AI.
 """
 
+from backend.app.models.debate import Debate, DebateMessage
+from backend.app.models.decision_evaluation import DecisionEvaluation
 from backend.app.models.enums import (
     AgentDebateRole,
     AlertSeverity,
@@ -21,8 +23,6 @@ from backend.app.models.enums import (
     TimeHorizon,
     VectorEntityType,
 )
-from backend.app.models.debate import Debate, DebateMessage
-from backend.app.models.decision_evaluation import DecisionEvaluation
 from backend.app.models.evidence import Evidence
 from backend.app.models.fused_evidence import FusedEvidence
 from backend.app.models.job import Job

@@ -5,7 +5,7 @@ Bull Thesis vs Bear Antithesis vs Regulatory Auditor vs Principal Arbiter.
 
 import uuid
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any
 
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -13,9 +13,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.db.base import Base, utc_now
 from backend.app.models.enums import (
-    AgentDebateRole,
-    ArbiterVerdict,
-    ArgumentType,
     DebateStatus,
 )
 
@@ -53,18 +50,18 @@ class Debate(Base):
         default=3,
         comment="Total completed argument rounds in this debate",
     )
-    arbiter_verdict: Mapped[Optional[str]] = mapped_column(
+    arbiter_verdict: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         index=True,
         comment="Final verdict: STRONG_BUY, STRATEGIC_ACCUMULATE, NEUTRAL_HOLD, DEFENSIVE_HEDGE, DIVEST_AVOID",
     )
-    conviction_score: Mapped[Optional[float]] = mapped_column(
+    conviction_score: Mapped[float | None] = mapped_column(
         Float,
         nullable=True,
         comment="Arbiter conviction index from 0.00 to 1.00",
     )
-    executive_summary: Mapped[Optional[str]] = mapped_column(
+    executive_summary: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Consolidated synthesis and executive decision briefing",
@@ -89,7 +86,7 @@ class Debate(Base):
     )
 
     # Relationships
-    messages: Mapped[List["DebateMessage"]] = relationship(
+    messages: Mapped[list["DebateMessage"]] = relationship(
         "DebateMessage",
         back_populates="debate",
         cascade="all, delete-orphan",

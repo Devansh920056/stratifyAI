@@ -6,9 +6,8 @@ and issues structured real-time alerts.
 
 import logging
 import uuid
-from typing import Optional
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -157,7 +156,7 @@ class WatchlistService:
     @classmethod
     async def get_watchlist(
         cls, session: AsyncSession, watchlist_id: uuid.UUID
-    ) -> Optional[WatchlistResponse]:
+    ) -> WatchlistResponse | None:
         """
         Retrieves a single watchlist by ID.
         """
@@ -219,7 +218,7 @@ class WatchlistService:
         cls,
         session: AsyncSession,
         signals: list[MarketSignal],
-        target_watchlist_id: Optional[uuid.UUID] = None,
+        target_watchlist_id: uuid.UUID | None = None,
     ) -> list[Alert]:
         """
         Scans given signals against active watchlists.
@@ -375,8 +374,8 @@ class WatchlistService:
         cls,
         session: AsyncSession,
         unread_only: bool = False,
-        severity: Optional[str] = None,
-        watchlist_id: Optional[uuid.UUID] = None,
+        severity: str | None = None,
+        watchlist_id: uuid.UUID | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> AlertListResponse:
@@ -436,7 +435,7 @@ class WatchlistService:
     @classmethod
     async def mark_alert_read(
         cls, session: AsyncSession, alert_id: uuid.UUID, is_read: bool = True
-    ) -> Optional[AlertResponse]:
+    ) -> AlertResponse | None:
         """
         Updates read status of an alert.
         """

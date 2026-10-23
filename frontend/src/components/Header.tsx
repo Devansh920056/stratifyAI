@@ -11,10 +11,12 @@ import {
   Compass,
   FileCheck2,
   Layers,
+  Menu,
   Radio,
   Search,
   Sparkles,
   Target,
+  X,
 } from "lucide-react";
 import { TelemetryModal } from "@/components/TelemetryModal";
 import { SemanticSearchModal } from "@/components/SemanticSearchModal";
@@ -46,6 +48,7 @@ export function Header({
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
   const [isSemanticSearchOpen, setIsSemanticSearchOpen] = useState(false);
   const [isDossierOpen, setIsDossierOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -85,56 +88,49 @@ export function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-4 sm:px-6 py-3.5 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 bg-[#0D1C42]/95 border-b border-[#22396F] px-4 sm:px-6 py-3 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           {/* Brand */}
           <div
             onClick={onNewInquiryClick}
-            className="flex items-center gap-3 cursor-pointer group select-none"
+            className="flex items-center gap-3 cursor-pointer select-none group"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-violet-500 p-0.5 shadow-lg shadow-cyan-500/20 group-hover:shadow-cyan-500/40 transition-all duration-300">
-              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <Layers className="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform duration-300" />
-              </div>
+            <div className="w-9 h-9 rounded-xl bg-[#FCF1D0] flex items-center justify-center shadow-md">
+              <Layers className="w-5 h-5 text-[#010736]" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl font-bold bg-gradient-to-r from-slate-100 via-slate-200 to-cyan-300 bg-clip-text text-transparent">
-                  Stratify AI
-                </span>
-                <span className="px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-400">
-                  Multi-Agent
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                Distributed Market Intelligence Platform
+              <span className="text-lg font-bold text-[#FCF1D0] tracking-tight">
+                Stratify AI
+              </span>
+              <p className="text-[11px] text-slate-400 hidden sm:block">
+                Market Intelligence · India
               </p>
             </div>
           </div>
 
-          {/* Navigation Pill Switcher (Stratify AI 2.0 Core Pillars) */}
-          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-slate-900/90 border border-slate-800/80 backdrop-blur-md">
+          {/* Navigation Switcher */}
+          <nav className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-[#010736] border border-[#22396F]">
             {[
-              { id: "research", label: "Research Core", icon: Compass },
-              { id: "actions", label: "Action Intel", icon: Target },
-              { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-              { id: "pulse", label: "Market Pulse", icon: Radio },
-              { id: "watchlists", label: "Watchlists", icon: Bell },
+              { id: "research", label: "New Research", icon: Compass },
+              { id: "actions", label: "Action Plan", icon: Target },
+              { id: "dashboard", label: "Insights", icon: BarChart3 },
+              { id: "pulse", label: "Market Trends", icon: Radio },
+              { id: "watchlists", label: "Alerts", icon: Bell },
             ].map(({ id, label, icon: Icon }) => {
               const isActive = currentTab === id;
               return (
                 <button
                   key={id}
                   onClick={() => onTabChange(id as NavigationTab)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
                     isActive
-                      ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent"
+                      ? "bg-[#22396F] text-[#FCF1D0] shadow-sm font-semibold"
+                      : "text-slate-300 hover:text-[#FCF1D0] hover:bg-[#142554]"
                   }`}
                 >
                   <Icon
                     className={`w-3.5 h-3.5 ${
-                      isActive ? "text-cyan-400" : "text-slate-400"
+                      isActive ? "text-[#FCF1D0]" : "text-slate-400"
                     }`}
                   />
                   <span>{label}</span>
@@ -144,82 +140,115 @@ export function Header({
           </nav>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2.5 sm:gap-4">
-            {/* Backend Status & Telemetry Button */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Status indicator */}
             <button
               onClick={() => setIsTelemetryOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-xs transition group cursor-pointer"
-              title="Click to view live architecture telemetry"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#010736] border border-[#22396F] text-xs text-slate-300 hover:text-white transition cursor-pointer"
+              title="System Status"
             >
-              <Activity className="w-3.5 h-3.5 text-slate-400 group-hover:text-cyan-400 transition-colors" />
-              <span className="text-slate-400 hidden md:inline">Cluster:</span>
               {isHealthy === null ? (
                 <span className="flex items-center gap-1.5 text-slate-400">
                   <span className="w-2 h-2 rounded-full bg-slate-500 animate-pulse" />
-                  Connecting...
+                  <span className="hidden sm:inline">Connecting</span>
                 </span>
               ) : isHealthy ? (
-                <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
-                  Operational
+                <span className="flex items-center gap-1.5 text-emerald-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="hidden sm:inline">Online</span>
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 text-amber-400 font-medium">
+                <span className="flex items-center gap-1.5 text-amber-400">
                   <span className="w-2 h-2 rounded-full bg-amber-400" />
-                  Disconnected
+                  <span className="hidden sm:inline">Offline</span>
                 </span>
               )}
             </button>
 
-            {/* Semantic Search & Vector Memory Button with Cmd+S hint */}
+            {/* Search */}
             <button
               onClick={() => setIsSemanticSearchOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-cyan-300 hover:text-white bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 hover:border-cyan-500/60 transition-all cursor-pointer shadow-sm shadow-cyan-500/10"
-              title="Semantic Search & Vector Memory (⌘S)"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#FCF1D0] bg-[#010736] hover:bg-[#142554] border border-[#22396F] transition-all cursor-pointer"
+              title="Search (⌘S)"
             >
-              <Brain className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden sm:inline">Semantic Search</span>
-              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-cyan-400 bg-slate-900 border border-cyan-800">
+              <Search className="w-3.5 h-3.5 text-[#FCF1D0]" />
+              <span className="hidden sm:inline">Search</span>
+              <kbd className="hidden lg:inline-block px-1 py-0.2 rounded text-[10px] font-mono text-slate-400 bg-[#0D1C42] border border-[#22396F]">
                 ⌘S
               </kbd>
             </button>
 
-            {/* Stage 11 Executive Intelligence Dossier Button with Cmd+E hint */}
+            {/* Export Report */}
             <button
               onClick={() => setIsDossierOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-emerald-300 hover:text-white bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 hover:border-emerald-500/60 transition-all cursor-pointer shadow-sm shadow-emerald-500/10"
-              title="Executive Intelligence Dossier & SEC Rule 17a-4 Audit (⌘E)"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#010736] bg-[#FCF1D0] hover:bg-[#fae8b4] transition-all cursor-pointer shadow-sm"
+              title="Export Report (⌘E)"
             >
-              <FileCheck2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Executive Dossier</span>
-              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-emerald-400 bg-slate-900 border border-emerald-800">
+              <FileCheck2 className="w-3.5 h-3.5 text-[#010736]" />
+              <span className="hidden sm:inline">Export Report</span>
+              <kbd className="hidden lg:inline-block px-1 py-0.2 rounded text-[10px] font-mono text-[#010736] bg-[#FCF1D0]/70 border border-[#010736]/30">
                 ⌘E
               </kbd>
             </button>
 
-            {/* Past Jobs button with Cmd+K hint */}
+            {/* Past Inquiries */}
             <button
               onClick={onRecentClick}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-slate-600 transition-all cursor-pointer"
-              title="Recent Inquiries (⌘K)"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-[#010736] hover:bg-[#142554] border border-[#22396F] transition-all cursor-pointer"
+              title="History (⌘K)"
             >
               <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span className="hidden sm:inline">Recent Inquiries</span>
-              <kbd className="hidden lg:inline-block px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-700">
-                ⌘K
-              </kbd>
+              <span className="hidden sm:inline">History</span>
             </button>
 
-            {/* New Inquiry Button */}
+            {/* Mobile Hamburger Menu Toggle */}
             <button
-              onClick={onNewInquiryClick}
-              className="flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-600 via-indigo-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 shadow-md shadow-indigo-500/20 hover:shadow-indigo-500/40 transition-all duration-300 active:scale-95 cursor-pointer"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className="md:hidden p-2 rounded-lg bg-[#010736] border border-[#22396F] text-slate-300 hover:text-white transition"
+              aria-label="Toggle mobile navigation menu"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>New Inquiry</span>
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5 text-[#FCF1D0]" />
+              ) : (
+                <Menu className="w-5 h-5 text-slate-300" />
+              )}
             </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Navigation */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden mt-3 pt-3 border-t border-[#22396F] animate-fade-in">
+            <div className="grid grid-cols-2 gap-1.5 pb-1">
+              {[
+                { id: "research", label: "New Research", icon: Compass },
+                { id: "actions", label: "Action Plan", icon: Target },
+                { id: "dashboard", label: "Insights", icon: BarChart3 },
+                { id: "pulse", label: "Market Trends", icon: Radio },
+                { id: "watchlists", label: "Alerts", icon: Bell },
+              ].map(({ id, label, icon: Icon }) => {
+                const isActive = currentTab === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => {
+                      onTabChange(id as NavigationTab);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                      isActive
+                        ? "bg-[#22396F] text-[#FCF1D0] font-semibold"
+                        : "text-slate-300 hover:text-[#FCF1D0] hover:bg-[#142554]"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Architecture & Telemetry Modal */}

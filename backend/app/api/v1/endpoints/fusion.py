@@ -4,7 +4,7 @@ Provides RESTful APIs for querying SEC EDGAR filings, arXiv technical preprints,
 and evaluating commercial vs regulatory claim divergences.
 """
 
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,9 +50,9 @@ async def query_and_fuse_evidence(
 )
 async def list_fused_evidence(
     db: SessionDep,
-    entity: Optional[str] = Query(None, description="Optional entity name filter"),
-    source_type: Optional[str] = Query(None, description="SEC_EDGAR, ARXIV_PREPRINT, etc."),
-    divergence: Optional[str] = Query(None, description="ALIGNED, DIVERGENT, CONTRADICTORY"),
+    entity: str | None = Query(None, description="Optional entity name filter"),
+    source_type: str | None = Query(None, description="SEC_EDGAR, ARXIV_PREPRINT, etc."),
+    divergence: str | None = Query(None, description="ALIGNED, DIVERGENT, CONTRADICTORY"),
     limit: int = Query(50, ge=1, le=100),
 ) -> FusedEvidenceListResponse:
     return await EvidenceFusionService.get_fused_evidence(

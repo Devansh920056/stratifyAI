@@ -4,7 +4,6 @@ Synthesizes grounded, prioritized strategic initiatives from market intelligence
 mapping hypotheses and effort-vs-impact scores directly to verifiable research evidence.
 """
 
-import json
 import logging
 import uuid
 from typing import Any
@@ -176,7 +175,7 @@ class RecommendationService:
         Generates 3 to 4 structured recommendations with calibrated effort/impact scores.
         """
         # Collect context summary
-        summary_text = report.executive_summary if report else f"Inquiry on {job.target_market}: {job.research_question}"
+        summary_snippet = report.executive_summary[:90] if (report and report.executive_summary) else f"inquiry on {job.target_market}"
         top_citations = citations[:4] if citations else []
 
         # Deterministic domain-grounded synthesis tailored to the market inquiry
@@ -187,7 +186,7 @@ class RecommendationService:
             {
                 "title": f"Differentiate Value Proposition in {target_market}",
                 "description": f"Restructure core messaging and feature positioning to counteract prevailing competitive moats highlighted in the inquiry ({question[:60]}...).",
-                "rationale": f"Market findings indicate rising customer acquisition costs and buyer sensitivity in {job.geography}.",
+                "rationale": f"Market findings from {job.geography} indicate: {summary_snippet}. Rising acquisition dynamics necessitate refined positioning.",
                 "estimated_impact": 9,
                 "estimated_effort": 4,
                 "time_horizon": TimeHorizon.IMMEDIATE.value,
@@ -209,7 +208,7 @@ class RecommendationService:
                 "evidence_ids": top_citations[1:3] if len(top_citations) > 2 else top_citations[:1],
             },
             {
-                "title": f"Capture Competitor Churn via Targeted Packaging",
+                "title": "Capture Competitor Churn via Targeted Packaging",
                 "description": f"Introduce transparent modular pricing tiers directly targeting unsatisfied mid-market customers switching away from incumbent solutions in {target_market}.",
                 "rationale": "Competitor analysis demonstrated friction in incumbent pricing models, creating an immediate window for acquisition.",
                 "estimated_impact": 8,
@@ -221,7 +220,7 @@ class RecommendationService:
                 "evidence_ids": top_citations[:2],
             },
             {
-                "title": f"Automate Real-Time Intelligence & Moat Reinforcement",
+                "title": "Automate Real-Time Intelligence & Moat Reinforcement",
                 "description": f"Deploy automated continuous tracking on competitor feature velocity and pricing shifts across {target_market}.",
                 "rationale": "High market dynamism requires continuous signal observation rather than point-in-time assessment.",
                 "estimated_impact": 7,

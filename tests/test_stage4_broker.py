@@ -9,6 +9,7 @@ Verifies:
 6. Broker outage resilience (outbox events remain safely PENDING in DB when broker is unreachable).
 """
 
+from contextlib import suppress
 import json
 import uuid
 
@@ -39,9 +40,6 @@ from backend.app.services.job_service import JobService
 from backend.app.services.outbox_relay import OutboxRelayService
 
 settings = get_settings()
-
-
-from contextlib import suppress
 
 
 @pytest_asyncio.fixture

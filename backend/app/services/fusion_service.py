@@ -5,10 +5,8 @@ and commercial market signals to detect claim contradictions and compute Evidenc
 """
 
 import logging
-import uuid
-from typing import Any, Optional
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.base import utc_now
@@ -36,7 +34,7 @@ class EvidenceFusionService:
         cls,
         session: AsyncSession,
         entity_name: str,
-        topic: Optional[str] = None,
+        topic: str | None = None,
         include_sec: bool = True,
         include_arxiv: bool = True,
         reconcile: bool = True,
@@ -211,7 +209,7 @@ class EvidenceFusionService:
         cls,
         evidence: FusedEvidence,
         signals: list[MarketSignal],
-    ) -> tuple[str, Optional[str]]:
+    ) -> tuple[str, str | None]:
         """
         Cross-examines statutory Item 1A Risk Factors against commercial news headlines.
         """
@@ -233,21 +231,23 @@ class EvidenceFusionService:
                 else:
                     return (
                         DivergenceStatus.DIVERGENT.value,
-                        f"Source Asymmetry: SEC statutory risk disclosure highlights operational and supplier dependencies that are absent from general commercial news coverage.",
+                        "Source Asymmetry: SEC statutory risk disclosure highlights operational and supplier dependencies that are absent from general commercial news coverage.",
                     )
 
             if "recall" in excerpt_lower or "regulatory" in excerpt_lower or "investigation" in excerpt_lower:
                 return (
                     DivergenceStatus.DIVERGENT.value,
-                    f"Regulatory Divergence: Mandatory SEC disclosures emphasize ongoing compliance inquiries and liability caps which represent downside risk factors for strategic planning.",
+                    "Regulatory Divergence: Mandatory SEC disclosures emphasize ongoing compliance inquiries and liability caps which represent downside risk factors for strategic planning.",
                 )
 
-        if evidence.source_type == EvidenceSourceType.ARXIV_PREPRINT.value:
-            if "dendrite" in excerpt_lower or "overhead" in excerpt_lower or "hallucination" in excerpt_lower:
-                return (
-                    DivergenceStatus.DIVERGENT.value,
-                    f"Technical Empirical Constraint: Peer-reviewed preprint indicates physical and latency constraints in laboratory benchmarks before mass commercial deployment.",
-                )
+        if (
+            evidence.source_type == EvidenceSourceType.ARXIV_PREPRINT.value
+            and any(term in excerpt_lower for term in ("dendrite", "overhead", "hallucination"))
+        ):
+            return (
+                DivergenceStatus.DIVERGENT.value,
+                "Technical Empirical Constraint: Peer-reviewed preprint indicates physical and latency constraints in laboratory benchmarks before mass commercial deployment.",
+            )
 
         return (
             DivergenceStatus.ALIGNED.value,
@@ -287,9 +287,9 @@ class EvidenceFusionService:
     async def get_fused_evidence(
         cls,
         session: AsyncSession,
-        entity_name: Optional[str] = None,
-        source_type: Optional[str] = None,
-        divergence_status: Optional[str] = None,
+        entity_name: str | None = None,
+        source_type: str | None = None,
+        divergence_status: str | None = None,
         limit: int = 50,
     ) -> FusedEvidenceListResponse:
         """

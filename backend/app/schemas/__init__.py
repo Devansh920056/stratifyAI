@@ -18,6 +18,28 @@ from backend.app.schemas.debate import (
     DebateSynthesisMatrix,
     EvidenceCitationItem,
 )
+from backend.app.schemas.evaluation import (
+    BacktestFindingItem,
+    BacktestResultResponse,
+    BacktestSimulationRequest,
+    DecisionAnalyticsSummaryResponse,
+    DecisionEvaluationCreateRequest,
+    DecisionEvaluationListResponse,
+    DecisionEvaluationResponse,
+    MetricEvidenceItem,
+)
+from backend.app.schemas.export import (
+    AuditHistoryResponse,
+    DossierExportRequest,
+    DossierExportResponse,
+    GovernanceAuditRecord,
+)
+from backend.app.schemas.fusion import (
+    EvidenceQueryRequest,
+    EvidenceReconciliationSummary,
+    FusedEvidenceItem,
+    FusedEvidenceListResponse,
+)
 from backend.app.schemas.health import HealthResponse, TelemetryResponse
 from backend.app.schemas.job import (
     JobCreateRequest,
@@ -38,23 +60,15 @@ from backend.app.schemas.recommendation import (
     RecommendationResponse,
     RecommendationStatusUpdateRequest,
 )
-from backend.app.schemas.evaluation import (
-    BacktestFindingItem,
-    BacktestResultResponse,
-    BacktestSimulationRequest,
-    DecisionAnalyticsSummaryResponse,
-    DecisionEvaluationCreateRequest,
-    DecisionEvaluationListResponse,
-    DecisionEvaluationResponse,
-    MetricEvidenceItem,
-)
-from backend.app.schemas.export import (
-    AuditHistoryResponse,
-    DossierExportRequest,
-    DossierExportResponse,
-    GovernanceAuditRecord,
-)
 from backend.app.schemas.report import CitationItem, ReportResponse
+from backend.app.schemas.semantic import (
+    SemanticMatchItem,
+    SemanticSearchRequest,
+    SemanticSearchResponse,
+    VectorIndexRequest,
+    VectorIndexResponse,
+    VectorMemoryStatsResponse,
+)
 from backend.app.schemas.task import TaskSummaryResponse
 from backend.app.schemas.watchlist import (
     AlertListResponse,
@@ -64,20 +78,6 @@ from backend.app.schemas.watchlist import (
     WatchlistCreateRequest,
     WatchlistListResponse,
     WatchlistResponse,
-)
-from backend.app.schemas.fusion import (
-    EvidenceQueryRequest,
-    EvidenceReconciliationSummary,
-    FusedEvidenceItem,
-    FusedEvidenceListResponse,
-)
-from backend.app.schemas.semantic import (
-    SemanticMatchItem,
-    SemanticSearchRequest,
-    SemanticSearchResponse,
-    VectorIndexRequest,
-    VectorIndexResponse,
-    VectorMemoryStatsResponse,
 )
 from backend.app.schemas.webhook import (
     WebhookCreateRequest,
@@ -113,6 +113,7 @@ __all__ = [
     "DomainStatItem",
     "DossierExportRequest",
     "DossierExportResponse",
+    "EvidenceCitationItem",
     "EvidenceQueryRequest",
     "EvidenceReconciliationSummary",
     "FusedEvidenceItem",

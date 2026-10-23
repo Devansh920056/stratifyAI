@@ -35,91 +35,91 @@ interface TemplateItem {
 
 const TEMPLATES: TemplateItem[] = [
   {
-    id: "solid-state",
-    name: "Solid-State Batteries",
-    tag: "CleanTech",
+    id: "upi-credit",
+    name: "UPI & Digital Lending Credit",
+    tag: "Fintech & Banking",
     question:
-      "What is the commercialization timeline, manufacturing cost parity with LFP, and supply chain readiness of solid-state lithium batteries through 2030?",
-    market: "Energy Storage & Electric Vehicles",
-    geography: "Global (North America & APAC)",
-    timeRange: "2024-2030",
-    focus: ["Capex Parity", "Electrolyte Durability", "Automaker MOUs", "Yield Rates"],
+      "How will RBI digital lending guidelines, RuPay credit cards on UPI, and default loss guarantee norms impact fintech net interest margins and credit penetration in India through 2028?",
+    market: "Fintech & Digital Banking",
+    geography: "India (Pan-India)",
+    timeRange: "2025-2028",
+    focus: ["RBI Regulations", "UPI Take-Rates", "NPA Ratios", "RuPay Credit Expansion"],
   },
   {
-    id: "supersonic",
-    name: "Supersonic Passenger Flight",
-    tag: "Aerospace",
+    id: "ev-2w-pli",
+    name: "India EV 2W & Battery PLI",
+    tag: "EV & Mobility",
     question:
-      "Assess the market feasibility, fuel economics, and sonic boom regulatory framework for passenger supersonic commercial aircraft.",
-    market: "Commercial Aerospace",
-    geography: "Transatlantic & Transpacific Routes",
-    timeRange: "2025-2032",
-    focus: ["FAA Noise Standards", "Sustainable Aviation Fuel", "Business Class Pricing"],
+      "What is the commercialization timeline, subsidy impact of EMPS/FAME transition, and localized battery cell manufacturing under the PLI scheme for Indian 2W EV OEMs through 2027?",
+    market: "Electric Vehicles & Clean Mobility",
+    geography: "India (Metro & Tier-2/3)",
+    timeRange: "FY 2025-26",
+    focus: ["PLI Scheme Subsidies", "Battery Localization", "TCO Parity", "Charging Infra"],
   },
   {
-    id: "ai-coding",
-    name: "Agentic AI Software Synthesis",
-    tag: "Enterprise AI",
+    id: "quick-commerce",
+    name: "Quick Commerce Dark Stores",
+    tag: "Retail & Consumer",
     question:
-      "Analyze enterprise adoption velocity, security IP concerns, and displacement of legacy offshore development by autonomous AI coding assistants.",
-    market: "Enterprise Software & DevTools",
-    geography: "North America & Europe",
-    timeRange: "2024-2027",
-    focus: ["SOC2 Compliance", "Productivity Gains", "Per-Seat Pricing", "IP Indemnification"],
+      "Analyze dark store unit economics, delivery partner retention costs, and grocery vs non-grocery margin expansion across Blinkit, Zepto, and Swiggy Instamart through 2027.",
+    market: "Quick Commerce & Instant Logistics",
+    geography: "India (Top 20 Metros)",
+    timeRange: "2025-2028",
+    focus: ["Dark Store EBITDA", "Average Order Value (₹)", "Delivery Fleet Costs", "Ad Monetization"],
   },
   {
-    id: "smr-nuclear",
-    name: "Small Modular Nuclear Reactors",
-    tag: "Energy & Infra",
+    id: "semiconductor-ism",
+    name: "India Semiconductor Mission",
+    tag: "DeepTech & OSAT",
     question:
-      "Evaluate private capital deployment, NRC design certification bottlenecks, and data center co-location demand for Gen-IV SMR nuclear reactors.",
-    market: "Nuclear Energy & Hyperscale Infrastructure",
-    geography: "North America & Europe",
-    timeRange: "2025-2035",
-    focus: ["NRC Licensing", "HALEU Enrichment", "PPA Pricing", "Data Center Demand"],
+      "Evaluate the progress of the India Semiconductor Mission (ISM), fab construction milestones across Tata Electronics and Micron, and OSAT packaging supply chain readiness through 2030.",
+    market: "Semiconductor Fabrication & OSAT",
+    geography: "India (Gujarat, Assam, Tamil Nadu)",
+    timeRange: "Vision 2030",
+    focus: ["ISM Fiscal Incentives", "OSAT Packaging", "Industrial Water & Power", "Talent Pipeline"],
   },
   {
-    id: "glp1-therapeutics",
-    name: "GLP-1 Receptor Agonists",
-    tag: "Biotech",
+    id: "renewables-hydrogen",
+    name: "Green Hydrogen & 500 GW Target",
+    tag: "Energy & Infrastructure",
     question:
-      "Examine competitive moats, oral formulation pipelines, and insurance payer reimbursement thresholds for next-generation obesity drugs.",
-    market: "Biopharma & Metabolic Therapeutics",
-    geography: "United States & EU5",
-    timeRange: "2024-2029",
-    focus: ["Payer Coverage", "Oral Bioavailability", "Supply Chain Fill-Finish", "Generic Threat"],
+      "Assess India's target of 500 GW non-fossil power capacity by 2030, ISTS waiver phase-out impact, and National Green Hydrogen Mission bidding economics across Adani, Reliance, and NTPC.",
+    market: "Renewable Energy & Green Power",
+    geography: "India (Pan-India)",
+    timeRange: "Vision 2030",
+    focus: ["Solar & Wind PPA Tariffs", "Green Hydrogen Mission", "Grid Transmission (ISTS)", "Battery Storage BESS"],
   },
   {
-    id: "quantum-computing",
-    name: "Commercial Quantum Advantage",
-    tag: "DeepTech",
+    id: "gcc-enterprise-ai",
+    name: "Indian GCCs & Enterprise AI",
+    tag: "IT & Digital Services",
     question:
-      "Identify the commercial timeline for fault-tolerant logical qubits, post-quantum cryptography migration, and financial optimization use cases.",
-    market: "Quantum Computing & Cryptography",
-    geography: "Global",
-    timeRange: "2025-2032",
-    focus: ["Fault Tolerance", "NIST Post-Quantum Standards", "QPU Co-processing"],
+      "How are Global Capability Centers (GCCs) in India transitioning from cost centers to generative AI innovation hubs, and what is the impact on Tier-1 IT services billing models through 2028?",
+    market: "IT Services & Global Capability Centers",
+    geography: "India (Bengaluru, Hyderabad, Pune, NCR)",
+    timeRange: "2025-2028",
+    focus: ["GCC Expansion", "IT Services Margins", "GenAI Headcount Shift", "Enterprise Billing Rates"],
   },
 ];
 
 const SUGGESTED_FOCUS_TAGS = [
-  "Capex Parity",
-  "Regulatory Moats",
-  "Customer Churn",
-  "Unit Economics",
-  "Gross Margins",
-  "Supply Chain Friction",
-  "Enterprise Sales Cycles",
-  "IP Litigation Risks",
+  "RBI / SEBI Compliance",
+  "PLI Scheme Subsidies",
+  "Unit Economics (₹)",
+  "Dark Store Density",
+  "Tier-2/3 Adoption",
+  "UPI Integration",
+  "Supply Chain Localization",
+  "Export Competitiveness",
 ];
 
-const TIME_RANGES = ["Next 12 Mos", "2024-2027", "2025-2030", "2025-2035"];
+const TIME_RANGES = ["Next 12 Mos", "FY 2025-26", "2025-2028", "Vision 2030"];
 
 export function ResearchForm({ onJobCreated }: ResearchFormProps) {
   const [question, setQuestion] = useState("");
   const [market, setMarket] = useState("");
-  const [geography, setGeography] = useState("Global");
-  const [timeRange, setTimeRange] = useState("2024-2030");
+  const [geography, setGeography] = useState("India (Pan-India)");
+  const [timeRange, setTimeRange] = useState("2025-2028");
   const [focusInput, setFocusInput] = useState("");
   const [focusAreas, setFocusAreas] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -200,16 +200,16 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* ─── Preset Industry Templates ───────────────────────── */}
+      {/* ─── Example Topics ──────────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Lightbulb className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Curated Strategic Templates
+            <Lightbulb className="w-4 h-4 text-[#FCF1D0]" />
+            <span className="text-xs font-semibold text-[#FCF1D0] tracking-wide">
+              Example Market Topics
             </span>
           </div>
-          <span className="text-[11px] text-slate-500">Click any card to auto-populate</span>
+          <span className="text-xs text-slate-400">Click one to get started</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
@@ -220,19 +220,19 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                 key={t.id}
                 type="button"
                 onClick={() => applyTemplate(t)}
-                className={`p-3 rounded-xl text-left border transition-all duration-200 cursor-pointer flex flex-col justify-between h-24 ${
+                className={`p-3 rounded-xl text-left border transition-all duration-200 cursor-pointer flex flex-col justify-between h-22 ${
                   isSelected
-                    ? "bg-cyan-950/60 border-cyan-500/80 shadow-md shadow-cyan-500/20 ring-1 ring-cyan-500/50"
-                    : "glass-card hover:border-slate-600 hover:bg-slate-800/50"
+                    ? "bg-[#22396F] border-[#FCF1D0] text-[#FCF1D0] shadow-sm"
+                    : "bg-[#0D1C42] border-[#22396F] hover:bg-[#142554] text-slate-200"
                 }`}
               >
                 <div className="flex items-center justify-between w-full">
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-900/80 text-cyan-400 border border-slate-700">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-[#010736] text-[#FCF1D0] border border-[#22396F]">
                     {t.tag}
                   </span>
-                  {isSelected && <Check className="w-3.5 h-3.5 text-cyan-400" />}
+                  {isSelected && <Check className="w-3.5 h-3.5 text-[#FCF1D0]" />}
                 </div>
-                <span className="text-xs font-semibold text-slate-200 line-clamp-2 leading-tight">
+                <span className="text-xs font-medium line-clamp-2 leading-tight">
                   {t.name}
                 </span>
               </button>
@@ -241,32 +241,16 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
         </div>
       </div>
 
-      {/* ─── Main Submission Card ────────────────────────────── */}
-      <div className="glass-panel p-6 sm:p-8 rounded-2xl relative shadow-2xl space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <Compass className="w-5 h-5 text-cyan-400" />
-              Configure Research Vector Matrix
-            </h2>
-            <p className="text-xs text-slate-400">
-              The platform decomposes inquiries into 4 orthogonal units: TAM, Moats, Churn, and Regulation.
-            </p>
-          </div>
-
-          {/* Inquiry Strength Meter */}
-          <div className="hidden sm:flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-slate-500">Inquiry Depth:</span>
-              <span className={`font-semibold ${strengthLabel.color}`}>{strengthLabel.text}</span>
-            </div>
-            <div className="w-28 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${strengthLabel.bar}`}
-                style={{ width: `${inquiryStrength}%` }}
-              />
-            </div>
-          </div>
+      {/* ─── Main Inquiry Card ───────────────────────────────── */}
+      <div className="bg-[#0D1C42] border border-[#22396F] p-6 sm:p-8 rounded-2xl shadow-xl space-y-6">
+        <div className="border-b border-[#22396F] pb-4">
+          <h2 className="text-lg font-bold text-[#FCF1D0] flex items-center gap-2">
+            <Compass className="w-5 h-5 text-[#FCF1D0]" />
+            Ask Your Market Question
+          </h2>
+          <p className="text-xs text-slate-300 mt-1">
+            Enter a market, industry, or competitive question below to get verified research.
+          </p>
         </div>
 
         {error && (
@@ -282,11 +266,11 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
             <div className="flex items-center justify-between">
               <label
                 htmlFor="research_question"
-                className="text-xs font-semibold text-slate-300 uppercase tracking-wider"
+                className="text-xs font-medium text-slate-200"
               >
-                Strategic Inquiry / Research Question *
+                What do you want to learn? *
               </label>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-400">
                 {question.length}/500 chars
               </span>
             </div>
@@ -299,8 +283,8 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                 setQuestion(e.target.value);
                 setSelectedTemplateId(null);
               }}
-              placeholder="e.g. What is the commercialization timeline, manufacturing cost parity with LFP, and supply chain readiness of solid-state lithium batteries through 2030?"
-              className="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700/80 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-slate-100 placeholder-slate-500 text-sm transition outline-none resize-none"
+              placeholder="e.g. What is the commercialization timeline, costs, and market readiness of solid-state lithium batteries through 2030?"
+              className="w-full px-4 py-3 rounded-xl bg-[#010736] border border-[#22396F] focus:border-[#FCF1D0] text-white placeholder-slate-400 text-sm transition outline-none resize-none"
             />
           </div>
 
@@ -309,10 +293,10 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
             <div className="space-y-2">
               <label
                 htmlFor="target_market"
-                className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                className="text-xs font-medium text-slate-200 flex items-center gap-1.5"
               >
-                <Target className="w-3.5 h-3.5 text-indigo-400" />
-                Target Market / Sector *
+                <Target className="w-3.5 h-3.5 text-[#FCF1D0]" />
+                Target Market or Industry *
               </label>
               <input
                 id="target_market"
@@ -320,35 +304,35 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                 required
                 value={market}
                 onChange={(e) => setMarket(e.target.value)}
-                placeholder="e.g. Energy Storage & Electric Vehicles"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-slate-100 placeholder-slate-500 text-sm transition outline-none"
+                placeholder="e.g. Electric Vehicles & Energy Storage"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#010736] border border-[#22396F] focus:border-[#FCF1D0] text-white placeholder-slate-400 text-sm transition outline-none"
               />
             </div>
 
             <div className="space-y-2">
               <label
                 htmlFor="geography"
-                className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                className="text-xs font-medium text-slate-200 flex items-center gap-1.5"
               >
-                <Globe className="w-3.5 h-3.5 text-cyan-400" />
-                Geographic Scope
+                <Globe className="w-3.5 h-3.5 text-[#FCF1D0]" />
+                Region / Geographic Scope
               </label>
               <input
                 id="geography"
                 type="text"
                 value={geography}
                 onChange={(e) => setGeography(e.target.value)}
-                placeholder="e.g. Global, North America & APAC, EU5"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-slate-100 placeholder-slate-500 text-sm transition outline-none"
+                placeholder="e.g. Global, North America, Europe"
+                className="w-full px-4 py-2.5 rounded-xl bg-[#010736] border border-[#22396F] focus:border-[#FCF1D0] text-white placeholder-slate-400 text-sm transition outline-none"
               />
             </div>
           </div>
 
           {/* Time Horizon Selector */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Zap className="w-3.5 h-3.5 text-amber-400" />
-              Strategic Time Horizon
+            <label className="text-xs font-medium text-slate-200 flex items-center gap-1.5">
+              <Zap className="w-3.5 h-3.5 text-[#FCF1D0]" />
+              Time Period
             </label>
             <div className="flex flex-wrap gap-2">
               {TIME_RANGES.map((r) => (
@@ -358,8 +342,8 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                   onClick={() => setTimeRange(r)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
                     timeRange === r
-                      ? "bg-cyan-500/20 border-cyan-500 text-cyan-300"
-                      : "bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
+                      ? "bg-[#22396F] border-[#FCF1D0] text-[#FCF1D0]"
+                      : "bg-[#010736] border-[#22396F] text-slate-300 hover:text-white hover:border-slate-500"
                   }`}
                 >
                   {r}
@@ -370,22 +354,22 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                 value={timeRange}
                 onChange={(e) => setTimeRange(e.target.value)}
                 placeholder="Custom (e.g. 2026-2035)"
-                className="px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800 text-xs text-slate-200 placeholder-slate-600 focus:border-cyan-500 outline-none w-36"
+                className="px-3 py-1.5 rounded-lg bg-[#010736] border border-[#22396F] text-xs text-white placeholder-slate-400 focus:border-[#FCF1D0] outline-none w-44"
               />
             </div>
           </div>
 
-          {/* Focus Areas Tag Input */}
+          {/* Focus Areas */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="focus_input"
-                className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"
+                className="text-xs font-medium text-slate-200 flex items-center gap-1.5"
               >
-                <Tag className="w-3.5 h-3.5 text-violet-400" />
-                Target Research Vectors & Focus Areas ({focusAreas.length}/8)
+                <Tag className="w-3.5 h-3.5 text-[#FCF1D0]" />
+                Key Focus Topics (Optional)
               </label>
-              <span className="text-[11px] text-slate-500">Press Enter to add tag</span>
+              <span className="text-xs text-slate-400">Press Enter to add</span>
             </div>
 
             {/* Existing tags */}
@@ -394,7 +378,7 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                 {focusAreas.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-slate-800 border border-slate-700 text-slate-200"
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-[#010736] border border-[#22396F] text-[#FCF1D0]"
                   >
                     <span>{tag}</span>
                     <button
@@ -422,14 +406,14 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                     handleAddFocus();
                   }
                 }}
-                placeholder="Add custom vector (e.g. Supply Chain Bottlenecks)"
-                className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-slate-100 placeholder-slate-500 text-sm transition outline-none"
+                placeholder="Add a topic (e.g. Supply Chain, Regulations, Cost)"
+                className="flex-1 px-4 py-2.5 rounded-xl bg-[#010736] border border-[#22396F] focus:border-[#FCF1D0] text-white placeholder-slate-400 text-sm transition outline-none"
               />
               <button
                 type="button"
                 onClick={() => handleAddFocus()}
                 disabled={!focusInput.trim() || focusAreas.length >= 8}
-                className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 disabled:opacity-40 transition flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-[#22396F] hover:bg-[#2d4c94] border border-[#22396F] text-[#FCF1D0] disabled:opacity-40 transition flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add</span>
@@ -438,7 +422,7 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
 
             {/* Quick Suggestions Chips */}
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-[11px] text-slate-500 mr-1">Suggestions:</span>
+              <span className="text-xs text-slate-400 mr-1">Suggestions:</span>
               {SUGGESTED_FOCUS_TAGS.map((tag) => {
                 const isAdded = focusAreas.includes(tag);
                 return (
@@ -447,10 +431,10 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
                     type="button"
                     disabled={isAdded || focusAreas.length >= 8}
                     onClick={() => handleAddFocus(tag)}
-                    className={`text-[11px] px-2 py-0.5 rounded-md border transition cursor-pointer ${
+                    className={`text-xs px-2.5 py-1 rounded-md border transition cursor-pointer ${
                       isAdded
-                        ? "opacity-30 border-slate-800 text-slate-600 cursor-not-allowed"
-                        : "border-slate-800 bg-slate-900/60 text-slate-400 hover:text-cyan-300 hover:border-slate-700"
+                        ? "opacity-30 border-[#22396F] text-slate-500 cursor-not-allowed"
+                        : "border-[#22396F] bg-[#010736] text-slate-300 hover:text-[#FCF1D0] hover:border-[#FCF1D0]"
                     }`}
                   >
                     + {tag}
@@ -461,26 +445,26 @@ export function ResearchForm({ onJobCreated }: ResearchFormProps) {
           </div>
 
           {/* Submit Action */}
-          <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs text-slate-400 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              <span>Grounded in live web search with anti-hallucination citations.</span>
+          <div className="pt-4 border-t border-[#22396F] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-xs text-slate-300 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#FCF1D0]" />
+              <span>Verified with live sources and real market data.</span>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full sm:w-auto px-7 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-600 via-indigo-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-95 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-7 py-3 rounded-xl text-sm font-bold text-[#010736] bg-[#FCF1D0] hover:bg-[#fae8b4] shadow-md active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Decomposing & Dispatching...</span>
+                  <Loader2 className="w-4 h-4 animate-spin text-[#010736]" />
+                  <span>Researching Market...</span>
                 </>
               ) : (
                 <>
-                  <span>Dispatch 4-Vector Inquiry</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Generate Research Report</span>
+                  <ArrowRight className="w-4 h-4 text-[#010736]" />
                 </>
               )}
             </button>

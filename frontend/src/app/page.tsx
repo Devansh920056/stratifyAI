@@ -11,65 +11,10 @@ import { DashboardWorkspace } from "@/components/DashboardWorkspace";
 import { MarketPulseWorkspace } from "@/components/MarketPulseWorkspace";
 import { WatchlistsWorkspace } from "@/components/WatchlistsWorkspace";
 import { JobDetailResponse } from "@/types/api";
-import {
-  AlertTriangle,
-  ArrowRight,
-  BarChart3,
-  Bell,
-  CheckCircle2,
-  Clock,
-  Compass,
-  Cpu,
-  Database,
-  ExternalLink,
-  FileCheck,
-  FileText,
-  Network,
-  Radio,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 // ─── View state machine ──────────────────────────────────────
 type ViewMode = "form" | "tracker" | "report";
-
-// ─── Platform invariant cards ────────────────────────────────
-const INVARIANTS = [
-  {
-    icon: Network,
-    title: "RabbitMQ Broker",
-    color: "text-cyan-400",
-    bg: "bg-cyan-500/10 border-cyan-500/20",
-    description:
-      "Publisher confirms, durable delivery (mode=2), QoS prefetch, Dead Letter Queue routing with 3× bounded retries.",
-  },
-  {
-    icon: Database,
-    title: "Atomic Outbox & OCC",
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10 border-indigo-500/20",
-    description:
-      "PostgreSQL 16 with Optimistic Concurrency Control, ACID transaction isolation, and idempotent UNIQUE constraints.",
-  },
-  {
-    icon: Cpu,
-    title: "AI Intelligence Synthesis",
-    color: "text-violet-400",
-    bg: "bg-violet-500/10 border-violet-500/20",
-    description:
-      "Grounded factual extraction with structured JSON synthesis, confidence scoring, and strict anti-hallucination citation guardrails — zero API cost.",
-  },
-  {
-    icon: FileCheck,
-    title: "Live Web Evidence",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10 border-emerald-500/20",
-    description:
-      "Real-time web search with UTM stripping, URL canonicalization, and score-based deduplication for zero phantom citations.",
-  },
-];
 
 export default function Home() {
   const [currentTab, setCurrentTab] = useState<NavigationTab>("research");
@@ -118,76 +63,26 @@ export default function Home() {
             {viewMode === "form" && (
               <div className="space-y-14 animate-fade-in">
                 {/* Hero */}
-                <div className="text-center max-w-3xl mx-auto space-y-5 pt-4">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 shadow-sm">
-                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Autonomous Market Intelligence Matrix — 4-Vector Research</span>
+                <div className="text-center max-w-2xl mx-auto space-y-4 pt-2">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium bg-[#0D1C42] border border-[#22396F] text-[#FCF1D0]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#FCF1D0]" />
+                    <span>India First · Strategic Market Intelligence</span>
                   </div>
 
-                  <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-tight text-slate-100">
-                    Deep Strategic Intelligence,{" "}
-                    <span
-                      className="bg-clip-text text-transparent"
-                      style={{
-                        backgroundImage: "linear-gradient(135deg, #22d3ee, #818cf8, #a78bfa)",
-                      }}
-                    >
-                      Grounded in Evidence
+                  <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight text-white">
+                    Understand Indian Markets,{" "}
+                    <span className="text-[#FCF1D0]">
+                      Fast and Simple
                     </span>
                   </h1>
 
-                  <p className="text-base text-slate-400 leading-relaxed max-w-2xl mx-auto">
-                    Stratify AI decomposes high-stakes market questions into 4 concurrent research
-                    vectors — macro sizing, competitive moats, customer churn, and regulatory
-                    headwinds — backed by verifiable real web sources.
+                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                    Ask any question about Indian industries, competitors, RBI/SEBI regulations, or market trends. Get clear, verified insights and step-by-step action plans in seconds.
                   </p>
-
-                  {/* Quick stats bar */}
-                  <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs font-medium text-slate-400">
-                    <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      69 automated tests passing
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      Live real-time web search
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      Anti-hallucination guardrails
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      Markdown report export
-                    </span>
-                  </div>
                 </div>
 
                 {/* Research Input Form */}
                 <ResearchForm onJobCreated={handleJobCreated} />
-
-                {/* Platform Architecture Invariants */}
-                <div className="pt-4 border-t border-slate-900">
-                  <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-500 mb-8">
-                    Distributed Systems Guarantees
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {INVARIANTS.map(({ icon: Icon, title, color, bg, description }) => (
-                      <div
-                        key={title}
-                        className="glass-panel p-5 rounded-xl space-y-3 hover:border-slate-700 transition-all duration-200 group"
-                      >
-                        <div
-                          className={`w-10 h-10 rounded-lg ${bg} border flex items-center justify-center transition-transform duration-200 group-hover:scale-110`}
-                        >
-                          <Icon className={`w-5 h-5 ${color}`} />
-                        </div>
-                        <h3 className="text-sm font-semibold text-slate-100">{title}</h3>
-                        <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </div>
             )}
 
@@ -196,10 +91,10 @@ export default function Home() {
               <div className="space-y-6 animate-fade-in">
                 <Breadcrumbs
                   items={[
-                    { label: "Inquiry", onClick: handleNewInquiry },
-                    { label: "Sub-Task Execution", active: true },
+                    { label: "New Research", onClick: handleNewInquiry },
+                    { label: "Research in Progress", active: true },
                     ...(activeJob.has_report
-                      ? [{ label: "Executive Report", onClick: () => setViewMode("report") }]
+                      ? [{ label: "Research Report", onClick: () => setViewMode("report") }]
                       : []),
                   ]}
                 />
@@ -218,9 +113,9 @@ export default function Home() {
               <div className="space-y-6 animate-fade-in">
                 <Breadcrumbs
                   items={[
-                    { label: "Inquiry", onClick: handleNewInquiry },
-                    { label: "Sub-Task Execution", onClick: () => setViewMode("tracker") },
-                    { label: "Executive Report", active: true },
+                    { label: "New Research", onClick: handleNewInquiry },
+                    { label: "Research in Progress", onClick: () => setViewMode("tracker") },
+                    { label: "Research Report", active: true },
                   ]}
                 />
                 <ReportViewer
@@ -281,29 +176,28 @@ export default function Home() {
 
       {/* ─── Footer ────────────────────────────────────────── */}
       <footer
-        className="mt-auto border-t px-6 py-5 text-xs text-slate-500"
-        style={{ borderColor: "rgba(30,41,59,0.6)", background: "rgba(8,12,20,0.85)" }}
+        className="mt-auto border-t px-6 py-6 text-xs text-slate-400"
+        style={{ borderColor: "#22396F", background: "#010736" }}
       >
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="font-semibold text-slate-300">Stratify AI 2.0 Market Intelligence Core</span>
-            <span
-              className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold"
-              style={{
-                background: "rgba(6,182,212,0.1)",
-                border: "1px solid rgba(6,182,212,0.3)",
-                color: "#22d3ee",
-              }}
-            >
-              v2.0.0-alpha
-            </span>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[#FCF1D0]">Stratify AI</span>
+            <span className="text-slate-400">— Clear & Simple Market Intelligence</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-5">
-            <Dot color="#34d399" label="PostgreSQL 16 · Port 5434" />
-            <Dot color="#22d3ee" label="RabbitMQ 3.13 · AMQP 5672" />
-            <Dot color="#a78bfa" label="Gemini / Smart Extractor" />
-            <Dot color="#f59e0b" label="DuckDuckGo Live Search" />
+          <div className="flex flex-wrap items-center gap-5 text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FCF1D0]" />
+              <span>Real-Time Market Data</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FCF1D0]" />
+              <span>Verified Facts</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FCF1D0]" />
+              <span>Actionable Strategy</span>
+            </span>
           </div>
         </div>
       </footer>
@@ -321,18 +215,18 @@ interface BreadcrumbItem {
 
 function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   return (
-    <nav className="flex items-center gap-1.5 text-xs text-slate-400 flex-wrap">
+    <nav className="flex items-center gap-2 text-xs text-slate-400 flex-wrap">
       {items.map((item, idx) => (
         <React.Fragment key={item.label}>
-          {idx > 0 && <span className="text-slate-700">/</span>}
+          {idx > 0 && <span className="text-slate-600">/</span>}
           {item.active ? (
-            <span className="font-medium" style={{ color: "#22d3ee" }}>
+            <span className="font-semibold text-[#FCF1D0]">
               {item.label}
             </span>
           ) : (
             <button
               onClick={item.onClick}
-              className="hover:text-slate-200 transition-colors underline underline-offset-4 decoration-slate-700 hover:decoration-slate-500"
+              className="hover:text-[#FCF1D0] transition-colors"
             >
               {item.label}
             </button>
@@ -340,14 +234,5 @@ function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
         </React.Fragment>
       ))}
     </nav>
-  );
-}
-
-function Dot({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
-      <span>{label}</span>
-    </span>
   );
 }

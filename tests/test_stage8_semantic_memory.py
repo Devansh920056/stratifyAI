@@ -28,7 +28,6 @@ from backend.app.models.job import Job
 from backend.app.models.market_signal import MarketSignal
 from backend.app.models.recommendation import Recommendation
 from backend.app.models.vector_memory import VectorEmbedding
-from backend.app.schemas.semantic import SemanticSearchRequest
 from backend.app.services.vector_service import DEFAULT_DIMENSIONS, VectorMemoryService
 
 

@@ -83,9 +83,9 @@ export function DashboardWorkspace({
         if (mounted) {
           setDashboard(data);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (mounted) {
-          setError(err?.message || "Failed to load dashboard data.");
+          setError(err instanceof Error ? err.message : "Failed to load dashboard data.");
         }
       } finally {
         if (mounted) setIsLoading(false);
@@ -106,18 +106,13 @@ export function DashboardWorkspace({
   return (
     <div className="space-y-8 animate-fade-in">
       {/* ─── Top Control Bar ───────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#22396F]">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 mb-2">
-            <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Stage 3 · Real-Data Visualizations & Competitive Moats</span>
-          </div>
-          <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-            Market Intelligence Dashboard
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Market Insights & Overview
           </h1>
-          <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Grounded visual intelligence. Strictly separating empirical citations from inferred model projections
-            with zero fabricated charts.
+          <p className="text-sm text-slate-300 mt-1 max-w-2xl">
+            Clear visual charts and competitor comparisons based on real verified source data.
           </p>
         </div>
 
@@ -130,7 +125,7 @@ export function DashboardWorkspace({
                 const found = recentJobs.find((j) => j.id === e.target.value);
                 if (found) onSelectJob(found);
               }}
-              className="bg-slate-900 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-cyan-500 cursor-pointer"
+              className="bg-[#0D1C42] border border-[#22396F] text-[#FCF1D0] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#FCF1D0] cursor-pointer"
             >
               {recentJobs.map((j) => (
                 <option key={j.id} value={j.id}>
@@ -143,9 +138,9 @@ export function DashboardWorkspace({
       </div>
 
       {isLoading && (
-        <div className="glass-panel p-12 rounded-2xl border border-slate-800 flex flex-col items-center justify-center space-y-3">
-          <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
-          <p className="text-xs text-slate-400">Synthesizing visual intelligence metrics...</p>
+        <div className="bg-[#0D1C42] p-12 rounded-2xl border border-[#22396F] flex flex-col items-center justify-center space-y-3">
+          <Loader2 className="w-8 h-8 text-[#FCF1D0] animate-spin" />
+          <p className="text-xs text-slate-300">Loading market charts and metrics...</p>
         </div>
       )}
 
@@ -157,17 +152,17 @@ export function DashboardWorkspace({
       )}
 
       {!activeJob && !isLoading && (
-        <div className="glass-panel p-12 rounded-2xl border border-slate-800 text-center space-y-4">
-          <Compass className="w-12 h-12 text-slate-500 mx-auto" />
-          <h3 className="text-base font-semibold text-slate-200">No Active Inquiry Selected</h3>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Select or launch a market research inquiry to populate the visual intelligence dashboard.
+        <div className="bg-[#0D1C42] p-12 rounded-2xl border border-[#22396F] text-center space-y-4">
+          <Compass className="w-12 h-12 text-[#FCF1D0]/60 mx-auto" />
+          <h3 className="text-base font-semibold text-white">No Research Selected</h3>
+          <p className="text-xs text-slate-300 max-w-md mx-auto">
+            Start a new research question to view market charts and competitor insights.
           </p>
           <button
             onClick={onNewInquiry}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-[#010736] bg-[#FCF1D0] hover:brightness-105 transition cursor-pointer"
           >
-            <span>Launch Research Inquiry</span>
+            <span>Start Research</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -179,63 +174,63 @@ export function DashboardWorkspace({
               KPI SUMMARY METRICS
           ══════════════════════════════════════════════════ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div className="bg-[#0D1C42] p-5 rounded-2xl border border-[#22396F] space-y-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Grounded Confidence
+                Confidence Score
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-cyan-300">
+                <span className="text-3xl font-extrabold text-[#FCF1D0]">
                   {Math.round(dashboard.overall_confidence * 100)}%
                 </span>
-                <span className="text-xs text-emerald-400 font-medium">Multi-Vector Verified</span>
+                <span className="text-xs text-emerald-400 font-medium">Verified</span>
               </div>
-              <p className="text-[11px] text-slate-500">
-                Calibrated across 4 independent research dimensions
+              <p className="text-[11px] text-slate-400">
+                Overall confidence across all research topics
               </p>
             </div>
 
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div className="bg-[#0D1C42] p-5 rounded-2xl border border-[#22396F] space-y-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Empirical Facts
+                Verified Facts
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-extrabold text-emerald-400">
                   {dashboard.empirical_facts_count}
                 </span>
-                <span className="text-xs text-slate-400">Citations Linked</span>
+                <span className="text-xs text-slate-400">Linked</span>
               </div>
-              <p className="text-[11px] text-slate-500">
-                100% verified against external web citations
+              <p className="text-[11px] text-slate-400">
+                Backed by real external sources
               </p>
             </div>
 
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div className="bg-[#0D1C42] p-5 rounded-2xl border border-[#22396F] space-y-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Model Projections
+                Trends & Forecasts
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-indigo-400">
+                <span className="text-3xl font-extrabold text-[#FCF1D0]">
                   {dashboard.inferred_projections_count}
                 </span>
-                <span className="text-xs text-slate-400">Synthesized</span>
+                <span className="text-xs text-slate-400">Analyzed</span>
               </div>
-              <p className="text-[11px] text-slate-500">
-                Clearly isolated from empirical raw data
+              <p className="text-[11px] text-slate-400">
+                Strategic projections and forward outlook
               </p>
             </div>
 
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-2">
+            <div className="bg-[#0D1C42] p-5 rounded-2xl border border-[#22396F] space-y-2">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Source Diversity
+                Sources Analyzed
               </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-violet-400">
+                <span className="text-3xl font-extrabold text-[#FCF1D0]">
                   {dashboard.source_domains.length}
                 </span>
-                <span className="text-xs text-slate-400">Unique Domains</span>
+                <span className="text-xs text-slate-400">Web Domains</span>
               </div>
-              <p className="text-[11px] text-slate-500">
-                {dashboard.total_citations} external citations deduplicated
+              <p className="text-[11px] text-slate-400">
+                {dashboard.total_citations} individual citations referenced
               </p>
             </div>
           </div>
@@ -245,49 +240,49 @@ export function DashboardWorkspace({
           ══════════════════════════════════════════════════ */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Visual 1: Competitive Moat Matrix */}
-            <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            <div className="bg-[#0D1C42] p-6 rounded-2xl border border-[#22396F] space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-cyan-400" />
-                  <h3 className="text-sm font-semibold text-slate-200">
-                    Competitive Moat Matrix (2D Positioning)
+                  <Target className="w-4 h-4 text-[#FCF1D0]" />
+                  <h3 className="text-sm font-semibold text-white">
+                    Competitor Market Map
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-400">
-                  VECTOR 2 GROUNDED
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#010736] border border-[#22396F] text-[#FCF1D0]">
+                  Competitor Matrix
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Scatter analysis of key entities plotting <strong>Technological Moat (X)</strong> against{" "}
-                <strong>Pricing Power (Y)</strong>. Hover over nodes to inspect details.
+              <p className="text-xs text-slate-300">
+                Compares key companies on <strong>Product Strength (X)</strong> against{" "}
+                <strong>Pricing Power (Y)</strong>. Hover over any company to see details.
               </p>
 
               {/* Responsive SVG Scatter Plot */}
-              <div className="relative w-full h-80 rounded-xl bg-slate-900/90 border border-slate-800/80 p-4 overflow-hidden">
+              <div className="relative w-full h-80 rounded-xl bg-[#010736] border border-[#22396F] p-4 overflow-hidden">
                 <svg viewBox="0 0 400 300" className="w-full h-full">
                   {/* Grid Lines */}
-                  <line x1="200" y1="20" x2="200" y2="280" stroke="rgba(51, 65, 85, 0.4)" strokeDasharray="4 4" />
-                  <line x1="20" y1="150" x2="380" y2="150" stroke="rgba(51, 65, 85, 0.4)" strokeDasharray="4 4" />
+                  <line x1="200" y1="20" x2="200" y2="280" stroke="#22396F" strokeDasharray="4 4" />
+                  <line x1="20" y1="150" x2="380" y2="150" stroke="#22396F" strokeDasharray="4 4" />
 
                   {/* Quadrant Labels */}
-                  <text x="35" y="45" fill="rgba(148, 163, 184, 0.5)" fontSize="10" fontFamily="sans-serif">
+                  <text x="35" y="45" fill="#94a3b8" fontSize="10" fontFamily="sans-serif">
                     Price Leaders
                   </text>
-                  <text x="260" y="45" fill="rgba(34, 211, 238, 0.7)" fontSize="10" fontWeight="bold" fontFamily="sans-serif">
+                  <text x="260" y="45" fill="#FCF1D0" fontSize="10" fontWeight="bold" fontFamily="sans-serif">
                     Market Dominators
                   </text>
-                  <text x="35" y="270" fill="rgba(148, 163, 184, 0.4)" fontSize="10" fontFamily="sans-serif">
+                  <text x="35" y="270" fill="#64748b" fontSize="10" fontFamily="sans-serif">
                     Challengers
                   </text>
-                  <text x="260" y="270" fill="rgba(167, 139, 250, 0.7)" fontSize="10" fontWeight="bold" fontFamily="sans-serif">
-                    Niche Innovators
+                  <text x="260" y="270" fill="#FCF1D0" opacity="0.8" fontSize="10" fontWeight="bold" fontFamily="sans-serif">
+                    Specialized Leaders
                   </text>
 
                   {/* Axis Labels */}
-                  <text x="200" y="295" textAnchor="middle" fill="rgba(148, 163, 184, 0.7)" fontSize="10">
-                    Technological Moat →
+                  <text x="200" y="295" textAnchor="middle" fill="#94a3b8" fontSize="10">
+                    Product Strength →
                   </text>
-                  <text x="12" y="150" textAnchor="middle" transform="rotate(-90 12 150)" fill="rgba(148, 163, 184, 0.7)" fontSize="10">
+                  <text x="12" y="150" textAnchor="middle" transform="rotate(-90 12 150)" fill="#94a3b8" fontSize="10">
                     Pricing Power →
                   </text>
 
@@ -310,7 +305,7 @@ export function DashboardWorkspace({
                           cx={cx}
                           cy={cy}
                           r={isHovered ? 16 : 10}
-                          fill={idx === 0 ? "rgba(34, 211, 238, 0.2)" : "rgba(129, 140, 248, 0.2)"}
+                          fill={idx === 0 ? "rgba(252, 241, 208, 0.25)" : "rgba(34, 57, 111, 0.4)"}
                           className="animate-pulse"
                         />
                         {/* Core circle */}
@@ -318,15 +313,15 @@ export function DashboardWorkspace({
                           cx={cx}
                           cy={cy}
                           r={isHovered ? 8 : 6}
-                          fill={idx === 0 ? "#22d3ee" : idx === 1 ? "#a78bfa" : idx === 2 ? "#fbbf24" : "#94a3b8"}
-                          stroke="#0f172a"
+                          fill={idx === 0 ? "#FCF1D0" : idx === 1 ? "#cbd5e1" : "#94a3b8"}
+                          stroke="#010736"
                           strokeWidth="2"
                         />
                         {/* Entity label */}
                         <text
                           x={cx + 10}
                           y={cy + 4}
-                          fill={isHovered ? "#f8fafc" : "#cbd5e1"}
+                          fill={isHovered ? "#FCF1D0" : "#cbd5e1"}
                           fontSize="9"
                           fontWeight={isHovered ? "bold" : "normal"}
                         >
@@ -339,40 +334,40 @@ export function DashboardWorkspace({
 
                 {/* Hover Tooltip Overlay */}
                 {hoveredPoint && (
-                  <div className="absolute bottom-3 left-3 right-3 p-3 rounded-lg bg-slate-950/95 border border-cyan-500/40 shadow-xl backdrop-blur-md animate-fade-in text-xs flex items-center justify-between gap-4">
+                  <div className="absolute bottom-3 left-3 right-3 p-3 rounded-lg bg-[#0D1C42] border border-[#22396F] shadow-xl backdrop-blur-md animate-fade-in text-xs flex items-center justify-between gap-4">
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
-                        <strong className="text-slate-100">{hoveredPoint.name}</strong>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30">
+                        <strong className="text-white">{hoveredPoint.name}</strong>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#010736] text-[#FCF1D0] border border-[#22396F]">
                           {hoveredPoint.quadrant}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-300">{hoveredPoint.summary}</p>
                     </div>
                     <div className="text-right flex-shrink-0 font-mono text-[11px] text-slate-400">
-                      <div>Tech Moat: <span className="text-cyan-400 font-bold">{hoveredPoint.technological_moat}%</span></div>
-                      <div>Pricing: <span className="text-indigo-400 font-bold">{hoveredPoint.pricing_power}%</span></div>
+                      <div>Product: <span className="text-[#FCF1D0] font-bold">{hoveredPoint.technological_moat}%</span></div>
+                      <div>Pricing: <span className="text-slate-200 font-bold">{hoveredPoint.pricing_power}%</span></div>
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Visual 2: 4-Vector Risk & Confidence Radar */}
-            <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            {/* Visual 2: Key Market Drivers */}
+            <div className="bg-[#0D1C42] p-6 rounded-2xl border border-[#22396F] space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Compass className="w-4 h-4 text-violet-400" />
-                  <h3 className="text-sm font-semibold text-slate-200">
-                    4-Vector Risk & Confidence Matrix
+                  <Compass className="w-4 h-4 text-[#FCF1D0]" />
+                  <h3 className="text-sm font-semibold text-white">
+                    Key Market Drivers
                   </h3>
                 </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-violet-950/80 border border-violet-500/30 text-violet-400">
-                  MULTI-DIMENSION
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#010736] border border-[#22396F] text-[#FCF1D0]">
+                  Summary
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Evaluation across Macro Headwinds, Competitive Durability, Customer Pricing, and Regulatory Friction.
+              <p className="text-xs text-slate-300">
+                Risk and confidence assessment across market size, competitors, customer demand, and regulations.
               </p>
 
               {/* Vector Cards List */}
@@ -380,37 +375,37 @@ export function DashboardWorkspace({
                 {dashboard.vector_scores.map((vs) => (
                   <div
                     key={vs.vector_key}
-                    className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 hover:border-slate-700 transition"
+                    className="p-3.5 rounded-xl bg-[#010736] border border-[#22396F] space-y-2 hover:border-[#FCF1D0]/40 transition"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-200">{vs.label}</span>
+                      <span className="text-xs font-semibold text-white">{vs.label}</span>
                       <div className="flex items-center gap-2">
                         <span
                           className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded ${
                             vs.risk_level === "HIGH"
                               ? "bg-red-950/80 text-red-400 border border-red-500/30"
                               : vs.risk_level === "MEDIUM"
-                              ? "bg-amber-950/80 text-amber-400 border border-amber-500/30"
-                              : "bg-emerald-950/80 text-emerald-400 border border-emerald-500/30"
+                              ? "bg-amber-950/80 text-amber-300 border border-amber-500/30"
+                              : "bg-emerald-950/80 text-emerald-300 border border-emerald-500/30"
                           }`}
                         >
                           {vs.risk_level} RISK
                         </span>
-                        <span className="text-xs font-mono font-bold text-cyan-400">
+                        <span className="text-xs font-mono font-bold text-[#FCF1D0]">
                           {Math.round(vs.confidence * 100)}%
                         </span>
                       </div>
                     </div>
 
                     {/* Confidence Bar */}
-                    <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                    <div className="w-full h-1.5 rounded-full bg-[#0D1C42] overflow-hidden border border-[#22396F]/50">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500"
+                        className="h-full rounded-full bg-[#FCF1D0]"
                         style={{ width: `${vs.confidence * 100}%` }}
                       />
                     </div>
 
-                    <p className="text-[11px] text-slate-400 leading-relaxed truncate">
+                    <p className="text-[11px] text-slate-300 leading-relaxed truncate">
                       {vs.summary_snippet}
                     </p>
                   </div>
@@ -422,28 +417,28 @@ export function DashboardWorkspace({
           {/* ══════════════════════════════════════════════════
               ROW 2: EMPIRICAL VS INFERRED CLAIMS INSPECTOR
           ══════════════════════════════════════════════════ */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div className="bg-[#0D1C42] p-6 rounded-2xl border border-[#22396F] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-semibold text-slate-200">
-                    Grounded Findings Classification (Empirical vs. Inferred)
+                  <h3 className="text-sm font-semibold text-white">
+                    Facts & Key Findings
                   </h3>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Anti-hallucination guardrail: Every finding is labeled as an <strong>Empirical Verified Fact</strong> (backed by citation) or an <strong>Inferred Model Projection</strong>.
+                <p className="text-xs text-slate-300">
+                  Every finding is checked against real sources so you know what is verified.
                 </p>
               </div>
 
               {/* Filter Tabs */}
-              <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800">
+              <div className="flex items-center gap-1.5 bg-[#010736] p-1 rounded-xl border border-[#22396F]">
                 <button
                   onClick={() => setClaimFilter("ALL")}
                   className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
                     claimFilter === "ALL"
-                      ? "bg-slate-800 text-slate-100 shadow"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? "bg-[#22396F] text-[#FCF1D0]"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
                   All ({dashboard.claims_breakdown.length})
@@ -452,8 +447,8 @@ export function DashboardWorkspace({
                   onClick={() => setClaimFilter("EMPIRICAL")}
                   className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
                     claimFilter === "EMPIRICAL"
-                      ? "bg-emerald-950/80 text-emerald-300 border border-emerald-500/40"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? "bg-[#22396F] text-emerald-300"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
                   Verified Facts ({dashboard.empirical_facts_count})
@@ -462,11 +457,11 @@ export function DashboardWorkspace({
                   onClick={() => setClaimFilter("INFERRED")}
                   className={`px-3 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
                     claimFilter === "INFERRED"
-                      ? "bg-indigo-950/80 text-indigo-300 border border-indigo-500/40"
-                      : "text-slate-400 hover:text-slate-200"
+                      ? "bg-[#22396F] text-[#FCF1D0]"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  Model Projections ({dashboard.inferred_projections_count})
+                  Forecasts ({dashboard.inferred_projections_count})
                 </button>
               </div>
             </div>
@@ -476,7 +471,7 @@ export function DashboardWorkspace({
               {filteredClaims.map((claim, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-700 transition"
+                  className="p-4 rounded-xl bg-[#010736] border border-[#22396F] flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-[#FCF1D0]/30 transition"
                 >
                   <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2">
@@ -486,12 +481,12 @@ export function DashboardWorkspace({
                           Verified Fact
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-950/80 border border-indigo-500/40 text-indigo-300">
-                          <Cpu className="w-3 h-3 text-indigo-400" />
-                          Model Projection
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#0D1C42] border border-[#22396F] text-[#FCF1D0]">
+                          <Cpu className="w-3 h-3 text-[#FCF1D0]" />
+                          Forecast
                         </span>
                       )}
-                      <span className="text-[10px] font-mono uppercase text-slate-500">
+                      <span className="text-[10px] font-mono uppercase text-slate-400">
                         {claim.vector_type.replace("_", " ")}
                       </span>
                     </div>
@@ -503,9 +498,9 @@ export function DashboardWorkspace({
                       href={claim.source_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:text-cyan-300 hover:underline flex-shrink-0"
+                      className="inline-flex items-center gap-1 text-xs text-[#FCF1D0] hover:underline flex-shrink-0"
                     >
-                      <span>View Citation</span>
+                      <span>View Source</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
@@ -517,16 +512,16 @@ export function DashboardWorkspace({
           {/* ══════════════════════════════════════════════════
               ROW 3: SOURCE DOMAIN DISTRIBUTION
           ══════════════════════════════════════════════════ */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div className="bg-[#0D1C42] p-6 rounded-2xl border border-[#22396F] space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-cyan-400" />
-                <h3 className="text-sm font-semibold text-slate-200">
-                  External Evidence & Source Provenance Distribution
+                <Globe className="w-4 h-4 text-[#FCF1D0]" />
+                <h3 className="text-sm font-semibold text-white">
+                  Sources & Citations
                 </h3>
               </div>
               <span className="text-xs font-mono text-slate-400">
-                Total Citations: {dashboard.total_citations}
+                Total Sources: {dashboard.total_citations}
               </span>
             </div>
 
@@ -534,19 +529,19 @@ export function DashboardWorkspace({
               {dashboard.source_domains.map((sd, idx) => (
                 <div
                   key={idx}
-                  className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2"
+                  className="p-4 rounded-xl bg-[#010736] border border-[#22396F] space-y-2"
                 >
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-slate-200 truncate">{sd.domain}</span>
-                    <span className="font-mono text-cyan-400 font-bold">{sd.percentage}%</span>
+                    <span className="font-mono text-[#FCF1D0] font-bold">{sd.percentage}%</span>
                   </div>
-                  <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                  <div className="w-full h-1.5 rounded-full bg-[#0D1C42] overflow-hidden border border-[#22396F]/50">
                     <div
-                      className="h-full rounded-full bg-cyan-400"
+                      className="h-full rounded-full bg-[#FCF1D0]"
                       style={{ width: `${sd.percentage}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-slate-500 font-mono">
+                  <p className="text-[10px] text-slate-400 font-mono">
                     {sd.count} verified citation{sd.count > 1 ? "s" : ""}
                   </p>
                 </div>

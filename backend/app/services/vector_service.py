@@ -5,13 +5,10 @@ cross-inquiry intelligence retrieval, entity indexing, and grounded AI insight s
 """
 
 import hashlib
-import json
 import logging
 import math
 import re
 import time
-import uuid
-from typing import Any, Optional
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -314,8 +311,8 @@ class VectorMemoryService:
         cls,
         session: AsyncSession,
         query: str,
-        entity_types: Optional[list[str]] = None,
-        sector: Optional[str] = None,
+        entity_types: list[str] | None = None,
+        sector: str | None = None,
         min_similarity: float = 0.20,
         limit: int = 10,
         synthesize_insight: bool = True,

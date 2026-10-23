@@ -4,7 +4,7 @@ Pydantic Schemas for Semantic Search, Vector Memory, and AI Insight Synthesis.
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,11 +16,11 @@ class SemanticSearchRequest(BaseModel):
         max_length=500,
         description="Natural language search query e.g. 'Solid-state battery scaling bottlenecks'",
     )
-    entity_types: Optional[list[str]] = Field(
+    entity_types: list[str] | None = Field(
         default=None,
         description="Optional filter: MARKET_SIGNAL, RECOMMENDATION, RESEARCH_FINDING, RESEARCH_REPORT",
     )
-    sector: Optional[str] = Field(
+    sector: str | None = Field(
         default=None,
         description="Optional market sector filter e.g. 'Climate Tech'",
     )
@@ -50,7 +50,7 @@ class SemanticMatchItem(BaseModel):
     entity_id: uuid.UUID = Field(..., description="Referenced entity UUID")
     title: str = Field(..., description="Entity headline or title")
     content_text: str = Field(..., description="Embedded textual excerpt")
-    sector: Optional[str] = Field(default=None, description="Market sector")
+    sector: str | None = Field(default=None, description="Market sector")
     similarity_score: float = Field(..., description="Cosine similarity score (0.0 to 1.0)")
     match_percentage: float = Field(..., description="Relevance match percentage (0 to 100%)")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Entity metadata payload")
@@ -61,7 +61,7 @@ class SemanticSearchResponse(BaseModel):
     query: str = Field(..., description="Executed search query")
     total_matches: int = Field(..., description="Count of matches meeting threshold")
     matches: list[SemanticMatchItem] = Field(default_factory=list, description="Ranked semantic results")
-    ai_insight: Optional[str] = Field(
+    ai_insight: str | None = Field(
         default=None,
         description="Synthesized intelligence summary grounded in the retrieved matches",
     )

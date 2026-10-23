@@ -11,10 +11,10 @@ import logging
 import secrets
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 import httpx
-from sqlalchemy import delete, func, select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -114,7 +114,7 @@ class WebhookService:
     @classmethod
     async def get_subscription(
         cls, session: AsyncSession, subscription_id: uuid.UUID
-    ) -> Optional[WebhookResponse]:
+    ) -> WebhookResponse | None:
         """
         Retrieves a single subscription by ID.
         """
@@ -153,7 +153,7 @@ class WebhookService:
         session: AsyncSession,
         subscription_id: uuid.UUID,
         req: WebhookUpdateRequest,
-    ) -> Optional[WebhookResponse]:
+    ) -> WebhookResponse | None:
         """
         Updates an existing subscription's properties.
         """
@@ -242,9 +242,9 @@ class WebhookService:
                 "X-Stratify-Signature": f"sha256={signature}",
             }
 
-            status_code: Optional[int] = None
-            response_body: Optional[str] = None
-            error_msg: Optional[str] = None
+            status_code: int | None = None
+            response_body: str | None = None
+            error_msg: str | None = None
             is_success = False
 
             start_time = time.monotonic()
@@ -285,7 +285,7 @@ class WebhookService:
     async def get_deliveries(
         cls,
         session: AsyncSession,
-        subscription_id: Optional[uuid.UUID] = None,
+        subscription_id: uuid.UUID | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> WebhookDeliveryListResponse:
@@ -327,7 +327,7 @@ class WebhookService:
         session: AsyncSession,
         subscription_id: uuid.UUID,
         event_type: str = "alert.critical",
-    ) -> Optional[WebhookDeliveryResponse]:
+    ) -> WebhookDeliveryResponse | None:
         """
         Sends a test dispatch ping directly to a specific subscription.
         """
@@ -366,9 +366,9 @@ class WebhookService:
             "X-Stratify-Signature": f"sha256={signature}",
         }
 
-        status_code: Optional[int] = None
-        response_body: Optional[str] = None
-        error_msg: Optional[str] = None
+        status_code: int | None = None
+        response_body: str | None = None
+        error_msg: str | None = None
         is_success = False
 
         start_time = time.monotonic()

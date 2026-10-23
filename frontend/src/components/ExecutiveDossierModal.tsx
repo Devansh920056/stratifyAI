@@ -169,28 +169,20 @@ export function ExecutiveDossierModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl h-[92vh] max-h-[950px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-5xl h-[92vh] max-h-[950px] bg-[#0D1C42] border border-[#22396F] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* Top Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60 backdrop-blur-sm">
+        <div className="px-6 py-4 border-b border-[#22396F] flex items-center justify-between bg-[#010736]/60">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500/20 via-indigo-500/20 to-violet-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <div className="w-10 h-10 rounded-xl bg-[#010736] border border-[#22396F] flex items-center justify-center text-[#FCF1D0]">
               <FileCheck2 className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-100">
-                  Executive Intelligence Export & Governance Dossier
-                </h2>
-                <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-cyan-950 text-cyan-400 border border-cyan-500/30">
-                  Stage 11
-                </span>
-                <span className="px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> SEC Rule 17a-4
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Deterministic synthesis with multi-vector arbitration, statutory SEC EDGAR provenance, and SHA-256 cryptographic audit seal.
+              <h2 className="text-lg font-bold text-white">
+                Export Research Report
+              </h2>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Download or print a clean, verified summary of your market research.
               </p>
             </div>
           </div>
@@ -198,7 +190,7 @@ export function ExecutiveDossierModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-[#010736] transition"
               title="Close modal (Esc)"
             >
               <X className="w-5 h-5" />
@@ -207,28 +199,28 @@ export function ExecutiveDossierModal({
         </div>
 
         {/* Configuration Toolbar */}
-        <div className="px-6 py-3.5 bg-slate-950/40 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
+        <div className="px-6 py-3.5 bg-[#010736]/40 border-b border-[#22396F] flex flex-wrap items-center justify-between gap-3">
           {/* Entity Input & Presets */}
           <div className="flex items-center gap-3 flex-1 min-w-[280px]">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              Entity:
+              Company / Market:
             </span>
             <input
               type="text"
               value={entityName}
               onChange={(e) => setEntityName(e.target.value)}
               placeholder="e.g. Tesla, Inc., CrowdStrike..."
-              className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 w-52"
+              className="px-3 py-1.5 rounded-xl bg-[#010736] border border-[#22396F] text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#FCF1D0] w-56"
             />
             <div className="hidden lg:flex items-center gap-1">
               {PRESET_ENTITIES.slice(0, 3).map((ent) => (
                 <button
                   key={ent}
                   onClick={() => setEntityName(ent)}
-                  className={`text-[11px] px-2 py-1 rounded-md transition border ${
+                  className={`text-[11px] px-2.5 py-1 rounded-lg transition border ${
                     entityName === ent
-                      ? "bg-cyan-950/80 text-cyan-300 border-cyan-500/40"
-                      : "bg-slate-800/60 text-slate-400 border-slate-700 hover:text-slate-200"
+                      ? "bg-[#22396F] text-[#FCF1D0] border-[#FCF1D0]/40"
+                      : "bg-[#010736] text-slate-400 border-[#22396F] hover:text-white"
                   }`}
                 >
                   {ent.split(" ")[0]}
@@ -242,21 +234,21 @@ export function ExecutiveDossierModal({
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
               Format:
             </span>
-            <div className="flex items-center p-1 rounded-lg bg-slate-900 border border-slate-800">
+            <div className="flex items-center p-1 rounded-xl bg-[#010736] border border-[#22396F]">
               {(
                 [
                   { id: "MARKDOWN", label: "Markdown (.md)", icon: FileText },
-                  { id: "HTML", label: "HTML Report (.html)", icon: FileCode },
-                  { id: "JSON", label: "JSON Data (.json)", icon: Terminal },
+                  { id: "HTML", label: "HTML (.html)", icon: FileCode },
+                  { id: "JSON", label: "JSON (.json)", icon: Terminal },
                 ] as const
               ).map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setSelectedFormat(id)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium transition ${
                     selectedFormat === id
-                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200 border border-transparent"
+                      ? "bg-[#22396F] text-[#FCF1D0] shadow-sm"
+                      : "text-slate-400 hover:text-white"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -269,71 +261,42 @@ export function ExecutiveDossierModal({
             <button
               onClick={handleGenerateDossier}
               disabled={isGenerating || !entityName.trim()}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-cyan-600 via-indigo-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 disabled:opacity-50 transition shadow-md shadow-indigo-500/20"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-[#010736] bg-[#FCF1D0] hover:brightness-105 disabled:opacity-50 transition shadow"
             >
               {isGenerating ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Compiling...</span>
+                  <span>Generating...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Compile Dossier</span>
+                  <span>Generate Report</span>
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* Cryptographic Governance Seal Banner */}
+        {/* Verification Summary Banner */}
         {dossier && (
-          <div className="px-6 py-3 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="px-6 py-3 bg-[#010736] border-b border-[#22396F] flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/60 border border-emerald-500/40 text-emerald-400">
-                <Lock className="w-3.5 h-3.5" />
-                <span className="font-semibold uppercase tracking-wider text-[11px]">
-                  SHA-256 Provenance:
-                </span>
-                <code className="font-mono text-[11px] text-emerald-300">
-                  {dossier.governance_audit.sha256_hash.slice(0, 16)}...
-                  {dossier.governance_audit.sha256_hash.slice(-8)}
-                </code>
-                <button
-                  onClick={handleCopyHash}
-                  className="ml-1 hover:text-white transition"
-                  title="Copy full 64-character SHA-256 hash"
-                >
-                  {copiedHash ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5 text-emerald-400" />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 font-medium">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0D1C42] border border-[#22396F] text-[#FCF1D0] font-medium">
                 <Scale className="w-3.5 h-3.5" />
                 <span>Verdict:</span>
                 <strong className="text-white">
-                  {dossier.governance_audit.arbiter_verdict || "STRATEGIC_ACCUMULATE"}
+                  {dossier.governance_audit.arbiter_verdict || "RECOMMENDED"}
                 </strong>
                 <span className="text-slate-400">
                   ({Math.round((dossier.governance_audit.conviction_score || 0.85) * 100)}% conviction)
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-300">
-                <span>DQS Quality:</span>
-                <strong className="text-cyan-300">
-                  {((dossier.governance_audit.dqs_score || 0.84) * 100).toFixed(1)}%
-                </strong>
-              </div>
-
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <span>Citations:</span>
-                <span className="text-slate-200 font-semibold">
-                  {dossier.governance_audit.total_citations} Verified Sources
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <span>Sources:</span>
+                <span className="text-[#FCF1D0] font-semibold">
+                  {dossier.governance_audit.total_citations} Verified
                 </span>
               </div>
             </div>
@@ -342,8 +305,8 @@ export function ExecutiveDossierModal({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopyContent}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
-                title="Copy entire document payload"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0D1C42] hover:bg-[#22396F] text-slate-300 hover:text-white text-xs font-medium border border-[#22396F] transition"
+                title="Copy entire document"
               >
                 {copiedContent ? (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
@@ -355,7 +318,7 @@ export function ExecutiveDossierModal({
 
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0D1C42] hover:bg-[#22396F] text-slate-300 hover:text-white text-xs font-medium border border-[#22396F] transition"
                 title="Print or Save as PDF"
               >
                 <Printer className="w-3.5 h-3.5" />
@@ -364,7 +327,7 @@ export function ExecutiveDossierModal({
 
               <button
                 onClick={handleDownloadFile}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold shadow-sm transition"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#FCF1D0] hover:brightness-105 text-[#010736] text-xs font-semibold shadow-sm transition"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Download {dossier.filename.split(".").pop()?.toUpperCase()}</span>
@@ -375,49 +338,49 @@ export function ExecutiveDossierModal({
 
         {/* View Tabs */}
         {dossier && (
-          <div className="px-6 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+          <div className="px-6 border-b border-[#22396F] bg-[#0D1C42] flex items-center justify-between">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab("preview")}
                 className={`py-2 px-3 text-xs font-semibold border-b-2 transition ${
                   activeTab === "preview"
-                    ? "border-cyan-400 text-cyan-300"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "border-[#FCF1D0] text-[#FCF1D0]"
+                    : "border-transparent text-slate-400 hover:text-white"
                 }`}
               >
-                Rendered Dossier
+                Report Preview
               </button>
               <button
                 onClick={() => setActiveTab("raw")}
                 className={`py-2 px-3 text-xs font-semibold border-b-2 transition ${
                   activeTab === "raw"
-                    ? "border-cyan-400 text-cyan-300"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "border-[#FCF1D0] text-[#FCF1D0]"
+                    : "border-transparent text-slate-400 hover:text-white"
                 }`}
               >
-                Raw Source Payload
+                Raw Text
               </button>
               <button
                 onClick={() => setActiveTab("audit")}
                 className={`py-2 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 ${
                   activeTab === "audit"
-                    ? "border-cyan-400 text-cyan-300"
-                    : "border-transparent text-slate-400 hover:text-slate-200"
+                    ? "border-[#FCF1D0] text-[#FCF1D0]"
+                    : "border-transparent text-slate-400 hover:text-white"
                 }`}
               >
                 <History className="w-3.5 h-3.5" />
-                <span>Governance Audit History ({auditHistory.length})</span>
+                <span>Report History ({auditHistory.length})</span>
               </button>
             </div>
 
-            <div className="text-[11px] text-slate-500 font-mono">
-              Bytes: {dossier.governance_audit.content_length_bytes} | File: {dossier.filename}
+            <div className="text-[11px] text-slate-400 font-mono">
+              File: {dossier.filename}
             </div>
           </div>
         )}
 
         {/* Content Body Area */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-950/50">
+        <div className="flex-1 overflow-y-auto p-6 bg-[#010736]/40">
           {error && (
             <div className="mb-4 p-4 rounded-xl bg-rose-950/50 border border-rose-500/40 text-rose-300 text-sm">
               {error}
@@ -426,51 +389,51 @@ export function ExecutiveDossierModal({
 
           {!dossier && !isGenerating && (
             <div className="h-full flex flex-col items-center justify-center text-center p-8">
-              <div className="w-16 h-16 rounded-2xl bg-cyan-950/40 border border-cyan-500/20 flex items-center justify-center text-cyan-400 mb-4">
+              <div className="w-16 h-16 rounded-2xl bg-[#010736] border border-[#22396F] flex items-center justify-center text-[#FCF1D0] mb-4">
                 <FileCheck2 className="w-8 h-8" />
               </div>
-              <h3 className="text-base font-bold text-slate-200">
-                Ready to Compile Boardroom Intelligence Dossier
+              <h3 className="text-base font-bold text-white">
+                Ready to Generate Report
               </h3>
-              <p className="text-xs text-slate-400 max-w-md mt-1 mb-6 leading-relaxed">
-                Stratify AI will aggregate Cross-Vector Multi-Agent Dialectic Debates, SEC EDGAR 10-K disclosures, arXiv scientific papers, and GDELT market signals with a non-repudiable SHA-256 audit fingerprint.
+              <p className="text-xs text-slate-300 max-w-md mt-1 mb-6 leading-relaxed">
+                Stratify AI combines market signals, competitor moves, and verified sources into a comprehensive briefing document.
               </p>
               <button
                 onClick={handleGenerateDossier}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-cyan-600 via-indigo-600 to-violet-600 hover:from-cyan-500 hover:to-violet-500 shadow-lg shadow-indigo-500/20"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-[#010736] bg-[#FCF1D0] hover:brightness-105 shadow"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>Compile Executive Dossier for {entityName || "Target"}</span>
+                <span>Generate Report for {entityName || "Target"}</span>
               </button>
             </div>
           )}
 
           {isGenerating && (
             <div className="h-full flex flex-col items-center justify-center text-center p-8">
-              <Loader2 className="w-10 h-10 text-cyan-400 animate-spin mb-4" />
-              <h3 className="text-base font-bold text-slate-200">
-                Synthesizing Multi-Vector Evidence & Cryptographic Seal
+              <Loader2 className="w-10 h-10 text-[#FCF1D0] animate-spin mb-4" />
+              <h3 className="text-base font-bold text-white">
+                Compiling Verified Market Report
               </h3>
-              <p className="text-xs text-slate-400 max-w-sm mt-1">
-                Querying statutory Form 10-K disclosures, arXiv preprints, backtested DQS scores, and generating SEC Rule 17a-4 provenance hash...
+              <p className="text-xs text-slate-300 max-w-sm mt-1">
+                Synthesizing market findings, competitor analysis, and citations...
               </p>
             </div>
           )}
 
           {dossier && activeTab === "preview" && (
-            <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-xl">
+            <div className="max-w-4xl mx-auto bg-[#010736] border border-[#22396F] rounded-2xl p-8 shadow-xl">
               {dossier.format === "HTML" ? (
                 <iframe
                   srcDoc={dossier.content}
-                  title="Dossier HTML Preview"
-                  className="w-full h-[650px] rounded-lg border border-slate-800 bg-[#090d16]"
+                  title="Report HTML Preview"
+                  className="w-full h-[650px] rounded-xl border border-[#22396F] bg-[#010736]"
                 />
               ) : dossier.format === "JSON" ? (
-                <pre className="font-mono text-xs text-cyan-300 bg-slate-950 p-6 rounded-lg border border-slate-800 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                <pre className="font-mono text-xs text-[#FCF1D0] bg-[#010736] p-6 rounded-xl border border-[#22396F] overflow-x-auto whitespace-pre-wrap leading-relaxed">
                   {dossier.content}
                 </pre>
               ) : (
-                <div className="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                <div className="prose prose-invert max-w-none text-slate-200 text-sm leading-relaxed whitespace-pre-wrap font-sans">
                   {dossier.content}
                 </div>
               )}
@@ -479,7 +442,7 @@ export function ExecutiveDossierModal({
 
           {dossier && activeTab === "raw" && (
             <div className="max-w-4xl mx-auto">
-              <pre className="font-mono text-xs text-slate-300 bg-slate-900 border border-slate-800 p-6 rounded-xl overflow-x-auto whitespace-pre-wrap leading-relaxed select-all">
+              <pre className="font-mono text-xs text-slate-300 bg-[#010736] border border-[#22396F] p-6 rounded-xl overflow-x-auto whitespace-pre-wrap leading-relaxed select-all">
                 {dossier.content}
               </pre>
             </div>
@@ -488,62 +451,47 @@ export function ExecutiveDossierModal({
           {dossier && activeTab === "audit" && (
             <div className="max-w-4xl mx-auto space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  Statutory Non-Repudiation Audit Trail
+                  <span>Report Archive</span>
                 </h4>
                 <button
                   onClick={() => loadAuditHistory(entityName)}
-                  className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition"
+                  className="flex items-center gap-1.5 text-xs text-[#FCF1D0] hover:underline transition"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Refresh Registry</span>
+                  <span>Refresh</span>
                 </button>
               </div>
 
               {auditHistory.length === 0 ? (
-                <div className="p-8 text-center bg-slate-900 border border-slate-800 rounded-xl text-slate-400 text-xs">
-                  No previous audit records found for this entity.
+                <div className="p-8 text-center bg-[#0D1C42] border border-[#22396F] rounded-2xl text-slate-400 text-xs">
+                  No previous records found for this company.
                 </div>
               ) : (
                 <div className="space-y-3">
                   {auditHistory.map((rec, i) => (
                     <div
                       key={rec.sha256_hash + i}
-                      className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition space-y-2"
+                      className="p-4 rounded-2xl bg-[#010736] border border-[#22396F] hover:border-[#FCF1D0]/30 transition space-y-2"
                     >
                       <div className="flex items-center justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-slate-200">
+                          <span className="font-semibold text-white">
                             {rec.entity_name}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-500/30 font-medium text-[10px]">
-                            {rec.arbiter_verdict || "ACCUMULATE"}
+                          <span className="px-2 py-0.5 rounded-full bg-[#0D1C42] text-[#FCF1D0] border border-[#22396F] font-medium text-[10px]">
+                            {rec.arbiter_verdict || "RECOMMENDED"}
                           </span>
                         </div>
-                        <span className="text-slate-500 font-mono text-[11px]">
+                        <span className="text-slate-400 font-mono text-[11px]">
                           {new Date(rec.generated_at).toLocaleString()}
                         </span>
                       </div>
 
-                      <div className="p-2.5 rounded-lg bg-slate-950 font-mono text-xs text-cyan-300 break-all border border-slate-850 flex items-center justify-between">
-                        <span>SHA-256: {rec.sha256_hash}</span>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(rec.sha256_hash);
-                          }}
-                          className="ml-2 text-slate-400 hover:text-cyan-300 transition"
-                          title="Copy Hash"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
                       <div className="flex items-center gap-4 text-[11px] text-slate-400 pt-1">
-                        <span>Payload Size: {rec.content_length_bytes} bytes</span>
                         <span>Citations: {rec.total_citations}</span>
-                        <span>DQS Calibration: {((rec.dqs_score || 0.84) * 100).toFixed(1)}%</span>
-                        <span>SEC Accessions: {rec.sec_accessions.length}</span>
+                        <span>Confidence: {((rec.dqs_score || 0.84) * 100).toFixed(0)}%</span>
                       </div>
                     </div>
                   ))}

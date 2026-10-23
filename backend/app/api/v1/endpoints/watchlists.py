@@ -5,7 +5,7 @@ and manual/automated signal threshold triggers.
 """
 
 import uuid
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -97,8 +97,8 @@ async def delete_watchlist(
 async def get_alerts(
     db: SessionDep,
     unread_only: bool = Query(False, description="Filter for unread alerts only"),
-    severity: Optional[str] = Query(None, description="Filter by severity: INFO, WARNING, CRITICAL"),
-    watchlist_id: Optional[uuid.UUID] = Query(None, description="Filter by specific watchlist"),
+    severity: str | None = Query(None, description="Filter by severity: INFO, WARNING, CRITICAL"),
+    watchlist_id: uuid.UUID | None = Query(None, description="Filter by specific watchlist"),
     limit: int = Query(50, ge=1, le=100, description="Max alerts to retrieve"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
 ) -> AlertListResponse:

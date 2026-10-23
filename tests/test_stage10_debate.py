@@ -15,7 +15,6 @@ from backend.app.main import app
 from backend.app.models.debate import Debate, DebateMessage
 from backend.app.models.enums import (
     AgentDebateRole,
-    ArbiterVerdict,
     ArgumentType,
     DebateStatus,
     EvidenceSourceType,

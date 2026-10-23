@@ -6,7 +6,7 @@ for deep tech, battery materials, cryptography, and artificial intelligence mark
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -88,7 +88,7 @@ class ArxivPreprintProvider:
     Ingests technical and academic research preprints from arXiv.
     """
 
-    def __init__(self, timeout_seconds: float = 10.0, client: Optional[httpx.AsyncClient] = None):
+    def __init__(self, timeout_seconds: float = 10.0, client: httpx.AsyncClient | None = None):
         self.timeout = timeout_seconds
         self.client = client
 
@@ -99,7 +99,7 @@ class ArxivPreprintProvider:
         norm_query = topic.lower().strip()
         matched_key = None
 
-        for k in VERIFIED_ARXIV_PAPERS.keys():
+        for k in VERIFIED_ARXIV_PAPERS:
             if k in norm_query or any(word in norm_query for word in k.split()):
                 matched_key = k
                 break

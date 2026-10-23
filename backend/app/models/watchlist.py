@@ -4,7 +4,6 @@ Watchlist and Alert Models representing monitored competitor targets and automat
 
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID

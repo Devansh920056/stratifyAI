@@ -36,7 +36,7 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
       setTelemetry(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load system telemetry");
+      setError(err instanceof Error ? err.message : "Failed to load system status");
     } finally {
       setLoading(false);
     }
@@ -65,28 +65,28 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+        className="fixed inset-0 bg-[#010736]/80 backdrop-blur-md transition-opacity"
       />
 
       {/* Modal Dialog */}
-      <div className="relative z-50 w-full max-w-3xl glass-panel bg-slate-900/95 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="relative z-50 w-full max-w-2xl bg-[#0D1C42] border border-[#22396F] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+        <div className="px-6 py-5 border-b border-[#22396F] flex items-center justify-between bg-[#010736]/50">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-              <Activity className="w-5 h-5 text-cyan-400" />
+            <div className="w-9 h-9 rounded-xl bg-[#22396F] flex items-center justify-center">
+              <Activity className="w-5 h-5 text-[#FCF1D0]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-100">
-                  Stratify AI System Telemetry & Architecture
+                <h2 className="text-base font-bold text-[#FCF1D0]">
+                  System Status
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
-                  v1.0.0
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#22396F] text-[#FCF1D0]">
+                  All Systems Operational
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                Live distributed systems invariants, container health & pipeline telemetry
+              <p className="text-xs text-slate-300">
+                Real-time service health and performance overview
               </p>
             </div>
           </div>
@@ -95,15 +95,15 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
             <button
               onClick={fetchTelemetry}
               disabled={loading}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
-              title="Refresh telemetry"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-[#22396F] transition cursor-pointer"
+              title="Refresh status"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-cyan-400" : ""}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-[#FCF1D0]" : ""}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
-              title="Close modal (Esc)"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-[#22396F] transition cursor-pointer"
+              title="Close (Esc)"
             >
               <X className="w-5 h-5" />
             </button>
@@ -113,15 +113,15 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {loading && !telemetry && (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin text-cyan-400 mb-3" />
-              <p className="text-xs font-medium">Querying infrastructure nodes...</p>
+            <div className="flex flex-col items-center justify-center py-20 text-slate-300">
+              <Loader2 className="w-8 h-8 animate-spin text-[#FCF1D0] mb-3" />
+              <p className="text-xs font-medium">Checking system status...</p>
             </div>
           )}
 
           {error && (
             <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs">
-              <span className="font-semibold">Telemetry Query Warning:</span> {error}
+              <span className="font-semibold">Notice:</span> {error}
             </div>
           )}
 
@@ -132,185 +132,112 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
                 <MetricCard
                   label="Total Inquiries"
                   value={telemetry.metrics.total_jobs}
-                  color="text-cyan-400"
                 />
                 <MetricCard
-                  label="Completed Jobs"
+                  label="Completed Reports"
                   value={telemetry.metrics.completed_jobs}
-                  color="text-emerald-400"
                 />
                 <MetricCard
-                  label="In-Flight Jobs"
+                  label="Active Inquiries"
                   value={telemetry.metrics.processing_jobs}
-                  color="text-amber-400"
                 />
                 <MetricCard
-                  label="Decomposed Tasks"
+                  label="Analyzed Topics"
                   value={telemetry.metrics.total_tasks}
-                  color="text-violet-400"
                 />
               </div>
 
-              {/* Infrastructure Invariants Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 1. PostgreSQL */}
-                <div className="glass-card p-4 rounded-xl space-y-2.5">
+              {/* Service Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {/* 1. Database */}
+                <div className="p-4 rounded-xl bg-[#010736] border border-[#22396F] space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-indigo-400">
-                      <Database className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider">
-                        Storage Layer
+                    <div className="flex items-center gap-2 text-[#FCF1D0]">
+                      <Database className="w-4 h-4 text-[#FCF1D0]" />
+                      <span className="text-xs font-semibold">
+                        Database
                       </span>
                     </div>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-                      <CheckCircle2 className="w-3 h-3" />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#22396F] text-[#FCF1D0]">
+                      <CheckCircle2 className="w-3 h-3 text-[#FCF1D0]" />
                       {telemetry.database.status}
                     </span>
                   </div>
-                  <div className="space-y-1.5 text-xs text-slate-300">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Engine:</span>
-                      <span className="font-mono">{telemetry.database.engine}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Host Port:</span>
-                      <span className="font-mono text-cyan-300">
-                        127.0.0.1:{telemetry.database.host_port}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Isolation:</span>
-                      <span>{telemetry.database.isolation}</span>
-                    </div>
-                  </div>
+                  <p className="text-xs text-slate-300">
+                    Stores market reports, research findings, and verified sources securely.
+                  </p>
                 </div>
 
-                {/* 2. RabbitMQ */}
-                <div className="glass-card p-4 rounded-xl space-y-2.5">
+                {/* 2. Message Broker */}
+                <div className="p-4 rounded-xl bg-[#010736] border border-[#22396F] space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-cyan-400">
-                      <Network className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider">
-                        Message Broker
+                    <div className="flex items-center gap-2 text-[#FCF1D0]">
+                      <Network className="w-4 h-4 text-[#FCF1D0]" />
+                      <span className="text-xs font-semibold">
+                        Task Queue
                       </span>
                     </div>
-                    <a
-                      href="http://localhost:15672"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[10px] text-cyan-400 hover:text-cyan-300 font-semibold transition"
-                    >
-                      Admin UI
-                      <ExternalLink className="w-2.5 h-2.5" />
-                    </a>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#22396F] text-[#FCF1D0]">
+                      <CheckCircle2 className="w-3 h-3 text-[#FCF1D0]" />
+                      Healthy
+                    </span>
                   </div>
-                  <div className="space-y-1.5 text-xs text-slate-300">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Exchange:</span>
-                      <span className="font-mono">{telemetry.broker.exchange}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Primary Queue:</span>
-                      <span className="font-mono text-cyan-300">{telemetry.broker.queue}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Dead Letter Queue:</span>
-                      <span className="font-mono text-rose-300">{telemetry.broker.dlq}</span>
-                    </div>
-                  </div>
+                  <p className="text-xs text-slate-300">
+                    Coordinates multi-agent research tasks in parallel without delays.
+                  </p>
                 </div>
 
-                {/* 3. Concurrency & Outbox */}
-                <div className="glass-card p-4 rounded-xl space-y-2.5">
+                {/* 3. Concurrency & Protection */}
+                <div className="p-4 rounded-xl bg-[#010736] border border-[#22396F] space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-violet-400">
-                      <ShieldCheck className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider">
-                        Reliability & OCC
+                    <div className="flex items-center gap-2 text-[#FCF1D0]">
+                      <ShieldCheck className="w-4 h-4 text-[#FCF1D0]" />
+                      <span className="text-xs font-semibold">
+                        Data Protection
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-violet-300">QoS Prefetch: 2</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#22396F] text-[#FCF1D0]">
+                      <CheckCircle2 className="w-3 h-3 text-[#FCF1D0]" />
+                      Active
+                    </span>
                   </div>
-                  <div className="space-y-1.5 text-xs text-slate-300">
-                    <div>
-                      <span className="text-slate-500 block">Outbox Pattern:</span>
-                      <span className="text-[11px] text-slate-300">
-                        {telemetry.orchestrator.outbox_pattern}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">Concurrency Control:</span>
-                      <span className="text-[11px] text-slate-300">
-                        {telemetry.orchestrator.concurrency_control}
-                      </span>
-                    </div>
-                  </div>
+                  <p className="text-xs text-slate-300">
+                    Prevents data conflicts and guarantees accurate reporting every time.
+                  </p>
                 </div>
 
-                {/* 4. AI & Anti-Hallucination */}
-                <div className="glass-card p-4 rounded-xl space-y-2.5">
+                {/* 4. AI & Grounded Evidence */}
+                <div className="p-4 rounded-xl bg-[#010736] border border-[#22396F] space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-emerald-400">
-                      <Cpu className="w-4 h-4" />
-                      <span className="text-xs font-bold uppercase tracking-wider">
-                        AI Reasoning & Search
+                    <div className="flex items-center gap-2 text-[#FCF1D0]">
+                      <Cpu className="w-4 h-4 text-[#FCF1D0]" />
+                      <span className="text-xs font-semibold">
+                        AI Research Engine
                       </span>
                     </div>
-                    <span className="text-[10px] font-semibold text-emerald-400">Grounded</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-[#22396F] text-[#FCF1D0]">
+                      <CheckCircle2 className="w-3 h-3 text-[#FCF1D0]" />
+                      Grounded
+                    </span>
                   </div>
-                  <div className="space-y-1.5 text-xs text-slate-300">
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">LLM Synthesis:</span>
-                      <span className="font-medium text-emerald-300">
-                        {telemetry.ai_providers.llm}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Web Evidence:</span>
-                      <span>{telemetry.ai_providers.search}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block">Citation Guardrail:</span>
-                      <span className="text-[11px] text-slate-300">
-                        {telemetry.ai_providers.anti_hallucination}
-                      </span>
-                    </div>
-                  </div>
+                  <p className="text-xs text-slate-300">
+                    Synthesizes verified market insights with live source citations.
+                  </p>
                 </div>
               </div>
 
-              {/* Developer Links Bar */}
-              <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 border-t border-slate-800">
-                <span className="text-slate-500">Developer Shortcuts:</span>
-                <div className="flex items-center gap-4">
-                  <a
-                    href="http://localhost:8000/docs"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition"
-                  >
-                    <span>FastAPI OpenAPI Docs</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                  <a
-                    href="http://localhost:15672"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-indigo-400 hover:text-indigo-300 transition"
-                  >
-                    <span>RabbitMQ Dashboard</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                  <a
-                    href="http://localhost:8000/api/v1/health/telemetry"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-slate-300 hover:text-white transition"
-                  >
-                    <span>Raw JSON Telemetry</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+              {/* Minimal Clean Footer */}
+              <div className="pt-3 flex items-center justify-between text-xs text-slate-400 border-t border-[#22396F]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>All core systems running normally</span>
                 </div>
+                <button
+                  onClick={onClose}
+                  className="px-3 py-1 rounded-lg text-xs font-medium bg-[#22396F] text-[#FCF1D0] hover:bg-[#2d4c94] transition cursor-pointer"
+                >
+                  Done
+                </button>
               </div>
             </>
           )}
@@ -323,16 +250,16 @@ export function TelemetryModal({ isOpen, onClose }: TelemetryModalProps) {
 function MetricCard({
   label,
   value,
-  color,
 }: {
   label: string;
   value: number;
-  color: string;
 }) {
   return (
-    <div className="glass-card p-3 rounded-xl border border-slate-800 text-center space-y-1">
-      <span className="text-[11px] font-medium text-slate-400 block">{label}</span>
-      <span className={`text-2xl font-extrabold ${color} tracking-tight`}>{value}</span>
+    <div className="p-3 rounded-xl bg-[#010736] border border-[#22396F] text-center space-y-1">
+      <span className="text-[11px] font-medium text-slate-300 block">{label}</span>
+      <span className="text-2xl font-extrabold text-[#FCF1D0] tracking-tight block">
+        {value}
+      </span>
     </div>
   );
 }

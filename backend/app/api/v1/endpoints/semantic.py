@@ -6,7 +6,7 @@ and grounded cross-inquiry AI insights.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.session import get_async_session

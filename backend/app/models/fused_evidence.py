@@ -5,7 +5,7 @@ SEC EDGAR filings (10-K, 10-Q, 8-K), arXiv preprints, and reconciled disclosures
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import DateTime, Float, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -72,12 +72,12 @@ class FusedEvidence(Base):
         index=True,
         comment="Reconciliation status: ALIGNED, DIVERGENT, CONTRADICTORY, UNVERIFIED",
     )
-    reconciliation_notes: Mapped[Optional[str]] = mapped_column(
+    reconciliation_notes: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Analytical explanation of divergence between commercial PR and statutory risk disclosures",
     )
-    fiscal_period: Mapped[Optional[str]] = mapped_column(
+    fiscal_period: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         comment="Fiscal period e.g. FY 2024, Q3 2024, or publication year",

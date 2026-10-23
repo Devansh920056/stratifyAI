@@ -8,7 +8,6 @@ Verifies:
 5. FastAPI endpoints for generating, fetching, and updating recommendations.
 """
 
-import uuid
 import httpx
 import pytest
 import pytest_asyncio

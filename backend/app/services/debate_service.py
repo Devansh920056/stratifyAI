@@ -9,8 +9,7 @@ Orchestrates multi-agent cross-vector debates between:
 
 import logging
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
 
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -130,13 +129,13 @@ class MultiAgentDebateService:
             status=DebateStatus.IN_PROGRESS.value,
             rounds_count=rounds,
             synthesis_matrix={},
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
         )
         session.add(debate)
         await session.flush()
 
-        messages: List[DebateMessage] = []
+        messages: list[DebateMessage] = []
 
         # ─── Round 1: Opening Arguments ──────────────────────────────
         # Bull: Thesis
@@ -158,7 +157,7 @@ class MultiAgentDebateService:
             content=bull_r1_content,
             evidence_citations=news_citations[:2],
             confidence_score=0.88,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         messages.append(msg_bull_1)
 
@@ -183,18 +182,18 @@ class MultiAgentDebateService:
             content=bear_r1_content,
             evidence_citations=sec_citations[:2],
             confidence_score=0.91,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         messages.append(msg_bear_1)
 
         # ─── Round 2: Rebuttal & Cross-Examination ──────────────────
         if rounds >= 2:
             bull_r2_content = (
-                f"### Cross-Rebuttal: Addressing Risk Factors with Structural Moat Defenses\n\n"
-                f"**1. Refuting the Yield Bottleneck Premise**: Dr. Reed conflates standard cautionary legal boilerplate in Item 1A with operational reality. "
-                f"Statutory 10-K risk factors are mandated by securities laws to articulate worst-case scenarios; they do not reflect actual internal engineering cadence.\n\n"
-                f"**2. Secondary Sourcing & Redundancy**: Enterprise partners have already instituted dual-sourcing agreements for core componentry. "
-                f"Furthermore, high switching costs in enterprise accounts ensure retention rates exceed 92%, protecting baseline gross revenue even during tooling transitions."
+                "### Cross-Rebuttal: Addressing Risk Factors with Structural Moat Defenses\n\n"
+                "**1. Refuting the Yield Bottleneck Premise**: Dr. Reed conflates standard cautionary legal boilerplate in Item 1A with operational reality. "
+                "Statutory 10-K risk factors are mandated by securities laws to articulate worst-case scenarios; they do not reflect actual internal engineering cadence.\n\n"
+                "**2. Secondary Sourcing & Redundancy**: Enterprise partners have already instituted dual-sourcing agreements for core componentry. "
+                "Furthermore, high switching costs in enterprise accounts ensure retention rates exceed 92%, protecting baseline gross revenue even during tooling transitions."
             )
             msg_bull_2 = DebateMessage(
                 id=uuid.uuid4(),
@@ -206,14 +205,14 @@ class MultiAgentDebateService:
                 content=bull_r2_content,
                 evidence_citations=news_citations[1:3] if len(news_citations) > 1 else news_citations,
                 confidence_score=0.82,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             messages.append(msg_bull_2)
 
             bear_r2_content = (
-                f"### Interrogation: Capital Expenditure Run-Rate vs. Customer Retention Caps\n\n"
-                f"**1. Boilerplate vs. Materiality**: The Supreme Court and SEC Enforcement Division have repeatedly affirmed that risk factors are material disclosures subject to antifraud liability. Calling them 'boilerplate' disregards fiduciary duty.\n\n"
-                f"**2. The Empirical Gap**: Peer-reviewed scientific literature and technical benchmarking reveal that theoretical laboratory yields frequently drop by 30-40% in mass roll-to-roll production. The Bull model assumes friction-free scaling that has never occurred in this sector."
+                "### Interrogation: Capital Expenditure Run-Rate vs. Customer Retention Caps\n\n"
+                "**1. Boilerplate vs. Materiality**: The Supreme Court and SEC Enforcement Division have repeatedly affirmed that risk factors are material disclosures subject to antifraud liability. Calling them 'boilerplate' disregards fiduciary duty.\n\n"
+                "**2. The Empirical Gap**: Peer-reviewed scientific literature and technical benchmarking reveal that theoretical laboratory yields frequently drop by 30-40% in mass roll-to-roll production. The Bull model assumes friction-free scaling that has never occurred in this sector."
             )
             msg_bear_2 = DebateMessage(
                 id=uuid.uuid4(),
@@ -225,7 +224,7 @@ class MultiAgentDebateService:
                 content=bear_r2_content,
                 evidence_citations=(sec_citations[1:3] + arxiv_citations[:1])[:2],
                 confidence_score=0.89,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             messages.append(msg_bear_2)
 
@@ -249,7 +248,7 @@ class MultiAgentDebateService:
                 content=reg_content,
                 evidence_citations=(sec_citations[:1] + arxiv_citations[:2]),
                 confidence_score=0.94,
-                created_at=datetime.now(timezone.utc),
+                created_at=datetime.now(UTC),
             )
             messages.append(msg_reg)
 
@@ -274,8 +273,8 @@ class MultiAgentDebateService:
 
         tripwires = [
             f"If manufacturing yield/delivery metric drops below quarterly guidance by >12%, immediately downgrade to {ArbiterVerdict.DEFENSIVE_HEDGE.value}.",
-            f"If new formal regulatory enforcement action is initiated by federal authorities, freeze capital allocation.",
-            f"If gross margin contracts for 2 consecutive quarters, re-run dialectic debate with defensive risk weighting.",
+            "If new formal regulatory enforcement action is initiated by federal authorities, freeze capital allocation.",
+            "If gross margin contracts for 2 consecutive quarters, re-run dialectic debate with defensive risk weighting.",
         ]
 
         summary_text = (
@@ -316,7 +315,7 @@ class MultiAgentDebateService:
             ),
             evidence_citations=(sec_citations[:2] + arxiv_citations[:1] + news_citations[:1]),
             confidence_score=conviction,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         messages.append(msg_arbiter)
 
@@ -329,7 +328,7 @@ class MultiAgentDebateService:
         debate.conviction_score = conviction
         debate.executive_summary = summary_text
         debate.synthesis_matrix = synthesis_matrix
-        debate.updated_at = datetime.now(timezone.utc)
+        debate.updated_at = datetime.now(UTC)
 
         await session.commit()
         await session.refresh(debate)
@@ -349,7 +348,7 @@ class MultiAgentDebateService:
     @classmethod
     async def get_debate(
         cls, session: AsyncSession, debate_id: uuid.UUID
-    ) -> Optional[DebateDetailResponse]:
+    ) -> DebateDetailResponse | None:
         """Fetches full debate details including chronological messages and citations."""
         stmt = (
             select(Debate)
@@ -364,7 +363,7 @@ class MultiAgentDebateService:
 
     @classmethod
     async def list_debates(
-        cls, session: AsyncSession, entity_name: Optional[str] = None, limit: int = 20
+        cls, session: AsyncSession, entity_name: str | None = None, limit: int = 20
     ) -> DebateListResponse:
         """Lists recent dialectic debates with optional entity filter."""
         query = select(Debate)

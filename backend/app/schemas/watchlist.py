@@ -4,7 +4,6 @@ Pydantic Schemas for Competitor Watchlists and Real-Time Alerting Engine.
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -14,13 +13,13 @@ class AlertResponse(BaseModel):
 
     id: uuid.UUID = Field(..., description="Alert UUID")
     watchlist_id: uuid.UUID = Field(..., description="Parent Watchlist UUID")
-    signal_id: Optional[uuid.UUID] = Field(None, description="Linked Market Signal UUID, if triggered by ingestion")
+    signal_id: uuid.UUID | None = Field(None, description="Linked Market Signal UUID, if triggered by ingestion")
     title: str = Field(..., description="Alert headline/summary")
     message: str = Field(..., description="Detailed alert context or trigger reason")
     severity: str = Field(..., description="INFO, WARNING, or CRITICAL")
     is_read: bool = Field(..., description="Read/unread acknowledgment status")
     triggered_at: datetime = Field(..., description="Timestamp alert was triggered")
-    watchlist_name: Optional[str] = Field(None, description="Associated watchlist name for cross-feed display")
+    watchlist_name: str | None = Field(None, description="Associated watchlist name for cross-feed display")
 
 
 class AlertListResponse(BaseModel):
@@ -63,7 +62,7 @@ class WatchlistListResponse(BaseModel):
 
 
 class AlertSimulateRequest(BaseModel):
-    watchlist_id: Optional[uuid.UUID] = Field(None, description="Target watchlist; uses first active if None")
-    title: Optional[str] = Field(None, description="Optional custom title")
-    message: Optional[str] = Field(None, description="Optional custom message")
-    severity: Optional[str] = Field("WARNING", description="INFO, WARNING, or CRITICAL")
+    watchlist_id: uuid.UUID | None = Field(None, description="Target watchlist; uses first active if None")
+    title: str | None = Field(None, description="Optional custom title")
+    message: str | None = Field(None, description="Optional custom message")
+    severity: str | None = Field("WARNING", description="INFO, WARNING, or CRITICAL")

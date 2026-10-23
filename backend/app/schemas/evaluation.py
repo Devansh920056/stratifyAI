@@ -4,7 +4,7 @@ Pydantic Schemas for Decision Evaluation, Outcome Auditing, and Historical Backt
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -23,7 +23,7 @@ class DecisionEvaluationCreateRequest(BaseModel):
     )
     evaluator_notes: str = Field(..., min_length=3, description="Qualitative evaluation notes or post-mortem")
     actual_outcome: str = Field(..., min_length=3, description="Observed real-world result after execution")
-    actual_metric_value: Optional[str] = Field(None, description="Measured metric e.g. +22% ARR")
+    actual_metric_value: str | None = Field(None, description="Measured metric e.g. +22% ARR")
     impact_delta: float = Field(default=0.0, ge=-10.0, le=10.0, description="Actual impact vs estimated delta")
     confidence_score: float = Field(default=0.85, ge=0.0, le=1.0, description="Confidence in this evaluation")
     metric_evidence: list[dict[str, Any]] = Field(default_factory=list, description="Structured metric proofs")
@@ -38,7 +38,7 @@ class DecisionEvaluationResponse(BaseModel):
     outcome_status: str = Field(..., description="Outcome status")
     evaluator_notes: str = Field(..., description="Evaluator notes")
     actual_outcome: str = Field(..., description="Actual outcome narrative")
-    actual_metric_value: Optional[str] = Field(None, description="Actual metric value")
+    actual_metric_value: str | None = Field(None, description="Actual metric value")
     impact_delta: float = Field(..., description="Impact delta")
     confidence_score: float = Field(..., description="Confidence score")
     metric_evidence: list[dict[str, Any]] = Field(default_factory=list)
@@ -46,7 +46,7 @@ class DecisionEvaluationResponse(BaseModel):
     evaluated_at: datetime = Field(..., description="Evaluation timestamp")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Updated timestamp")
-    recommendation_title: Optional[str] = Field(None, description="Associated recommendation title")
+    recommendation_title: str | None = Field(None, description="Associated recommendation title")
 
 
 class DecisionEvaluationListResponse(BaseModel):
@@ -80,7 +80,7 @@ class BacktestFindingItem(BaseModel):
 
 
 class BacktestSimulationRequest(BaseModel):
-    job_id: Optional[uuid.UUID] = Field(None, description="Target job to backtest; defaults to latest completed job")
+    job_id: uuid.UUID | None = Field(None, description="Target job to backtest; defaults to latest completed job")
     lookback_days: int = Field(default=60, ge=7, le=365, description="Lookback window for signals")
 
 

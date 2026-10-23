@@ -106,6 +106,10 @@ class Settings(BaseSettings):
     TASK_TIMEOUT_SECONDS: int = Field(default=45, ge=5, le=300)
     MAX_TASK_RETRIES: int = Field(default=3, ge=1, le=10)
     OUTBOX_POLL_INTERVAL_SECONDS: float = Field(default=1.0, ge=0.1, le=10.0)
+    AUTO_START_WORKERS: bool = Field(
+        default=True,
+        description="Automatically start integrated outbox relay loop and worker consumer in background",
+    )
 
 
 @lru_cache

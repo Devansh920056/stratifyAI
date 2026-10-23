@@ -4,7 +4,7 @@ Pydantic Schemas for Multi-Source Evidence Fusion & Regulatory Filing Reconcilia
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,7 +16,7 @@ class EvidenceQueryRequest(BaseModel):
         max_length=150,
         description="Company name or research topic e.g. 'Tesla', 'CrowdStrike', 'Solid-State Batteries'",
     )
-    topic: Optional[str] = Field(
+    topic: str | None = Field(
         default=None,
         description="Optional technical focus e.g. 'Battery yields', 'Kernel drivers', 'Cybersecurity'",
     )
@@ -46,8 +46,8 @@ class FusedEvidenceItem(BaseModel):
     source_url: str = Field(..., description="Direct link to source document")
     reliability_score: float = Field(..., description="Evidence Reliability Index (0.0 to 1.0)")
     divergence_status: str = Field(..., description="ALIGNED, DIVERGENT, CONTRADICTORY, UNVERIFIED")
-    reconciliation_notes: Optional[str] = Field(default=None, description="Discrepancy explanation")
-    fiscal_period: Optional[str] = Field(default=None, description="Fiscal year, quarter, or date")
+    reconciliation_notes: str | None = Field(default=None, description="Discrepancy explanation")
+    fiscal_period: str | None = Field(default=None, description="Fiscal year, quarter, or date")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Metadata dictionary")
     created_at: datetime = Field(..., description="Ingestion timestamp")
 
@@ -67,6 +67,6 @@ class FusedEvidenceListResponse(BaseModel):
     entity_name: str = Field(..., description="Queried entity or topic")
     items: list[FusedEvidenceItem] = Field(default_factory=list, description="Retrieved secondary evidence items")
     total: int = Field(..., description="Total count")
-    summary: Optional[EvidenceReconciliationSummary] = Field(
+    summary: EvidenceReconciliationSummary | None = Field(
         default=None, description="Cross-source reconciliation summary"
     )

@@ -22,7 +22,7 @@ class JobCreateRequest(BaseModel):
         max_length=500,
         description="Core market research inquiry (e.g. 'Analyze commercial space launch market')",
         examples=[
-            "Analyze the competitive landscape of AI code completion tools in North America"
+            "Analyze the competitive landscape of Quick Commerce dark stores and delivery unit economics in India"
         ],
     )
     target_market: str = Field(
@@ -30,27 +30,27 @@ class JobCreateRequest(BaseModel):
         min_length=2,
         max_length=100,
         description="Industry or market sector",
-        examples=["Developer Tools / Software Engineering"],
+        examples=["Fintech & Digital Payments"],
     )
     geography: str = Field(
         ...,
         min_length=2,
         max_length=100,
         description="Geographic region of focus",
-        examples=["North America & Europe"],
+        examples=["India (Pan-India)"],
     )
     time_range: str | None = Field(
-        default="2024-2026",
+        default="2025-2028",
         max_length=50,
         description="Temporal scope of the market intelligence",
-        examples=["2024-2026"],
+        examples=["2025-2028"],
     )
     focus_areas: list[str] = Field(
         default_factory=list,
         max_length=10,
         description="Specific topics or sub-sectors to prioritize",
         examples=[
-            ["Enterprise Adoption", "Pricing Models", "Open Source vs Proprietary"]
+            ["RBI Regulations", "UPI Integration", "Unit Economics (₹)"]
         ],
     )
 

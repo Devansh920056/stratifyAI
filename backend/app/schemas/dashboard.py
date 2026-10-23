@@ -3,7 +3,6 @@ Pydantic Schemas for Market Intelligence Dashboard & Visualizations.
 """
 
 import uuid
-from typing import Any
 
 from pydantic import BaseModel, Field
 

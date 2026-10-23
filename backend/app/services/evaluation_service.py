@@ -6,12 +6,9 @@ and runs counterfactual market backtests against continuous market signals.
 
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from backend.app.db.base import utc_now
 from backend.app.models.decision_evaluation import DecisionEvaluation
@@ -43,7 +40,7 @@ class EvaluationService:
         session: AsyncSession,
         recommendation_id: uuid.UUID,
         req: DecisionEvaluationCreateRequest,
-    ) -> Optional[DecisionEvaluationResponse]:
+    ) -> DecisionEvaluationResponse | None:
         """
         Records an empirical outcome evaluation for a strategic recommendation.
         Updates recommendation lifecycle status if appropriate.
@@ -136,7 +133,7 @@ class EvaluationService:
     async def list_evaluations(
         cls,
         session: AsyncSession,
-        outcome_status: Optional[str] = None,
+        outcome_status: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> DecisionEvaluationListResponse:
@@ -288,7 +285,9 @@ class EvaluationService:
             # Fallback: find any job and create recommendations if none exist
             job = await session.scalar(select(Job).order_by(Job.created_at.desc()).limit(1))
             if job:
-                from backend.app.services.recommendation_service import RecommendationService
+                from backend.app.services.recommendation_service import (
+                    RecommendationService,
+                )
                 recs = await RecommendationService.get_recommendations_for_job(session, job.id)
 
         # 2. Query market signals
