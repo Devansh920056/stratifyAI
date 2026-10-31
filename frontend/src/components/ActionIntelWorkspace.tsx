@@ -81,7 +81,8 @@ export function ActionIntelWorkspace({
   const [evalOutcomeNotes, setEvalOutcomeNotes] = useState("");
   const [evalActualOutcome, setEvalActualOutcome] = useState("");
   const [evalActualMetric, setEvalActualMetric] = useState("");
-  const [evalImpactDelta, setEvalImpactDelta] = useState<number>(1.0);
+  const [evalImpactDelta, setEvalImpactDelta] = useState<number>(0);
+  const [evalConfidencePct, setEvalConfidencePct] = useState("");
   const [isSubmittingEval, setIsSubmittingEval] = useState(false);
 
   // Analytics & Backtesting state
@@ -193,7 +194,8 @@ export function ActionIntelWorkspace({
     setEvalOutcomeNotes("");
     setEvalActualOutcome("");
     setEvalActualMetric("");
-    setEvalImpactDelta(1.0);
+    setEvalImpactDelta(0);
+    setEvalConfidencePct("");
   };
 
   // Submit Outcome Evaluation
@@ -210,7 +212,7 @@ export function ActionIntelWorkspace({
         actual_outcome: evalActualOutcome,
         actual_metric_value: evalActualMetric,
         impact_delta: evalImpactDelta,
-        confidence_score: 0.9,
+        confidence_score: Math.min(100, Math.max(0, Number(evalConfidencePct))) / 100,
         metric_evidence: [
           {
             metric: evaluatingRec.success_metric,
@@ -1187,6 +1189,22 @@ export function ActionIntelWorkspace({
                     className="w-full accent-[#FCF1D0] cursor-pointer"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                  Your confidence in this evaluation (%)
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  max={100}
+                  value={evalConfidencePct}
+                  onChange={(e) => setEvalConfidencePct(e.target.value)}
+                  placeholder="Enter your own assessment, 0-100"
+                  className="w-full px-3 py-2 text-xs rounded-lg bg-[#010736] border border-[#22396F] text-white focus:outline-none focus:border-[#FCF1D0]"
+                />
               </div>
 
               <div>

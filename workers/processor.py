@@ -205,21 +205,12 @@ class TaskProcessor:
         )
 
         if not evidence_items:
-            fallback_url = f"https://mock-market-intelligence.internal/reports/{task_message.task_id}/fallback"
-            evidence_items = [
-                Evidence(
-                    task_id=task_message.task_id,
-                    job_id=task_message.job_id,
-                    source_url=fallback_url,
-                    source_title=f"Market Synthesis: {task_message.task_type}",
-                    snippet=f"Synthesized evidence for queries: {', '.join(task_message.search_queries)}.",
-                    provider_name=search_provider.provider_name,
-                    provider_metadata={
-                        "queries": task_message.search_queries,
-                        "fallback": True,
-                    },
-                )
-            ]
+            # Never fabricate evidence: surface a real failure so the task retries / dead-letters
+            # and the report honestly marks this dimension as unavailable.
+            raise RuntimeError(
+                f"No evidence retrieved from provider '{search_provider.provider_name}' "
+                f"for queries: {', '.join(task_message.search_queries)}"
+            )
 
         # Delegate AI reasoning to LLMProvider
         analysis = await llm_provider.analyze(

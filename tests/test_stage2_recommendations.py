@@ -8,6 +8,8 @@ Verifies:
 5. FastAPI endpoints for generating, fetching, and updating recommendations.
 """
 
+import uuid
+
 import httpx
 import pytest
 import pytest_asyncio
@@ -19,6 +21,7 @@ from backend.app.main import app
 from backend.app.models.enums import JobStatus, RecommendationStatus, TimeHorizon
 from backend.app.models.job import Job
 from backend.app.models.recommendation import Recommendation
+from backend.app.models.report import Report
 from backend.app.services.recommendation_service import RecommendationService
 
 
@@ -158,12 +161,38 @@ async def test_recommendation_api_endpoints(api_client: httpx.AsyncClient):
     assert create_res.status_code == 202
     job_id = create_res.json()["id"]
 
+    # Recommendations derive from a real report; without one the list is empty (never invented).
+    empty_res = await api_client.post(f"/api/v1/jobs/{job_id}/recommendations/generate")
+    assert empty_res.status_code == 201
+    assert empty_res.json()["total"] == 0
+
+    async with AsyncSessionLocal() as s:
+        def sec(claim, url, conf):
+            return {
+                "summary": claim,
+                "confidence": conf,
+                "citations": [{"url": url, "title": "Source"}],
+                "key_findings": [{"claim": claim, "confidence": conf, "source_url": url}],
+            }
+        s.add(
+            Report(
+                job_id=uuid.UUID(job_id),
+                executive_summary="Test report built from stored findings.",
+                market_findings=sec("Vector database demand grew in 2024.", "https://example.test/a", 0.8),
+                competitor_analysis=sec("Three vendors hold most deployments.", "https://example.test/b", 0.6),
+                customer_insights=sec("Buyers prioritise latency.", "https://example.test/c", 0.7),
+                opportunities_and_risks={},
+                citations=[],
+            )
+        )
+        await s.commit()
+
     # 2. Generate recommendations for the job
     gen_res = await api_client.post(f"/api/v1/jobs/{job_id}/recommendations/generate")
     assert gen_res.status_code == 201
     gen_data = gen_res.json()
     assert gen_data["job_id"] == job_id
-    assert gen_data["total"] >= 3
+    assert gen_data["total"] == 3
     first_rec = gen_data["items"][0]
     assert "id" in first_rec
     assert "priority_score" in first_rec

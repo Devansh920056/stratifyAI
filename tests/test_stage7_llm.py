@@ -34,9 +34,9 @@ from backend.app.providers.llm.base import (
 )
 from backend.app.providers.llm.factory import get_llm_provider
 from backend.app.providers.llm.gemini import GeminiLLMProvider
-from backend.app.providers.llm.mock import MockLLMProvider
+from tests.fakes import MockLLMProvider
 from backend.app.providers.llm.prompt import validate_and_sanitize_grounding
-from backend.app.providers.search.mock import MockSearchProvider
+from tests.fakes import MockSearchProvider
 from workers.processor import TaskProcessor
 
 # ==============================================================================
@@ -124,7 +124,8 @@ async def test_gemini_analyze_success():
 
     def mock_handler(request: httpx.Request) -> httpx.Response:
         assert "generativelanguage.googleapis.com" in str(request.url)
-        assert "key=test-gemini-key" in str(request.url)
+        assert request.headers.get("x-goog-api-key") == "test-gemini-key"
+        assert "key=" not in str(request.url)
         return httpx.Response(200, json=mock_gemini_payload)
 
     transport = httpx.MockTransport(mock_handler)
@@ -330,12 +331,10 @@ def test_anti_hallucination_guardrail_remediates_unknown_urls():
 # ==============================================================================
 
 
-def test_factory_resolves_mock_llm_provider():
-    """Verify factory returns MockLLMProvider when configured as mock."""
-    mock_settings = Settings(LLM_PROVIDER="mock", GEMINI_API_KEY=None)
-    provider = get_llm_provider(mock_settings)
-    assert isinstance(provider, MockLLMProvider)
-    assert provider.provider_name == "mock"
+def test_factory_rejects_unknown_llm_provider():
+    """Unknown providers raise instead of silently substituting fabricated analysis."""
+    with pytest.raises(ValueError):
+        get_llm_provider(Settings(LLM_PROVIDER="mock", GEMINI_API_KEY=None))
 
 
 def test_factory_resolves_gemini_provider_with_key():
@@ -351,12 +350,10 @@ def test_factory_resolves_gemini_provider_with_key():
     assert provider.model_name == "gemini-1.5-flash"
 
 
-def test_factory_honest_fallback_when_gemini_key_missing():
-    """Verify factory falls back to MockLLMProvider when Gemini key is unset."""
-    missing_key_settings = Settings(LLM_PROVIDER="gemini", GEMINI_API_KEY=None)
-    provider = get_llm_provider(missing_key_settings)
-    assert isinstance(provider, MockLLMProvider)
-    assert provider.provider_name == "mock"
+def test_factory_falls_back_to_extractive_provider_when_gemini_key_missing():
+    """Missing Gemini key degrades to the evidence-quoting extractive provider, never a mock."""
+    provider = get_llm_provider(Settings(LLM_PROVIDER="gemini", GEMINI_API_KEY=None))
+    assert provider.provider_name == "smart-extractor"
 
 
 # ==============================================================================
@@ -415,10 +412,10 @@ async def test_worker_processes_with_mock_llm_provider():
             select(TaskResult).where(TaskResult.task_id == task.id)
         )
         assert result is not None
-        assert result.confidence_score >= 0.8
+        assert 0.0 < result.confidence_score <= 1.0
         assert len(result.key_findings) >= 1
         assert len(result.citations) >= 1
-        assert "geothermal" in result.grounded_summary.lower()
+        assert "fixture" in result.grounded_summary.lower()
         assert result.model_name == "mock-grounder-v1"
 
 
@@ -431,11 +428,15 @@ async def test_worker_processes_with_live_gemini_llm_provider():
     task_id = uuid.uuid4()
     job_id = uuid.uuid4()
 
+    retrieved_url = (
+        await MockSearchProvider().search("EGS drilling levelized cost of energy", 1)
+    )[0].url
+
     gemini_output_json = {
         "key_findings": [
             {
                 "claim": "Deep directional drilling reduces enhanced geothermal Capex by 38%.",
-                "source_url": "https://mock-market-intelligence.internal/reports/overview",
+                "source_url": retrieved_url,
                 "confidence": 0.95,
             }
         ],
@@ -446,7 +447,7 @@ async def test_worker_processes_with_live_gemini_llm_provider():
         "confidence_score": 0.93,
         "citations": [
             {
-                "url": "https://mock-market-intelligence.internal/reports/overview",
+                "url": retrieved_url,
                 "title": "Geothermal Drilling Economics Report",
             }
         ],
@@ -521,6 +522,6 @@ async def test_worker_processes_with_live_gemini_llm_provider():
             assert result is not None
             assert result.model_name == "gemini-1.5-flash"
             assert "geothermal" in result.grounded_summary.lower()
-            assert result.confidence_score == 0.93
+            assert 0.0 < result.confidence_score <= 1.0
             assert len(result.key_findings) >= 1
             assert len(result.citations) >= 1

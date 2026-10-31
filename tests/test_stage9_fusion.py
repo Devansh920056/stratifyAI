@@ -27,7 +27,10 @@ from backend.app.models.fused_evidence import FusedEvidence
 from backend.app.models.market_signal import MarketSignal
 from backend.app.providers.arxiv_preprint import ArxivPreprintProvider
 from backend.app.providers.sec_edgar import SECFilingsProvider
+from backend.app.providers.arxiv_preprint import build_search_query, parse_atom_feed
+from backend.app.providers.sec_edgar import extract_risk_factors, html_to_text
 from backend.app.services.fusion_service import EvidenceFusionService
+from tests.fakes import _ATOM, _filing_html, install_sec_arxiv_transport
 
 
 @pytest_asyncio.fixture
@@ -43,43 +46,78 @@ async def api_client():
         yield client
 
 
+@pytest.fixture
+def sec_arxiv_mocked(monkeypatch):
+    install_sec_arxiv_transport(monkeypatch)
+
+
+def test_html_to_text_and_item_1a_extraction():
+    text = html_to_text(_filing_html())
+    excerpt = extract_risk_factors(text)
+    assert excerpt is not None
+    assert "adversely affected" in excerpt
+    assert "Unresolved" not in excerpt
+    # a table of contents alone is not a risk-factor section
+    assert extract_risk_factors("Item 1A. Risk Factors 12 Item 1B. Unresolved Staff Comments 30") is None
+
+
 @pytest.mark.asyncio
-async def test_sec_edgar_provider_and_cik_resolution():
-    """Validates SEC EDGAR company CIK resolution and Item 1A Risk Factor extraction."""
+async def test_sec_edgar_provider_and_cik_resolution(sec_arxiv_mocked):
+    """Resolves a company via company_tickers.json and parses real-shaped submissions + filing HTML."""
     sec = SECFilingsProvider()
 
-    # 1. Test CIK resolution for known tickers
-    tesla_meta = sec.resolve_cik("TSLA")
-    assert tesla_meta is not None
-    assert tesla_meta["cik"] == "0001318605"
-    assert tesla_meta["ticker"] == "TSLA"
+    async with httpx.AsyncClient() as client:
+        assert (await sec.resolve_company("TSLA", client))["cik"] == 1318605
+        assert (await sec.resolve_company("CrowdStrike", client))["ticker"] == "CRWD"
+        assert await sec.resolve_company("Not A Registrant Corp", client) is None
 
-    crwd_meta = sec.resolve_cik("CrowdStrike")
-    assert crwd_meta is not None
-    assert crwd_meta["ticker"] == "CRWD"
-
-    # 2. Fetch filings
     filings = await sec.get_filings_for_entity("Tesla", max_results=3)
-    assert len(filings) >= 1
-    top_filing = filings[0]
-    assert top_filing.filing_type in ("10-K", "10-Q")
-    assert "Risk Factors" in top_filing.title
-    assert top_filing.reliability_score == 0.95
-    assert "https://www.sec.gov" in top_filing.source_url
+    assert [f.filing_type for f in filings] == ["10-Q", "10-K", "8-K"]
+    tenk = next(f for f in filings if f.filing_type == "10-K")
+    assert tenk.metadata["excerpt_kind"] == "item_1a_risk_factors"
+    assert "Risk Factors" in tenk.title
+    assert tenk.source_url == "https://www.sec.gov/Archives/edgar/data/1318605/000000000025000002/annual.htm"
+    assert tenk.metadata["reliability_basis"] == "source_class_prior"
+    # the 8-K has no risk-factor section: metadata only, and it says so
+    eightk = next(f for f in filings if f.filing_type == "8-K")
+    assert eightk.metadata["excerpt_kind"] == "filing_metadata"
+    assert "Form 8-K filed 2025-01-10" in eightk.content_excerpt
+
+    assert await sec.get_filings_for_entity("Not A Registrant Corp") == []
 
 
 @pytest.mark.asyncio
-async def test_arxiv_preprint_provider():
-    """Validates arXiv academic preprint search and metadata extraction."""
-    arxiv = ArxivPreprintProvider()
+async def test_sec_provider_raises_on_outage():
+    def down(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
 
-    papers = await arxiv.search_preprints("Solid-state battery chemistry", max_results=2)
-    assert len(papers) >= 1
-    top_paper = papers[0]
-    assert "arxiv.org" in top_paper.source_url
-    assert len(top_paper.authors) >= 1
-    assert top_paper.reliability_score == 0.85
-    assert len(top_paper.abstract_excerpt) > 40
+    from backend.app.providers import sec_edgar
+    from backend.app.providers.sec_edgar import SECProviderError
+
+    sec_edgar._ticker_cache.update(loaded_at=0.0, rows=[])
+    async with httpx.AsyncClient(transport=httpx.MockTransport(down)) as client:
+        with pytest.raises(SECProviderError):
+            await SECFilingsProvider(client=client).get_filings_for_entity("Tesla")
+
+
+def test_arxiv_atom_parsing_and_query_building():
+    papers = parse_atom_feed(_ATOM)
+    assert len(papers) == 1
+    p = papers[0]
+    assert p.arxiv_id == "2401.00001"
+    assert p.source_url == "https://arxiv.org/abs/2401.00001"
+    assert p.authors == ["Test Author One", "Test Author Two"]
+    assert p.metadata["reliability_basis"] == "source_class_prior"
+    assert build_search_query("the Solid-state battery") == "all:solid-state AND all:battery"
+    assert build_search_query("the of") is None
+
+
+@pytest.mark.asyncio
+async def test_arxiv_preprint_provider(sec_arxiv_mocked):
+    papers = await ArxivPreprintProvider().search_preprints("Solid-state battery chemistry", max_results=2)
+    assert len(papers) == 1
+    assert "arxiv.org" in papers[0].source_url
+    assert len(papers[0].abstract_excerpt) > 40
 
 
 @pytest.mark.asyncio
@@ -114,7 +152,7 @@ async def test_fused_evidence_model_crud_and_persistence(db_session: AsyncSessio
 
 
 @pytest.mark.asyncio
-async def test_evidence_fusion_service_contradiction_detection(db_session: AsyncSession):
+async def test_evidence_fusion_service_contradiction_detection(db_session: AsyncSession, sec_arxiv_mocked):
     """Tests cross-source reconciliation and claim contradiction detection."""
     unique_tag = uuid.uuid4().hex[:6]
     # 1. Insert overly optimistic commercial news signal
@@ -153,12 +191,12 @@ async def test_evidence_fusion_service_contradiction_detection(db_session: Async
         if item.divergence_status == DivergenceStatus.CONTRADICTORY.value
     ]
     assert len(contradictory_items) >= 1
-    assert "Direct Claim Contradiction" in (contradictory_items[0].reconciliation_notes or "")
-    assert fused_res.summary.evidence_reliability_index >= 0.85
+    assert "Tone mismatch" in (contradictory_items[0].reconciliation_notes or "")
+    assert fused_res.summary.retrieval_warnings == []
 
 
 @pytest.mark.asyncio
-async def test_api_fusion_endpoints(api_client: httpx.AsyncClient):
+async def test_api_fusion_endpoints(api_client: httpx.AsyncClient, sec_arxiv_mocked):
     """Tests REST endpoints for multi-source fusion query, listing, and reconciliation."""
     # 1. Query and fuse endpoint
     payload = {
@@ -187,3 +225,23 @@ async def test_api_fusion_endpoints(api_client: httpx.AsyncClient):
     recon_data = recon_res.json()
     assert recon_data["summary"] is not None
     assert "evidence_reliability_index" in recon_data["summary"]
+
+
+@pytest.mark.asyncio
+async def test_fusion_reports_retrieval_failure_and_stores_nothing(db_session: AsyncSession, monkeypatch):
+    """If SEC/arXiv are unreachable, the response carries warnings and zero items - no substitutes."""
+    original = httpx.AsyncClient
+
+    class _Down(original):  # type: ignore[misc, valid-type]
+        def __init__(self, *a, **kw):
+            kw.setdefault("transport", httpx.MockTransport(lambda r: httpx.Response(503)))
+            super().__init__(*a, **kw)
+
+    from backend.app.providers import sec_edgar
+
+    sec_edgar._ticker_cache.update(loaded_at=0.0, rows=[])
+    monkeypatch.setattr(httpx, "AsyncClient", _Down)
+    entity = f"NoData-{uuid.uuid4().hex[:6]}"
+    res = await EvidenceFusionService.query_and_fuse_evidence(db_session, entity, "anything")
+    assert res.total == 0
+    assert len(res.summary.retrieval_warnings) == 2

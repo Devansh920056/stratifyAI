@@ -1,294 +1,49 @@
 """
-SEC EDGAR Provider: Ingestion and Item 1A Risk Factor Extraction for Tracked Public Companies.
-Follows official SEC EDGAR submission protocols and User-Agent specifications.
-Provides deterministic institutional fallbacks for offline testing and continuous development.
+SEC EDGAR Provider: live retrieval of real filings.
+
+Data sources (all official SEC endpoints, see https://www.sec.gov/os/accessing-edgar-data):
+  * https://www.sec.gov/files/company_tickers.json         - ticker/name -> CIK
+  * https://data.sec.gov/submissions/CIK##########.json    - filing index for a company
+  * https://www.sec.gov/Archives/edgar/data/...            - the filing documents themselves
+
+Nothing is fabricated: if a company cannot be resolved, or SEC cannot be reached, the provider
+returns no filings (or raises SECProviderError for network failures). Fair-access rules are
+respected: a declared User-Agent is sent and requests are issued sequentially.
 """
 
+import html
 import logging
+import re
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
 
+from backend.app.core.config import get_settings
+
 logger = logging.getLogger("stratify.providers.sec_edgar")
 
-# Well-known CIK registry for tracked enterprise market intelligence targets
-CIK_REGISTRY: dict[str, dict[str, str]] = {
-    "tesla": {
-        "cik": "0001318605",
-        "ticker": "TSLA",
-        "name": "Tesla, Inc.",
-        "fiscal_year_end": "1231",
-    },
-    "tsla": {
-        "cik": "0001318605",
-        "ticker": "TSLA",
-        "name": "Tesla, Inc.",
-        "fiscal_year_end": "1231",
-    },
-    "crowdstrike": {
-        "cik": "0001535527",
-        "ticker": "CRWD",
-        "name": "CrowdStrike Holdings, Inc.",
-        "fiscal_year_end": "0131",
-    },
-    "crwd": {
-        "cik": "0001535527",
-        "ticker": "CRWD",
-        "name": "CrowdStrike Holdings, Inc.",
-        "fiscal_year_end": "0131",
-    },
-    "rivian": {
-        "cik": "0001874178",
-        "ticker": "RIVN",
-        "name": "Rivian Automotive, Inc.",
-        "fiscal_year_end": "1231",
-    },
-    "rivn": {
-        "cik": "0001874178",
-        "ticker": "RIVN",
-        "name": "Rivian Automotive, Inc.",
-        "fiscal_year_end": "1231",
-    },
-    "quantumscape": {
-        "cik": "0001811414",
-        "ticker": "QS",
-        "name": "QuantumScape Corporation",
-        "fiscal_year_end": "1231",
-    },
-    "qs": {
-        "cik": "0001811414",
-        "ticker": "QS",
-        "name": "QuantumScape Corporation",
-        "fiscal_year_end": "1231",
-    },
-    "microsoft": {
-        "cik": "0000789019",
-        "ticker": "MSFT",
-        "name": "Microsoft Corporation",
-        "fiscal_year_end": "0630",
-    },
-    "msft": {
-        "cik": "0000789019",
-        "ticker": "MSFT",
-        "name": "Microsoft Corporation",
-        "fiscal_year_end": "0630",
-    },
-    "nvidia": {
-        "cik": "0001045810",
-        "ticker": "NVDA",
-        "name": "NVIDIA Corporation",
-        "fiscal_year_end": "0131",
-    },
-    "nvda": {
-        "cik": "0001045810",
-        "ticker": "NVDA",
-        "name": "NVIDIA Corporation",
-        "fiscal_year_end": "0131",
-    },
-    "tata motors": {
-        "cik": "0000926042",
-        "ticker": "TATAMOTORS.NS",
-        "name": "Tata Motors Limited",
-        "fiscal_year_end": "0331",
-    },
-    "tatamotors": {
-        "cik": "0000926042",
-        "ticker": "TATAMOTORS.NS",
-        "name": "Tata Motors Limited",
-        "fiscal_year_end": "0331",
-    },
-    "infosys": {
-        "cik": "0001067491",
-        "ticker": "INFY.NS",
-        "name": "Infosys Limited",
-        "fiscal_year_end": "0331",
-    },
-    "infy": {
-        "cik": "0001067491",
-        "ticker": "INFY.NS",
-        "name": "Infosys Limited",
-        "fiscal_year_end": "0331",
-    },
-    "hdfc bank": {
-        "cik": "0001144967",
-        "ticker": "HDFCBANK.NS",
-        "name": "HDFC Bank Limited",
-        "fiscal_year_end": "0331",
-    },
-    "hdfcbank": {
-        "cik": "0001144967",
-        "ticker": "HDFCBANK.NS",
-        "name": "HDFC Bank Limited",
-        "fiscal_year_end": "0331",
-    },
-    "reliance": {
-        "cik": "0001016834",
-        "ticker": "RELIANCE.NS",
-        "name": "Reliance Industries Limited",
-        "fiscal_year_end": "0331",
-    },
-    "zomato": {
-        "cik": "0001923000",
-        "ticker": "ZOMATO.NS",
-        "name": "Zomato Limited",
-        "fiscal_year_end": "0331",
-    },
-}
+TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
+SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
+ARCHIVE_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{accession_nodash}/{document}"
 
-# Institutional disclosures and authentic Item 1A Risk Factors
-VERIFIED_SEC_DISCLOSURES: dict[str, list[dict[str, Any]]] = {
-    "tesla": [
-        {
-            "filing_type": "10-K",
-            "fiscal_period": "FY 2024",
-            "title": "Item 1A. Risk Factors: 4680 In-House Battery Scaling & Manufacturing Headwinds",
-            "content_excerpt": (
-                "We may be unable to successfully scale manufacturing of our proprietary 4680 battery cells to targeted yields. "
-                "Unforeseen production bottlenecks, dry cathode electrode coating equipment calibrations, and single-source supplier "
-                "dependencies for active cathode precursor materials could result in substantial vehicle margin contraction, delayed delivery "
-                "schedules, and higher unit costs across our Cybercab and energy storage product lines."
-            ),
-            "accession_number": "0001318605-24-000012",
-        },
-        {
-            "filing_type": "10-Q",
-            "fiscal_period": "Q3 2024",
-            "title": "Item 1A. Risk Factors: Autonomous Regulatory Scrutiny & Full Self-Driving Liability",
-            "content_excerpt": (
-                "Our autonomous and driver-assistance systems (Autopilot and Full Self-Driving Supervised) face rigorous regulatory "
-                "inquiries from the NHTSA and international transport authorities. Any mandatory software recalls, restrictions on vision-only "
-                "sensor suites, or catastrophic accident liabilities could materially impair consumer trust, delay commercial Robotaxi rollouts, "
-                "and impose substantial compliance expenditures."
-            ),
-            "accession_number": "0001318605-24-000038",
-        },
-    ],
-    "crowdstrike": [
-        {
-            "filing_type": "10-K",
-            "fiscal_period": "FY 2025",
-            "title": "Item 1A. Risk Factors: Kernel-Level Sensor Updates & System Stability Outages",
-            "content_excerpt": (
-                "Our Falcon platform relies on deep kernel-level sensors installed on customer endpoints across enterprise operating systems. "
-                "Defects in rapid-response channel configuration content, logic bugs in sensor deployment pipelines, or unauthorized system "
-                "crashes could disrupt customer business operations, trigger contractual warranty disputes, damage our enterprise brand reputation, "
-                "and exhaust customer liability limitation protections."
-            ),
-            "accession_number": "0001535527-25-000005",
-        },
-        {
-            "filing_type": "8-K",
-            "fiscal_period": "Current Event",
-            "title": "Item 8.01 Other Events: Root Cause Analysis on Channel File 291 Deployment Architecture",
-            "content_excerpt": (
-                "The company implemented rigorous multi-stage canary deployments, added mandatory Content Validator sanity checks, "
-                "and introduced granular customer deployment controls for Falcon sensor configuration updates to eliminate single-point "
-                "kernel panic failures across enterprise endpoints."
-            ),
-            "accession_number": "0001535527-24-000072",
-        },
-    ],
-    "rivian": [
-        {
-            "filing_type": "10-K",
-            "fiscal_period": "FY 2024",
-            "title": "Item 1A. Risk Factors: Capital Expenditure Requirements & R2 High-Volume Production Launch",
-            "content_excerpt": (
-                "We expect to incur significant ongoing capital expenditures and cash burn as we tool and commission our Normal, Illinois "
-                "manufacturing facility for our high-volume midsize R2 platform. Inability to achieve projected per-unit gross margin positive "
-                "metrics or supplier component price reductions could require us to seek additional dilutive debt or equity financing."
-            ),
-            "accession_number": "0001874178-24-000018",
-        },
-    ],
-    "quantumscape": [
-        {
-            "filing_type": "10-K",
-            "fiscal_period": "FY 2024",
-            "title": "Item 1A. Risk Factors: Solid-State Ceramic Separator Manufacturing Yields at Commercial Scale",
-            "content_excerpt": (
-                "Our proprietary solid-state lithium-metal battery technology relies on defect-free ceramic separator sheets sintered at extreme temperatures. "
-                "We have not yet demonstrated continuous high-volume roll-to-roll manufacturing yields. Failure to meet OEM automotive qualification standards "
-                "or delays in establishing gigawatt-scale production joint ventures will prevent commercial revenue generation."
-            ),
-            "accession_number": "0001811414-24-000015",
-        },
-    ],
-    "tata motors": [
-        {
-            "filing_type": "20-F",
-            "fiscal_period": "FY 2024",
-            "title": "Item 3D. Risk Factors: EV Transition, PLI Scheme Localization, and JLR Electrification",
-            "content_excerpt": (
-                "Our electric vehicle strategy in India and Jaguar Land Rover's Reimagine journey require substantial ongoing capital investment in "
-                "localized battery cell chemistry, dedicated EV platforms, and supply chain verticalization. Delays in battery gigafactory commissioning "
-                "or changes to government subsidies under the EMPS and Production Linked Incentive (PLI) scheme could impact profitability and market share."
-            ),
-            "accession_number": "0000926042-24-000030",
-        },
-        {
-            "filing_type": "6-K",
-            "fiscal_period": "Q3 FY25",
-            "title": "Report of Foreign Issuer: Commercial Vehicle Fleet Demand and Passenger EV Unit Economics",
-            "content_excerpt": (
-                "Commercial vehicle tonnage demand in India reflects macroeconomic infrastructure cycle spending. In passenger EVs, localized sourcing "
-                "of battery packs and e-drive units has achieved gross margin positive unit economics ahead of mainstream mass-market parity."
-            ),
-            "accession_number": "0000926042-24-000045",
-        },
-    ],
-    "infosys": [
-        {
-            "filing_type": "20-F",
-            "fiscal_period": "FY 2024",
-            "title": "Item 3D. Risk Factors: Generative AI Shift, Global Capability Center Insourcing, and Offshore Billing Models",
-            "content_excerpt": (
-                "The accelerating migration of Fortune 500 enterprises toward proprietary Global Capability Centers (GCCs) in India and automated "
-                "AI coding frameworks may compress traditional time-and-materials billing models. We are repositioning our Topaz AI suite and upskilling "
-                "over 200,000 engineers to safeguard enterprise digital transformation contract margins."
-            ),
-            "accession_number": "0001067491-24-000021",
-        },
-    ],
-    "hdfc bank": [
-        {
-            "filing_type": "20-F",
-            "fiscal_period": "FY 2024",
-            "title": "Item 3D. Risk Factors: Post-Merger Balance Sheet Absorption, Deposit Mobilization, and RBI Lending Directives",
-            "content_excerpt": (
-                "Following the landmark amalgamation with HDFC Limited, our primary strategic focus remains accelerating low-cost CASA deposit mobilization "
-                "to normalize the credit-to-deposit ratio without diluting net interest margins. Stricter Reserve Bank of India risk-weight norms on unsecured "
-                "personal credit and NBFC exposures require disciplined capital adequacy calibration."
-            ),
-            "accession_number": "0001144967-24-000019",
-        },
-    ],
-    "reliance": [
-        {
-            "filing_type": "Institutional Disclosure",
-            "fiscal_period": "FY 2024",
-            "title": "Statutory Annual Report: Clean Energy Gigafactory Rollout & Jio 5G Capital Allocation",
-            "content_excerpt": (
-                "We are progressing rapidly on our Jamnagar Green Energy Giga Complex encompassing solar PV, energy storage, electrolyzers, and fuel cells. "
-                "Jio's standalone True 5G network covers Pan-India, with fixed wireless access (JioAirFiber) driving prepaid ARPU expansion and broadband penetration."
-            ),
-            "accession_number": "0001016834-24-000010",
-        },
-    ],
-    "zomato": [
-        {
-            "filing_type": "BSE/NSE Statutory Disclosure",
-            "fiscal_period": "Q3 FY25",
-            "title": "Statutory Financial Results: Blinkit Quick Commerce Dark Store Expansion & Contribution Margin Growth",
-            "content_excerpt": (
-                "Blinkit dark store network expanded to over 1,000 operational locations across Tier-1 and Tier-2 Indian cities with net positive contribution "
-                "margins. Increasing non-grocery SKU mix (electronics, festive gifts, home essentials) continues to drive Average Order Value (AOV) higher."
-            ),
-            "accession_number": "0001923000-24-000008",
-        },
-    ],
-}
+SUPPORTED_FORMS = ("10-K", "10-Q", "8-K", "20-F", "6-K", "40-F")
+RISK_FACTOR_FORMS = ("10-K", "10-Q", "20-F")
+MAX_RISK_DOCS_PER_REQUEST = 2  # keep outbound request volume small (SEC fair access)
+MAX_DOCUMENT_BYTES = 6_000_000
+EXCERPT_CHARS = 1200
+TICKER_CACHE_TTL_SECONDS = 24 * 3600
+
+# Reliability is a *source-class prior*, not a measurement: filings are primary, legally
+# attested documents. It is recorded in metadata as such so consumers can tell.
+SEC_SOURCE_RELIABILITY_PRIOR = 1.0
+
+_ticker_cache: dict[str, Any] = {"loaded_at": 0.0, "rows": []}
+
+
+class SECProviderError(Exception):
+    """Raised when SEC EDGAR cannot be reached or returns an unexpected response."""
 
 
 @dataclass
@@ -301,94 +56,209 @@ class SECFilingResult:
     title: str
     content_excerpt: str
     source_url: str
-    reliability_score: float = 0.95
+    reliability_score: float = SEC_SOURCE_RELIABILITY_PRIOR
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
-class SECFilingsProvider:
-    """
-    Ingests and extracts primary statutory disclosures from the SEC EDGAR system.
-    """
+def html_to_text(raw: str) -> str:
+    """Converts filing HTML to plain text."""
+    raw = re.sub(r"(?is)<(script|style|head)[^>]*>.*?</\1>", " ", raw)
+    raw = re.sub(r"(?i)<br\s*/?>|</p>|</div>|</tr>|</li>", "\n", raw)
+    raw = re.sub(r"(?s)<[^>]+>", " ", raw)
+    raw = html.unescape(raw).replace("\xa0", " ")
+    raw = re.sub(r"[ \t\r\f\v]+", " ", raw)
+    raw = re.sub(r"\n\s*\n+", "\n", raw)
+    return raw.strip()
 
-    def __init__(self, timeout_seconds: float = 10.0, client: httpx.AsyncClient | None = None):
+
+_ITEM_1A = re.compile(r"item\s*1a\s*[\.\:\-–—]?\s*risk\s*factors", re.IGNORECASE)
+_ITEM_END = re.compile(
+    r"item\s*1b\s*[\.\:\-–—]?\s*unresolved|item\s*2\s*[\.\:\-–—]?\s*(?:properties|management)|item\s*1c\s*[\.\:\-–—]?\s*cyber",
+    re.IGNORECASE,
+)
+
+
+def extract_risk_factors(text: str, max_chars: int = EXCERPT_CHARS) -> str | None:
+    """
+    Extracts the opening of the real "Item 1A. Risk Factors" section from filing text.
+    The table of contents repeats the heading, so the longest candidate section is used.
+    Returns None when no substantial section is found.
+    """
+    flat = re.sub(r"\s+", " ", text)
+    best = ""
+    for match in _ITEM_1A.finditer(flat):
+        start = match.end()
+        end_match = _ITEM_END.search(flat, start)
+        end = end_match.start() if end_match else min(len(flat), start + 20000)
+        section = flat[start:end].strip()
+        if len(section) > len(best):
+            best = section
+    if len(best) < 300:
+        return None
+    excerpt = best[:max_chars]
+    if len(best) > max_chars:
+        cut = excerpt.rfind(". ")
+        excerpt = excerpt[: cut + 1] if cut > max_chars * 0.5 else excerpt.rstrip() + "..."
+    return excerpt
+
+
+class SECFilingsProvider:
+    """Retrieves real filings from SEC EDGAR."""
+
+    def __init__(
+        self,
+        timeout_seconds: float = 15.0,
+        client: httpx.AsyncClient | None = None,
+        user_agent: str | None = None,
+    ):
         self.timeout = timeout_seconds
         self.client = client
-        self.user_agent = "StratifyAI-EnterpriseMarketIntelligence/2.0 (research@stratify.ai)"
+        self.user_agent = user_agent or get_settings().SEC_USER_AGENT
 
-    def resolve_cik(self, entity_name: str) -> dict[str, str] | None:
-        """Resolves corporate entity name or ticker symbol to SEC CIK."""
-        key = entity_name.lower().strip()
-        return CIK_REGISTRY.get(key)
+    # ------------------------------------------------------------------ HTTP
+    async def _get(self, client: httpx.AsyncClient, url: str) -> httpx.Response:
+        headers = {"User-Agent": self.user_agent, "Accept-Encoding": "gzip, deflate"}
+        try:
+            response = await client.get(url, headers=headers, timeout=self.timeout, follow_redirects=True)
+        except httpx.HTTPError as exc:
+            raise SECProviderError(f"SEC request failed for {url}: {exc!s}") from exc
+        if response.status_code != 200:
+            raise SECProviderError(f"SEC returned HTTP {response.status_code} for {url}")
+        return response
 
+    async def _load_tickers(self, client: httpx.AsyncClient) -> list[dict[str, Any]]:
+        now = time.time()
+        if _ticker_cache["rows"] and now - _ticker_cache["loaded_at"] < TICKER_CACHE_TTL_SECONDS:
+            return _ticker_cache["rows"]
+        payload = (await self._get(client, TICKERS_URL)).json()
+        rows = list(payload.values()) if isinstance(payload, dict) else list(payload)
+        _ticker_cache.update(loaded_at=now, rows=rows)
+        return rows
+
+    # ------------------------------------------------------------ resolution
+    @staticmethod
+    def match_company(entity_name: str, rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+        """Matches a ticker or company name to a row of SEC's company_tickers.json."""
+        query = entity_name.strip().lower()
+        if not query:
+            return None
+        for row in rows:  # exact ticker
+            if str(row.get("ticker", "")).lower() == query:
+                return row
+        for row in rows:  # exact company name
+            if str(row.get("title", "")).lower() == query:
+                return row
+        word = re.compile(rf"\b{re.escape(query)}\b")
+        contains = [r for r in rows if word.search(str(r.get("title", "")).lower())]
+        if contains:  # shortest title = closest to the query (e.g. "Tesla, Inc.")
+            return min(contains, key=lambda r: len(str(r.get("title", ""))))
+        return None
+
+    async def resolve_company(self, entity_name: str, client: httpx.AsyncClient) -> dict[str, Any] | None:
+        rows = await self._load_tickers(client)
+        row = self.match_company(entity_name, rows)
+        if not row:
+            return None
+        return {
+            "cik": int(row["cik_str"]),
+            "ticker": str(row.get("ticker", "")),
+            "name": str(row.get("title", entity_name)),
+        }
+
+    # --------------------------------------------------------------- filings
     async def get_filings_for_entity(self, entity_name: str, max_results: int = 5) -> list[SECFilingResult]:
         """
-        Fetches SEC filings (10-K, 10-Q, 8-K) for a public company.
-        Tries live SEC EDGAR API if online; falls back reliably to verified disclosures.
+        Returns the company's most recent 10-K/10-Q/8-K/20-F/6-K/40-F filings, newest first.
+        Returns [] when the company is not an SEC registrant; raises SECProviderError on outage.
         """
-        resolved = self.resolve_cik(entity_name)
-        if not resolved:
-            # Fuzzy match
-            norm_query = entity_name.lower().strip()
-            for key, val in CIK_REGISTRY.items():
-                if key in norm_query or norm_query in key:
-                    resolved = val
-                    break
+        if self.client is not None:
+            return await self._get_filings(self.client, entity_name, max_results)
+        async with httpx.AsyncClient() as client:
+            return await self._get_filings(client, entity_name, max_results)
 
-        if not resolved:
-            logger.info(f"[SEC Provider] No SEC CIK registered for '{entity_name}'. Generating generic corporate filing model.")
-            return [
-                SECFilingResult(
-                    entity_name=entity_name.title(),
-                    ticker="N/A",
-                    cik="0000000000",
-                    filing_type="10-K",
-                    fiscal_period="FY 2024",
-                    title=f"Item 1A. Risk Factors: {entity_name.title()} Operational & Regulatory Disclosures",
-                    content_excerpt=(
-                        f"Statutory risk disclosure for {entity_name}: General economic deceleration, supply chain single-source vulnerabilities, "
-                        "and heightened competitive price compression may adversely affect operating margins and revenue trajectories."
-                    ),
-                    source_url="https://www.sec.gov/edgar/searchedgar/companysearch",
-                    reliability_score=0.90,
-                    metadata={"entity": entity_name, "status": "synthetic_model"},
-                )
-            ]
+    async def _get_filings(
+        self, client: httpx.AsyncClient, entity_name: str, max_results: int
+    ) -> list[SECFilingResult]:
+        company = await self.resolve_company(entity_name, client)
+        if not company:
+            logger.info("No SEC registrant found matching '%s'.", entity_name)
+            return []
 
-        cik = resolved["cik"]
-        ticker = resolved["ticker"]
-        company_name = resolved["name"]
-        canonical_key = resolved["name"].split()[0].strip(",.").lower()
+        cik = company["cik"]
+        submissions = (await self._get(client, SUBMISSIONS_URL.format(cik=cik))).json()
+        recent = (submissions.get("filings") or {}).get("recent") or {}
+        forms = recent.get("form", [])
 
-        # Check if verified statutory disclosures exist in institutional registry
-        verified_items = (
-            VERIFIED_SEC_DISCLOSURES.get(canonical_key)
-            or VERIFIED_SEC_DISCLOSURES.get(ticker.lower())
-            or VERIFIED_SEC_DISCLOSURES.get(entity_name.lower().strip())
-        )
+        def col(name: str, i: int) -> str:
+            values = recent.get(name, [])
+            return str(values[i]) if i < len(values) and values[i] is not None else ""
+
         results: list[SECFilingResult] = []
+        risk_docs_fetched = 0
+        for i, form in enumerate(forms):
+            if form not in SUPPORTED_FORMS:
+                continue
+            if len(results) >= max_results:
+                break
 
-        if verified_items:
-            for item in verified_items[:max_results]:
-                accession = item.get("accession_number", "0000000000")
-                url = f"https://www.sec.gov/edgar/browse/?CIK={cik}"
-                results.append(
-                    SECFilingResult(
-                        entity_name=company_name,
-                        ticker=ticker,
-                        cik=cik,
-                        filing_type=item["filing_type"],
-                        fiscal_period=item["fiscal_period"],
-                        title=item["title"],
-                        content_excerpt=item["content_excerpt"],
-                        source_url=url,
-                        reliability_score=0.95,
-                        metadata={
-                            "cik": cik,
-                            "ticker": ticker,
-                            "accession_number": accession,
-                            "source": "SEC EDGAR Statutory Filing",
-                        },
-                    )
+            accession = col("accessionNumber", i)
+            document = col("primaryDocument", i)
+            filing_date = col("filingDate", i)
+            report_date = col("reportDate", i)
+            items = col("items", i)
+            description = col("primaryDocDescription", i)
+            url = ARCHIVE_URL.format(cik=cik, accession_nodash=accession.replace("-", ""), document=document)
+
+            excerpt: str | None = None
+            excerpt_kind = "filing_metadata"
+            if form in RISK_FACTOR_FORMS and document and risk_docs_fetched < MAX_RISK_DOCS_PER_REQUEST:
+                risk_docs_fetched += 1
+                try:
+                    doc = await self._get(client, url)
+                    excerpt = extract_risk_factors(html_to_text(doc.text[:MAX_DOCUMENT_BYTES]))
+                    if excerpt:
+                        excerpt_kind = "item_1a_risk_factors"
+                except SECProviderError as exc:
+                    logger.warning("Could not fetch filing document %s: %s", url, exc)
+
+            if not excerpt:
+                parts = [f"Form {form} filed {filing_date}"]
+                if report_date:
+                    parts.append(f"for period ending {report_date}")
+                if description:
+                    parts.append(f"({description})")
+                if items:
+                    parts.append(f"reporting items {items}")
+                excerpt = " ".join(parts) + "."
+
+            fiscal_period = f"FY {report_date[:4]}" if form in ("10-K", "20-F", "40-F") and report_date else (
+                f"Period ending {report_date}" if report_date else f"Filed {filing_date}"
+            )
+            title = f"{company['name']} - Form {form} ({fiscal_period})"
+            if excerpt_kind == "item_1a_risk_factors":
+                title = f"Item 1A. Risk Factors - {company['name']} Form {form} ({fiscal_period})"
+
+            results.append(
+                SECFilingResult(
+                    entity_name=company["name"],
+                    ticker=company["ticker"],
+                    cik=f"{cik:010d}",
+                    filing_type=form,
+                    fiscal_period=fiscal_period,
+                    title=title,
+                    content_excerpt=excerpt,
+                    source_url=url,
+                    metadata={
+                        "cik": f"{cik:010d}",
+                        "ticker": company["ticker"],
+                        "accession_number": accession,
+                        "filing_date": filing_date,
+                        "report_date": report_date,
+                        "excerpt_kind": excerpt_kind,
+                        "reliability_basis": "source_class_prior",
+                        "source": "SEC EDGAR",
+                    },
                 )
+            )
 
         return results

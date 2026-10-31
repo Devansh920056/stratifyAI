@@ -116,12 +116,12 @@ async def test_multi_agent_debate_service_orchestration(db_session: AsyncSession
         source_type=EvidenceSourceType.SEC_EDGAR.value,
         filing_type="10-K",
         title="Item 1A Risk Factor: 4680 Cathode Coating Calibration",
-        content_excerpt="Dry cathode electrode coating equipment calibrations may delay production scaling.",
+        content_excerpt="Production delays and regulatory investigation could adversely affect our results; supply chain disruption may harm output.",
         source_url="https://www.sec.gov/edgar/browse/?CIK=0001318605",
         reliability_score=0.95,
         divergence_status="CONTRADICTORY",
         fiscal_period="FY 2024",
-        metadata_json={"accession_number": "0001318605-24-000012"},
+        metadata_json={"accession_number": "0001318605-24-000012", "excerpt_kind": "item_1a_risk_factors"},
     )
     db_session.add(sec_evidence)
     await db_session.commit()
@@ -155,25 +155,48 @@ async def test_multi_agent_debate_service_orchestration(db_session: AsyncSession
 
 @pytest.mark.asyncio
 async def test_arbiter_synthesis_matrix_and_tripwires(db_session: AsyncSession):
-    """Verifies synthesis matrix scorecard, vector balance, and conditional risk tripwires."""
+    """Matrix is computed from stored evidence; tripwires cite real adverse items; no evidence -> none."""
     unique_id = uuid.uuid4().hex[:6]
     entity = f"CrowdStrike-{unique_id}"
+    topic = "Single-Kernel Architecture Enterprise Stability Post-Incident"
 
-    req = DebateInitiateRequest(
-        topic="Single-Kernel Architecture Enterprise Stability Post-Incident",
-        entity_name=entity,
-        rounds_count=2,
+    # No stored evidence: honest empty result, neutral default, zero coverage.
+    empty = await MultiAgentDebateService.initiate_debate(
+        db_session, DebateInitiateRequest(topic=topic, entity_name=entity, rounds_count=2)
     )
-    res = await MultiAgentDebateService.initiate_debate(db_session, req)
+    assert empty.synthesis_matrix["tripwires"] == []
+    assert empty.synthesis_matrix["bear_score"] == 0.0
+    assert empty.conviction_score == 0.0
+    assert empty.arbiter_verdict == "NEUTRAL_HOLD"
 
+    # With two stored risk-factor filings, tripwires reference them.
+    entity2 = f"CrowdStrike-{uuid.uuid4().hex[:6]}"
+    for i in range(2):
+        db_session.add(
+            FusedEvidence(
+                id=uuid.uuid4(),
+                entity_name=entity2,
+                source_type=EvidenceSourceType.SEC_EDGAR.value,
+                filing_type="10-K",
+                title=f"Item 1A risk filing {i}",
+                content_excerpt="Outages and litigation could adversely affect our business and harm customers.",
+                source_url=f"https://www.sec.gov/Archives/edgar/data/1/{i}/doc.htm",
+                reliability_score=1.0,
+                divergence_status="UNVERIFIED",
+                fiscal_period="FY 2024",
+                metadata_json={"accession_number": f"0000000000-24-00000{i}", "excerpt_kind": "item_1a_risk_factors"},
+            )
+        )
+    await db_session.commit()
+    res = await MultiAgentDebateService.initiate_debate(
+        db_session, DebateInitiateRequest(topic=topic, entity_name=entity2, rounds_count=2)
+    )
     matrix = res.synthesis_matrix
-    assert "bull_score" in matrix
-    assert "bear_score" in matrix
-    assert "regulatory_risk_score" in matrix
-    assert "tripwires" in matrix
-    assert len(matrix["tripwires"]) >= 2
-    assert "primary_growth_vector" in matrix
-    assert "primary_vulnerability" in matrix
+    for key in ("bull_score", "bear_score", "regulatory_risk_score", "primary_growth_vector", "primary_vulnerability"):
+        assert key in matrix
+    assert len(matrix["tripwires"]) == 2
+    assert matrix["bear_score"] > matrix["bull_score"]
+    assert matrix["primary_growth_vector"] is None
 
 
 @pytest.mark.asyncio

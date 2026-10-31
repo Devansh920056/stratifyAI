@@ -1,5 +1,5 @@
 """
-LLM Providers package: interfaces, prompt guardrails, and Gemini/mock implementations.
+LLM Providers package: interfaces, prompt guardrails, and Gemini and extractive implementations.
 """
 
 from backend.app.providers.llm.base import (
@@ -15,7 +15,6 @@ from backend.app.providers.llm.base import (
 )
 from backend.app.providers.llm.factory import get_llm_provider
 from backend.app.providers.llm.gemini import GeminiLLMProvider
-from backend.app.providers.llm.mock import MockLLMProvider
 from backend.app.providers.llm.prompt import (
     SYSTEM_PROMPT,
     build_analysis_prompt,
@@ -35,7 +34,6 @@ __all__ = [
     "LLMRateLimitError",
     "LLMSchemaValidationError",
     "LLMTimeoutError",
-    "MockLLMProvider",
     "SmartWebLLMProvider",
     "build_analysis_prompt",
     "get_llm_provider",

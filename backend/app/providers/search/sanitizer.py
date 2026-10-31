@@ -104,7 +104,7 @@ def deduplicate_results(results: list[SearchResult]) -> list[SearchResult]:
         if not validate_url(res.url):
             continue
         norm_url = normalize_url(res.url)
-        if norm_url not in seen or res.score > seen[norm_url].score:
+        if norm_url not in seen or (res.score or 0.0) > (seen[norm_url].score or 0.0):
             res.url = norm_url
             res.content = sanitize_snippet(res.content)
             res.title = sanitize_snippet(res.title, max_chars=300) if res.title else ""
@@ -127,10 +127,11 @@ def results_to_evidence(
 
     for item in deduped:
         metadata = {
-            "relevance_score": item.score,
             "published_date": item.published_date,
             **item.raw_metadata,
         }
+        if item.score is not None:
+            metadata["relevance_score"] = item.score
         ev = Evidence(
             task_id=task_id,
             job_id=job_id,

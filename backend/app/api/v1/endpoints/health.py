@@ -2,6 +2,7 @@
 Health, Readiness, and System Telemetry Probes.
 """
 
+import asyncio
 import logging
 from datetime import UTC, datetime
 
@@ -10,7 +11,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
+from backend.app.broker.connection import get_broker_channel
+from backend.app.broker.constants import DEAD_LETTER_QUEUE, TASKS_QUEUE
 from backend.app.core.config import get_settings
+from backend.app.core import APP_VERSION
 from backend.app.db.session import AsyncSessionLocal, check_database_health
 from backend.app.models.enums import JobStatus
 from backend.app.models.job import Job
@@ -32,7 +36,7 @@ settings = get_settings()
 async def liveness_probe() -> HealthResponse:
     return HealthResponse(
         status="healthy",
-        version="0.1.0",
+        version=APP_VERSION,
         timestamp=datetime.now(UTC),
         components={"api": "healthy"},
     )
@@ -53,7 +57,7 @@ async def readiness_probe():
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content=HealthResponse(
                 status="unhealthy",
-                version="0.1.0",
+                version=APP_VERSION,
                 timestamp=datetime.now(UTC),
                 components=components,
             ).model_dump(mode="json"),
@@ -61,7 +65,7 @@ async def readiness_probe():
 
     return HealthResponse(
         status="healthy",
-        version="0.1.0",
+        version=APP_VERSION,
         timestamp=datetime.now(UTC),
         components=components,
     )
@@ -114,49 +118,45 @@ async def system_telemetry() -> TelemetryResponse:
         except (SQLAlchemyError, OSError) as exc:
             logger.warning("Telemetry metrics query error: %s", exc)
 
+    broker_ok = await _check_broker()
+    llm = settings.LLM_PROVIDER.lower()
+    search = settings.SEARCH_PROVIDER.lower()
     return TelemetryResponse(
-        status="healthy" if db_healthy else "degraded",
-        version="0.1.0",
+        status="healthy" if (db_healthy and broker_ok) else "degraded",
+        version=APP_VERSION,
         timestamp=datetime.now(UTC),
         database={
             "status": "healthy" if db_healthy else "unhealthy",
-            "host_port": 5434,
-            "container": "stratify_postgres",
-            "engine": "PostgreSQL 16 Alpine",
-            "isolation": "Read Committed + Serializable Outbox",
+            "host": settings.POSTGRES_HOST,
+            "port": settings.POSTGRES_PORT,
+            "database": settings.POSTGRES_DB,
         },
         broker={
-            "status": "operational",
-            "amqp_port": 5672,
-            "management_port": 15672,
-            "exchange": "stratify.tasks.exchange",
-            "queue": "stratify.tasks.queue",
-            "dlq": "stratify.tasks.dlq",
-            "delivery_mode": "DURABLE_PERSISTENT (2)",
+            "status": "operational" if broker_ok else "unreachable",
+            "host": settings.RABBITMQ_HOST,
+            "amqp_port": settings.RABBITMQ_PORT,
+            "management_port": settings.RABBITMQ_MANAGEMENT_PORT,
+            "queue": TASKS_QUEUE,
+            "dlq": DEAD_LETTER_QUEUE,
         },
         orchestrator={
-            "concurrency_control": "Optimistic Concurrency Control (OCC, integer version)",
-            "outbox_pattern": "Transactional Outbox with SELECT ... FOR UPDATE SKIP LOCKED",
-            "max_worker_retries": 3,
-            "qos_prefetch_count": 2,
+            "max_worker_retries": settings.MAX_TASK_RETRIES,
+            "qos_prefetch_count": settings.WORKER_CONCURRENCY,
+            "task_timeout_seconds": settings.TASK_TIMEOUT_SECONDS,
+            "embedded_workers": settings.AUTO_START_WORKERS,
         },
         ai_providers={
             "llm": (
-                f"Google Gemini Free Tier ({settings.LLM_MODEL})"
-                if settings.LLM_PROVIDER.lower() == "gemini" and settings.GEMINI_API_KEY
-                else "Smart Extractive Grounder (Live Web Evidence Synthesis)"
-                if settings.LLM_PROVIDER.lower() in ("smart", "smart-extractor")
-                or (settings.LLM_PROVIDER.lower() == "gemini" and not settings.GEMINI_API_KEY)
-                else f"{settings.LLM_PROVIDER} ({settings.LLM_MODEL})"
+                f"Gemini ({settings.LLM_MODEL})"
+                if llm == "gemini" and (settings.GEMINI_API_KEY or "").strip()
+                else "Extractive grounder (quotes retrieved evidence; no generative model)"
             ),
             "search": (
-                "DuckDuckGo (Live Real-Time Web Intelligence, Zero-Cost)"
-                if settings.SEARCH_PROVIDER.lower() in ("duckduckgo", "ddg", "real", "web")
-                else "Tavily (Real-Time External Search API)"
-                if settings.SEARCH_PROVIDER.lower() == "tavily"
-                else f"{settings.SEARCH_PROVIDER} (Offline Mock Evidence)"
+                "Tavily"
+                if search == "tavily" and (settings.TAVILY_API_KEY or "").strip()
+                else "DuckDuckGo / Wikipedia"
             ),
-            "anti_hallucination": "Active (Strict URL verification + Grounded Claim Extraction)",
+            "grounding_check": "URLs returned by the LLM must match retrieved evidence; others are dropped",
         },
         metrics={
             "total_jobs": total_jobs,
@@ -165,3 +165,14 @@ async def system_telemetry() -> TelemetryResponse:
             "total_tasks": total_tasks,
         },
     )
+
+
+async def _check_broker() -> bool:
+    """True when a RabbitMQ connection can be opened within 3 seconds."""
+    try:
+        async with asyncio.timeout(3):
+            async with get_broker_channel(publisher_confirms=False, ensure_topology=False):
+                return True
+    except Exception as exc:
+        logger.info("Broker health check failed: %s", exc)
+        return False

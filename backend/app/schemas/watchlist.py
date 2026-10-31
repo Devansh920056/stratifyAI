@@ -59,10 +59,3 @@ class WatchlistResponse(BaseModel):
 class WatchlistListResponse(BaseModel):
     watchlists: list[WatchlistResponse]
     total: int
-
-
-class AlertSimulateRequest(BaseModel):
-    watchlist_id: uuid.UUID | None = Field(None, description="Target watchlist; uses first active if None")
-    title: str | None = Field(None, description="Optional custom title")
-    message: str | None = Field(None, description="Optional custom message")
-    severity: str | None = Field("WARNING", description="INFO, WARNING, or CRITICAL")

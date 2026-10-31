@@ -15,7 +15,7 @@ class SearchResult:
     title: str
     url: str
     content: str
-    score: float = 0.0
+    score: float | None = None  # None when the provider reports no relevance score
     published_date: str | None = None
     raw_metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -42,7 +42,7 @@ class SearchProvider(ABC):
     @property
     @abstractmethod
     def provider_name(self) -> str:
-        """Identifying name of the provider (e.g. 'tavily', 'mock')."""
+        """Identifying name of the provider (e.g. 'tavily', 'duckduckgo')."""
 
     @abstractmethod
     async def search(self, query: str, max_results: int = 5) -> list[SearchResult]:

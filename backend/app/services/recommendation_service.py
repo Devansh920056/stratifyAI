@@ -1,7 +1,8 @@
 """
 Action Intelligence Recommendation Service.
-Synthesizes grounded, prioritized strategic initiatives from market intelligence reports,
-mapping hypotheses and effort-vs-impact scores directly to verifiable research evidence.
+Derives action items from the real, cited key findings of a job's report. Each recommendation
+quotes one finding and its source URL. Business judgments that the data cannot supply (effort,
+success metric, target value) are left as explicit "to be defined" fields for the decision owner.
 """
 
 import logging
@@ -19,9 +20,10 @@ from backend.app.models.recommendation import Recommendation
 from backend.app.models.report import Report
 from backend.app.models.task import Task
 from backend.app.providers.llm.base import LLMProvider
-from backend.app.providers.llm.factory import get_llm_provider
 
 logger = logging.getLogger("stratify.services.recommendations")
+
+UNDEFINED_FIELD = "To be defined by the decision owner"
 
 
 class RecommendationService:
@@ -83,10 +85,10 @@ class RecommendationService:
         cls,
         session: AsyncSession,
         job_id: uuid.UUID,
-        llm_provider: LLMProvider | None = None,
+        llm_provider: LLMProvider | None = None,  # accepted for API compatibility; unused (extractive)
     ) -> list[Recommendation]:
         """
-        Synthesizes strategic recommendations grounded in the job's report and research findings.
+        Derives recommendations from the job's report findings.
         If recommendations already exist, returns the existing list without redundant re-generation.
         """
         existing = await cls.get_recommendations_for_job(session, job_id)
@@ -107,51 +109,26 @@ class RecommendationService:
         if not job:
             raise ValueError(f"Job {job_id} not found.")
 
-        # Harvest citations and findings from report or completed tasks
         report = job.report
-        citations: list[dict[str, Any]] = []
-        if report and report.citations:
-            citations = report.citations
-        else:
-            for task in job.tasks:
-                if task.result and task.result.citations:
-                    citations.extend(task.result.citations)
-
-        # Synthesize strategic initiatives grounded in the query and findings
-        synthesized_data = await cls._synthesize_initiatives(
-            job=job,
-            report=report,
-            citations=citations,
-            llm_provider=llm_provider or get_llm_provider(),
-        )
 
         persisted_recs: list[Recommendation] = []
-        for item in synthesized_data:
-            impact = max(1, min(10, int(item.get("estimated_impact", 7))))
-            effort = max(1, min(10, int(item.get("estimated_effort", 5))))
-            # Formula: (Impact * 0.7) - (Effort * 0.3), scaled to positive range
-            raw_priority = (impact * 0.7) - (effort * 0.3)
-            priority_score = round(raw_priority, 2)
-
-            # Ensure valid time horizon enum
-            th_raw = str(item.get("time_horizon", TimeHorizon.NEAR_TERM.value)).upper()
-            valid_horizons = {h.value for h in TimeHorizon}
-            time_horizon = th_raw if th_raw in valid_horizons else TimeHorizon.NEAR_TERM.value
-
+        for item in cls._derive_initiatives(report):
+            impact = item["estimated_impact"]
+            effort = item["estimated_effort"]
             rec = Recommendation(
                 job_id=job_id,
-                title=item.get("title", "Strategic Market Alignment"),
-                description=item.get("description", "Execute prioritized strategic initiative based on research."),
-                rationale=item.get("rationale", "Derived from intelligence synthesis."),
+                title=item["title"],
+                description=item["description"],
+                rationale=item["rationale"],
                 estimated_impact=impact,
                 estimated_effort=effort,
-                priority_score=priority_score,
-                time_horizon=time_horizon,
-                outcome_hypothesis=item.get("outcome_hypothesis", "Anticipates positive market share expansion."),
-                success_metric=item.get("success_metric", "Market Conversion Rate"),
-                target_metric_value=item.get("target_metric_value", "+10%"),
+                priority_score=round((impact * 0.7) - (effort * 0.3), 2),
+                time_horizon=TimeHorizon.NEAR_TERM.value,
+                outcome_hypothesis=UNDEFINED_FIELD,
+                success_metric=UNDEFINED_FIELD,
+                target_metric_value=None,
                 status=RecommendationStatus.DRAFT.value,
-                evidence_ids=item.get("evidence_ids", citations[:2]),
+                evidence_ids=item["evidence_ids"],
             )
             session.add(rec)
             persisted_recs.append(rec)
@@ -160,75 +137,53 @@ class RecommendationService:
         for r in persisted_recs:
             await session.refresh(r)
 
-        logger.info(f"Successfully generated and persisted {len(persisted_recs)} recommendations for job {job_id}.")
+        logger.info(f"Derived and persisted {len(persisted_recs)} recommendations for job {job_id}.")
         return persisted_recs
 
     @classmethod
-    async def _synthesize_initiatives(
-        cls,
-        job: Job,
-        report: Report | None,
-        citations: list[dict[str, Any]],
-        llm_provider: LLMProvider,
-    ) -> list[dict[str, Any]]:
+    def _derive_initiatives(cls, report: Report | None) -> list[dict[str, Any]]:
         """
-        Generates 3 to 4 structured recommendations with calibrated effort/impact scores.
+        One action item per research vector, built from that vector's best-supported finding.
+        - estimated_impact = round(finding evidence-support score x 10), clamped to 1-10.
+        - estimated_effort = 5, the neutral midpoint: effort is not measurable from research data.
         """
-        # Collect context summary
-        summary_snippet = report.executive_summary[:90] if (report and report.executive_summary) else f"inquiry on {job.target_market}"
-        top_citations = citations[:4] if citations else []
+        if report is None:
+            return []
 
-        # Deterministic domain-grounded synthesis tailored to the market inquiry
-        target_market = job.target_market
-        question = job.research_question
-
-        return [
-            {
-                "title": f"Differentiate Value Proposition in {target_market}",
-                "description": f"Restructure core messaging and feature positioning to counteract prevailing competitive moats highlighted in the inquiry ({question[:60]}...).",
-                "rationale": f"Market findings from {job.geography} indicate: {summary_snippet}. Rising acquisition dynamics necessitate refined positioning.",
-                "estimated_impact": 9,
-                "estimated_effort": 4,
-                "time_horizon": TimeHorizon.IMMEDIATE.value,
-                "outcome_hypothesis": f"Realigned positioning will improve qualified buyer conversion in {target_market} by 15% within 60 days.",
-                "success_metric": "Qualified Lead Conversion Rate",
-                "target_metric_value": "+15%",
-                "evidence_ids": top_citations[:2],
-            },
-            {
-                "title": f"Mitigate Headwinds & Regulatory Exposure in {job.geography}",
-                "description": "Establish dedicated compliance and localized data governance frameworks to preempt regulatory friction discovered during research.",
-                "rationale": "Regulatory risk vectors revealed tightening regional requirements that threaten late-stage go-to-market execution.",
-                "estimated_impact": 8,
-                "estimated_effort": 6,
-                "time_horizon": TimeHorizon.NEAR_TERM.value,
-                "outcome_hypothesis": "Proactive regulatory alignment prevents audit delays and reduces compliance onboarding time by 30%.",
-                "success_metric": "Onboarding Cycle Time",
-                "target_metric_value": "-30%",
-                "evidence_ids": top_citations[1:3] if len(top_citations) > 2 else top_citations[:1],
-            },
-            {
-                "title": "Capture Competitor Churn via Targeted Packaging",
-                "description": f"Introduce transparent modular pricing tiers directly targeting unsatisfied mid-market customers switching away from incumbent solutions in {target_market}.",
-                "rationale": "Competitor analysis demonstrated friction in incumbent pricing models, creating an immediate window for acquisition.",
-                "estimated_impact": 8,
-                "estimated_effort": 3,
-                "time_horizon": TimeHorizon.IMMEDIATE.value,
-                "outcome_hypothesis": "Modular packaging captures 12% of dissatisfied competitor accounts within the next two quarters.",
-                "success_metric": "Competitive Win Rate",
-                "target_metric_value": "+12%",
-                "evidence_ids": top_citations[:2],
-            },
-            {
-                "title": "Automate Real-Time Intelligence & Moat Reinforcement",
-                "description": f"Deploy automated continuous tracking on competitor feature velocity and pricing shifts across {target_market}.",
-                "rationale": "High market dynamism requires continuous signal observation rather than point-in-time assessment.",
-                "estimated_impact": 7,
-                "estimated_effort": 5,
-                "time_horizon": TimeHorizon.MEDIUM_TERM.value,
-                "outcome_hypothesis": "Continuous monitoring reduces strategic response latency to competitor moves from 45 days to under 48 hours.",
-                "success_metric": "Competitive Response Latency",
-                "target_metric_value": "< 48 hours",
-                "evidence_ids": top_citations[2:4] if len(top_citations) > 3 else top_citations[:2],
-            },
+        sections = [
+            ("Market Overview", report.market_findings),
+            ("Competitive Landscape", report.competitor_analysis),
+            ("Customer Insights", report.customer_insights),
+            ("Regulatory & Risk", report.opportunities_and_risks),
         ]
+        items: list[dict[str, Any]] = []
+        for label, section in sections:
+            findings = [
+                f for f in ((section or {}).get("key_findings") or [])
+                if isinstance(f, dict) and f.get("claim") and f.get("source_url")
+            ]
+            if not findings:
+                continue
+            best = max(findings, key=lambda f: float(f.get("confidence") or 0.0))
+            confidence = float(best.get("confidence") or 0.0)
+            claim = str(best["claim"]).strip()
+            url = str(best["source_url"])
+            cite = next(
+                (c for c in ((section or {}).get("citations") or []) if isinstance(c, dict) and c.get("url") == url),
+                {"url": url, "title": url},
+            )
+            items.append(
+                {
+                    "title": f"Act on {label} finding: {claim}"[:255],
+                    "description": f'Source finding ({label}): "{claim}"',
+                    "rationale": (
+                        f"Quoted from {url}. Evidence-support score {confidence:.2f}. "
+                        f"Impact is derived from that score; effort is a neutral default (5) "
+                        f"until assessed by the decision owner."
+                    ),
+                    "estimated_impact": max(1, min(10, round(confidence * 10))),
+                    "estimated_effort": 5,
+                    "evidence_ids": [cite],
+                }
+            )
+        return items

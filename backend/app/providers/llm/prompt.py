@@ -3,11 +3,16 @@ Prompt engineering and anti-hallucination citation guardrails for LLM synthesis.
 """
 
 from backend.app.models.evidence import Evidence
+import logging
+
 from backend.app.providers.llm.base import (
     AnalysisOutput,
     Citation,
     KeyFinding,
+    LLMSchemaValidationError,
 )
+
+logger = logging.getLogger("stratify.providers.llm.prompt")
 
 SYSTEM_PROMPT = """You are Stratify AI's Senior Market Intelligence Research Engine.
 Your mission is to perform rigorous, grounded factual analysis on external evidence snippets.
@@ -24,11 +29,11 @@ JSON Schema:
     {
       "claim": "Specific factual finding directly stated in the evidence",
       "source_url": "https://exact-matching-evidence-url...",
-      "confidence": 0.95
+      "confidence": <number between 0 and 1: how directly the snippet supports the claim>
     }
   ],
   "grounded_summary": "Comprehensive, cohesive 2-3 paragraph analytical summary synthesizing the evidence...",
-  "confidence_score": 0.92,
+  "confidence_score": <number between 0 and 1>,
   "citations": [
     {
       "url": "https://exact-matching-evidence-url...",
@@ -78,74 +83,48 @@ def validate_and_sanitize_grounding(
     evidence_items: list[Evidence],
 ) -> AnalysisOutput:
     """
-    CRITICAL ANTI-HALLUCINATION GUARDRAIL:
-    Verifies that all citations and source_urls returned by the LLM genuinely exist
-    in the retrieved evidence set. Filters or repairs any hallucinated URLs.
+    ANTI-HALLUCINATION GUARDRAIL.
+    Keeps only findings and citations whose URL matches a retrieved evidence item
+    (a trailing-slash difference is tolerated). Anything else is dropped - it is never
+    re-attributed to a different source. If nothing grounded remains, the output is
+    rejected with LLMSchemaValidationError.
     """
     if not evidence_items:
-        return raw_output
+        raise LLMSchemaValidationError("Cannot ground an analysis without any retrieved evidence.")
 
-    valid_urls_map = {
-        ev.source_url: ev.source_title or "Verified Web Source" for ev in evidence_items
-    }
-    default_url = evidence_items[0].source_url
-    default_title = evidence_items[0].source_title or "Verified Web Source"
+    valid = {ev.source_url: ev.source_title or ev.source_url for ev in evidence_items}
+    by_stripped = {u.rstrip("/"): u for u in valid}
 
-    # 1. Filter and sanitize key findings
-    sanitized_findings: list[KeyFinding] = []
+    def resolve(url: str) -> str | None:
+        if url in valid:
+            return url
+        return by_stripped.get(url.rstrip("/"))
+
+    findings: list[KeyFinding] = []
     for finding in raw_output.key_findings:
-        if finding.source_url in valid_urls_map:
-            sanitized_findings.append(finding)
+        resolved = resolve(finding.source_url)
+        if resolved:
+            finding.source_url = resolved
+            findings.append(finding)
         else:
-            # Check for close match (e.g. trailing slash or protocol difference)
-            matched = False
-            for valid_url in valid_urls_map:
-                if finding.source_url.rstrip("/") == valid_url.rstrip("/"):
-                    finding.source_url = valid_url
-                    sanitized_findings.append(finding)
-                    matched = True
-                    break
-            if not matched:
-                # Strip out or ground to default source
-                finding.source_url = default_url
-                sanitized_findings.append(finding)
+            logger.warning("Dropping ungrounded finding citing unknown URL: %s", finding.source_url)
 
-    # 2. Filter and sanitize citations
-    sanitized_citations: list[Citation] = []
-    seen_citation_urls = set()
+    if not findings:
+        raise LLMSchemaValidationError("LLM output contained no findings grounded in the retrieved evidence.")
 
+    citations: list[Citation] = []
+    seen: set[str] = set()
     for cit in raw_output.citations:
-        target_url = cit.url
-        if target_url not in valid_urls_map:
-            # Attempt trailing slash match
-            for valid_url in valid_urls_map:
-                if target_url.rstrip("/") == valid_url.rstrip("/"):
-                    target_url = valid_url
-                    break
-            else:
-                target_url = default_url
+        resolved = resolve(cit.url)
+        if resolved and resolved not in seen:
+            seen.add(resolved)
+            citations.append(Citation(url=resolved, title=valid[resolved]))
+    # Always cite every source that a retained finding relies on.
+    for f in findings:
+        if f.source_url not in seen:
+            seen.add(f.source_url)
+            citations.append(Citation(url=f.source_url, title=valid[f.source_url]))
 
-        if target_url not in seen_citation_urls:
-            seen_citation_urls.add(target_url)
-            sanitized_citations.append(
-                Citation(
-                    url=target_url,
-                    title=valid_urls_map.get(target_url, cit.title or default_title),
-                )
-            )
-
-    if not sanitized_citations:
-        sanitized_citations.append(Citation(url=default_url, title=default_title))
-
-    if not sanitized_findings:
-        sanitized_findings.append(
-            KeyFinding(
-                claim=raw_output.grounded_summary[:120] + "...",
-                source_url=default_url,
-                confidence=0.85,
-            )
-        )
-
-    raw_output.key_findings = sanitized_findings
-    raw_output.citations = sanitized_citations
+    raw_output.key_findings = findings
+    raw_output.citations = citations
     return raw_output

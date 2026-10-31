@@ -116,12 +116,8 @@ async def test_dashboard_service_extraction(db_session: AsyncSession):
     # Call Dashboard Service
     data = await DashboardService.get_dashboard_data(session=db_session, job_id=job.id)
 
-    # 1. Moat Matrix assertions
-    assert len(data.moat_matrix) == 4
-    for pt in data.moat_matrix:
-        assert 0.0 <= pt.technological_moat <= 100.0
-        assert 0.0 <= pt.pricing_power <= 100.0
-        assert pt.quadrant in ("Market Dominators", "Niche Innovators", "Price Leaders", "Disrupted Challengers")
+    # 1. Moat matrix: no real source for moat/pricing scores exists, so it must be empty
+    assert data.moat_matrix == []
 
     # 2. Vector Scores assertions
     assert len(data.vector_scores) == 4

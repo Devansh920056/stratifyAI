@@ -1,11 +1,14 @@
 """
 Market Pulse Ingestion Service.
-Continuously ingests, canonicalizes, deduplicates, and analyzes market signals
-via GDELT 2.0 DOC API with fallback to real-time search, computing sentiment tone and signal classifications.
+Ingests, canonicalizes and deduplicates real news articles from the GDELT 2.0 DOC API.
+Sentiment and signal type are computed from each headline with a transparent keyword lexicon.
+If GDELT is unreachable the sync fails with PulseSyncError - no substitute data is generated.
 """
 
 import logging
+import re
 import urllib.parse
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -23,6 +26,32 @@ from backend.app.schemas.pulse import (
 )
 
 logger = logging.getLogger("stratify.services.pulse")
+
+GDELT_DOC_URL = "https://api.gdeltproject.org/api/v2/doc/doc"
+
+
+class PulseSyncError(Exception):
+    """Raised when the upstream news source cannot be reached or returns an invalid response."""
+
+
+def parse_gdelt_seendate(value: str | None) -> datetime | None:
+    """Parses GDELT's 'YYYYMMDDTHHMMSSZ' timestamp; returns None when absent/invalid."""
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
+    except ValueError:
+        return None
+
+
+def term_coverage(terms_source: str, text: str) -> float:
+    """Share of the significant words of `terms_source` that appear in `text` (0-1)."""
+    terms = {w.lower() for w in re.findall(r"[A-Za-z0-9]{3,}", terms_source)}
+    terms -= {"and", "the", "for"}
+    if not terms:
+        return 0.0
+    hay = text.lower()
+    return round(sum(1 for t in terms if t in hay) / len(terms), 2)
 
 
 class MarketPulseService:
@@ -143,43 +172,37 @@ class MarketPulseService:
         normalizes URLs, scores sentiment tone, and inserts new records idempotently.
         """
         articles = await cls._fetch_gdelt_articles(sector=sector, max_records=max_records)
-        if not articles:
-            articles = cls._generate_fallback_signals(sector=sector)
 
         inserted_signals: list[MarketSignal] = []
 
         for art in articles:
             raw_url = art.get("url", "")
-            if not raw_url:
+            headline = (art.get("title") or "").strip()
+            if not raw_url or not headline:
                 continue
 
             canonical_url = normalize_url(raw_url)
             parsed = urllib.parse.urlparse(canonical_url)
-            domain = art.get("domain") or parsed.netloc.replace("www.", "") or "reuters.com"
+            domain = (art.get("domain") or parsed.netloc.replace("www.", "") or "unknown")
 
-            # Check if canonical_url already exists
             existing = await session.scalar(
                 select(MarketSignal).where(MarketSignal.canonical_url == canonical_url)
             )
             if existing:
                 continue
 
-            headline = art.get("title", "") or f"{sector} Market Signal"
-            summary = art.get("summary") or f"Breaking developments reported in {sector} by {domain}."
-
-            # Calculate sentiment and classification
             sentiment = cls._analyze_sentiment(headline)
             sig_type = cls._classify_signal_type(headline)
 
             signal = MarketSignal(
                 market_sector=sector,
                 headline=headline[:500],
-                summary=summary,
+                summary=art.get("summary") or f"Reported by {domain}.",
                 source_url=raw_url,
                 canonical_url=canonical_url,
                 source_domain=domain[:100],
                 sentiment_score=sentiment,
-                relevance_score=0.92,
+                relevance_score=term_coverage(sector, headline),
                 signal_type=sig_type.value,
                 published_at=art.get("published_at") or utc_now(),
             )
@@ -208,75 +231,61 @@ class MarketPulseService:
         cls,
         sector: str,
         max_records: int = 15,
+        client: httpx.AsyncClient | None = None,
     ) -> list[dict[str, Any]]:
         """
-        Queries GDELT 2.0 DOC API for real-time global news coverage.
+        Queries the GDELT 2.0 DOC API for real news coverage of the sector.
+        Raises PulseSyncError on any network/HTTP/parse failure.
         """
-        encoded_query = urllib.parse.quote(f"{sector}")
-        url = f"https://api.gdeltproject.org/api/v2/doc/doc?query={encoded_query}&mode=artlist&maxrecords={max_records}&format=json"
-
+        params = {
+            "query": sector,
+            "mode": "artlist",
+            "maxrecords": str(max_records),
+            "format": "json",
+            "sort": "datedesc",
+        }
+        headers = {"User-Agent": "StratifyAI-SignalIngestion/2.0"}
         try:
-            async with httpx.AsyncClient(timeout=4.0) as client:
-                res = await client.get(url, headers={"User-Agent": "StratifyAI-SignalIngestion/2.0"})
-                if res.status_code == 200:
-                    data = res.json()
-                    raw_articles = data.get("articles", [])
-                    results = []
-                    for item in raw_articles:
-                        results.append({
-                            "title": item.get("title", "").strip(),
-                            "url": item.get("url", ""),
-                            "domain": item.get("domain", ""),
-                            "published_at": utc_now(),
-                            "summary": f"Reported by {item.get('domain', 'news source')} on global market developments in {sector}.",
-                        })
-                    return results
-        except Exception as e:
-            logger.info(f"GDELT DOC API fetch deferred ({e}). Engaging deterministic live pulse fallback.")
+            if client is not None:
+                res = await client.get(GDELT_DOC_URL, params=params, headers=headers)
+            else:
+                async with httpx.AsyncClient(timeout=15.0) as own_client:
+                    res = await own_client.get(GDELT_DOC_URL, params=params, headers=headers)
+        except httpx.HTTPError as exc:
+            raise PulseSyncError(f"GDELT request failed: {exc!s}") from exc
 
-        return []
+        if res.status_code != 200:
+            raise PulseSyncError(f"GDELT returned HTTP {res.status_code}")
+        try:
+            data = res.json()
+        except ValueError as exc:
+            # GDELT answers plain-text error messages (e.g. query too short / rate limited).
+            raise PulseSyncError(f"GDELT returned a non-JSON response: {res.text[:120]!r}") from exc
 
-    @classmethod
-    def _generate_fallback_signals(cls, sector: str) -> list[dict[str, Any]]:
-        """
-        Generates realistic empirical market signals when GDELT is rate-limited or unreachable.
-        """
-        clean_sec = sector.lower().replace(" ", "-").replace("&", "and")
-        return [
-            {
-                "title": f"Leading {sector} Consortium Secures ₹1,250 Cr Capital Facility for Pan-India Expansion",
-                "url": f"https://economictimes.indiatimes.com/industry/{clean_sec}-funding-record",
-                "domain": "economictimes.indiatimes.com",
-                "published_at": utc_now(),
-                "summary": f"Major Indian institutional consortium accelerates commercial deployment across {sector} under central government PLI support.",
-            },
-            {
-                "title": f"RBI & SEBI Issue Updated Governance & Compliance Directives for {sector} Operators",
-                "url": f"https://livemint.com/market/{clean_sec}-regulatory-directive",
-                "domain": "livemint.com",
-                "published_at": utc_now(),
-                "summary": f"Indian regulatory authorities mandate transparent audits, cybersecurity baselines, and data localization across {sector}.",
-            },
-            {
-                "title": f"Tier-1 Indian Conglomerate Announces Strategic Nationwide Partnership in {sector}",
-                "url": f"https://business-standard.com/companies/{clean_sec}-national-partnership",
-                "domain": "business-standard.com",
-                "published_at": utc_now(),
-                "summary": "Strategic joint venture accelerates retail footprint, reduces logistics lead times by 35%, and expands reach into Tier-2 and Tier-3 markets.",
-            },
-            {
-                "title": f"Market Shift: Rapid Tier-2 & Tier-3 City Adoption Accelerates Volume Growth in {sector}",
-                "url": f"https://financialexpress.com/market/{clean_sec}-tier2-expansion",
-                "domain": "financialexpress.com",
-                "published_at": utc_now(),
-                "summary": "Quarterly consumer metrics indicate surging demand from non-metro consumption centers, driving favorable unit economics.",
-            },
-        ]
+        results: list[dict[str, Any]] = []
+        for item in data.get("articles", []) or []:
+            domain = item.get("domain", "") or ""
+            details = [f"Reported by {domain}" if domain else "Reported by an unnamed source"]
+            if item.get("sourcecountry"):
+                details.append(f"source country: {item['sourcecountry']}")
+            if item.get("language"):
+                details.append(f"language: {item['language']}")
+            results.append(
+                {
+                    "title": (item.get("title") or "").strip(),
+                    "url": item.get("url", ""),
+                    "domain": domain,
+                    "published_at": parse_gdelt_seendate(item.get("seendate")),
+                    "summary": "; ".join(details) + ".",
+                }
+            )
+        return results
 
     @classmethod
     def _analyze_sentiment(cls, text: str) -> float:
         """
-        Calculates lexical tone rating between -1.0 and +1.0.
+        Keyword-lexicon tone rating between -1.0 and +1.0 (+/-0.35 per matched word).
+        This is a transparent heuristic on the headline text, not a trained sentiment model.
         """
         lower = text.lower()
         pos_words = ("surge", "record", "growth", "breakthrough", "secures", "advances", "partnership", "funding", "expands", "soars")

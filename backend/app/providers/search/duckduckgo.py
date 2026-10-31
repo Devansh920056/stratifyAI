@@ -1,8 +1,8 @@
 """
-Live Real-Time Web Evidence Provider.
-Queries open authoritative web sources (Wikipedia Search API, DuckDuckGo Instant Answer API,
-and DuckDuckGo Web) to retrieve genuine, verifiable web evidence at zero financial cost
-without requiring paid subscriptions or API keys.
+Live Web Evidence Provider.
+Queries open web sources (Wikipedia Search API, DuckDuckGo Instant Answer API, DuckDuckGo HTML)
+and returns the real results as-is. These sources do not publish relevance scores, so
+SearchResult.score is left as None rather than inventing a rank-based number.
 """
 
 import html
@@ -85,10 +85,42 @@ class DuckDuckGoSearchProvider(SearchProvider):
                     client, search_terms, results, seen_urls, max_results
                 )
 
+        if not results:
+            # Long multi-word phrases often match nothing (Wikipedia ANDs every term).
+            # Retry once with the few most distinctive words of the same query.
+            short_terms = self._core_terms(search_terms)
+            if short_terms and short_terms != search_terms:
+                logger.info(f"No results for '{search_terms}'; retrying with '{short_terms}'")
+                if self._client:
+                    await self._execute_search_sources(
+                        self._client, short_terms, results, seen_urls, max_results
+                    )
+                else:
+                    async with httpx.AsyncClient(
+                        headers=DEFAULT_HEADERS,
+                        timeout=self._timeout,
+                        follow_redirects=True,
+                    ) as client:
+                        await self._execute_search_sources(
+                            client, short_terms, results, seen_urls, max_results
+                        )
+
         logger.info(
             f"Live search retrieved {len(results)} verified real web items for '{search_terms}' (requested max {max_results})"
         )
         return results[:max_results]
+
+    @staticmethod
+    def _core_terms(query: str, limit: int = 4) -> str:
+        """The first few significant words of a query (stopwords and years removed)."""
+        stop = {
+            "a", "an", "and", "the", "of", "for", "in", "on", "to", "with", "how", "what",
+            "analysis", "forecast", "industry", "market", "trends", "key", "north", "america",
+        }
+        words = [
+            w for w in re.findall(r"[A-Za-z][A-Za-z\-]+", query) if w.lower() not in stop
+        ]
+        return " ".join(words[:limit])
 
     def _clean_query_terms(self, query: str) -> str:
         """Strips excessive prompt keywords to focus on core factual entities."""
@@ -146,7 +178,6 @@ class DuckDuckGoSearchProvider(SearchProvider):
                                 title=title,
                                 url=norm_url,
                                 content=clean_snip,
-                                score=round(0.96 - (idx * 0.03), 2),
                                 raw_metadata={"source": "wikipedia", "rank": idx + 1},
                             )
                         )
@@ -174,7 +205,6 @@ class DuckDuckGoSearchProvider(SearchProvider):
                                 title=heading,
                                 url=norm_url,
                                 content=sanitize_snippet(abstract),
-                                score=0.98,
                                 raw_metadata={"source": "duckduckgo_abstract"},
                             )
                         )
@@ -190,7 +220,6 @@ class DuckDuckGoSearchProvider(SearchProvider):
                                     title=topic_text[:70],
                                     url=norm_url,
                                     content=sanitize_snippet(topic_text),
-                                    score=round(0.90 - (idx * 0.04), 2),
                                     raw_metadata={"source": "duckduckgo_topic"},
                                 )
                             )
@@ -269,7 +298,6 @@ class DuckDuckGoSearchProvider(SearchProvider):
                     title=title,
                     url=normalized_url,
                     content=cleaned_snippet,
-                    score=round(0.88 - (i * 0.04), 2),
                     raw_metadata={"source": "duckduckgo_html", "domain": domain_label.strip()},
                 )
             )

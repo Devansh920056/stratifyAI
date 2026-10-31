@@ -63,14 +63,14 @@
    - Interactive 2x2 Impact-Effort Strategic Matrix (High Impact / Low Effort Quick Wins vs. Major Projects).
    - Strategic Hypothesis Tracking with empirical success metrics and live Dialectic Debate triggers.
 3. **Market Dashboard (`/dashboard`)**:
-   - 2D Interactive SVG Moat Matrix (Technological Moat vs. Pricing Power).
+   - Moat matrix: shown only when measured competitor data exists (none is invented, so it is currently empty).
    - 4-Vector Risk Radar with empirical claim verification versus speculative projection classification.
 4. **Market Pulse Stream (`/pulse`)**:
    - Continuous real-time ingestion from **GDELT 2.0 Global News Graph**.
    - Heuristic sentiment scoring, category classification (Competitor Moves, Regulations, Partnerships, Funding).
 5. **Competitor Watchlists & Anomaly Detection (`/watchlists`)**:
-   - Entity monitoring across tracked competitors (Tesla, Rivian, CrowdStrike, QuantumScape).
-   - Real-time anomaly detection heuristics triggering unread alerts on sudden negative sentiment shifts or regulatory scrutiny.
+   - Entity monitoring across competitors you choose.
+   - Alerts are created only when a stored news signal mentions a watched entity and its tone crosses your threshold. There is no test/simulated alert.
 
 ---
 
@@ -79,7 +79,7 @@
 ### Stage 6: Decision Evaluation & Historical Backtesting
 - Calculates empirical **Decision Quality Scores (DQS)**:
   $$\text{DQS} = (\text{Validation Rate} \times 0.6) + (\text{Normalized Impact Delta} \times 0.4)$$
-- Counterfactual simulation engine evaluating historical strategic recommendations against unfolding market signals.
+- Backtest of recorded decisions against the stored market signals in the chosen lookback window; with no signals the result says so.
 
 ### Stage 7: Real-Time Webhooks & Outbound Dispatcher
 - Delivers real-time events (`job.completed`, `recommendation.created`, `alert.triggered`, `debate.concluded`) to enterprise endpoints (Slack, Microsoft Teams, internal SIEMs).
@@ -90,20 +90,34 @@
 - Cosine similarity ranking enabling sub-millisecond semantic search across millions of intelligence findings without external proprietary vector database dependencies.
 
 ### Stage 9: Multi-Source Evidence Fusion & SEC EDGAR Reconciliation
-- Direct integration with **SEC EDGAR API** (institutional CIK resolution, Form 10-K / 10-Q Item 1A Risk Factor extraction).
+- Live **SEC EDGAR** retrieval (company_tickers.json CIK lookup, submissions index, Item 1A Risk Factor extraction). Set `SEC_USER_AGENT` to your name and email, as SEC requires.
 - Ingestion of scientific deep-tech preprints via **arXiv API**.
-- Automated contradiction detection between commercial PR news and statutory regulatory risk factors.
+- Tone comparison between stored news and filing/paper text using published keyword lists. With nothing to compare against the status is `UNVERIFIED`; retrieval failures are returned as warnings.
 
 ### Stage 10: Multi-Agent Dialectic Debate Engine
-- Multi-round dialectic reasoning featuring:
-  - **Bull Growth Specialist**: Commercial catalyst defense and revenue expansion thesis.
-  - **Bear Chief Risk Officer**: Adversarial counter-thesis grounded in Form 10-K Item 1A statutory disclosures.
-  - **Regulatory Compliance Auditor**: Administrative law constraints and NHTSA/FTC compliance boundaries.
-  - **Principal Arbiter**: Multi-vector scorecard weighting, Arbiter Verdict assignment (`STRATEGIC_ACCUMULATE`, `TACTICAL_HOLD`, `HEDGED_CONTAINMENT`, `EXIT_DISINVEST`), and Mandatory Risk Tripwires.
+- Evidence-grounded debate: every message quotes stored SEC filings, arXiv papers or news signals with their URLs.
+  - **Bull / Bear / Regulatory** sections are assembled from tone and keyword rules over that evidence, not from scripted personas.
+  - **Arbiter** is a rule-based score (published in `debate_service._arbitrate`) mapped to `STRONG_BUY` ... `DIVEST_AVOID`. "Conviction" is evidence coverage, not a probability. With no stored evidence the verdict is `NEUTRAL_HOLD` at 0%.
 
 ### Stage 11: Executive Intelligence Export & SEC Rule 17a-4 Audit Trail
-- One-click boardroom dossier compilation in **Markdown (.md)**, **Standalone HTML (.html)** with responsive `@media print` CSS, and **JSON (.json)**.
-- Deterministic **SHA-256 Cryptographic Non-Repudiation Certificate** embedded into each dossier and indexed in an immutable governance audit ledger.
+- One-click boardroom dossier compilation in **Markdown (.md)**, **Standalone HTML (.html)** and **JSON (.json)**, built only from stored data.
+- A SHA-256 digest of the dossier content is embedded for integrity checking.
+
+---
+
+## 🔎 Data Integrity
+
+All outputs come from retrieved sources (web search, SEC EDGAR, arXiv, GDELT) or from data you enter.
+When a source is unavailable the API returns an error or a warning and zero results; it never substitutes sample data.
+Reliability scores are labelled source-class priors, and confidence scores are computed from how well the retrieved text covers the question.
+Test doubles exist only in `tests/fakes.py`.
+
+To remove rows that older versions fabricated from an existing database:
+
+```bash
+python -m scripts.purge_fabricated_data          # dry run
+python -m scripts.purge_fabricated_data --apply  # delete
+```
 
 ---
 

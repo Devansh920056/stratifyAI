@@ -25,7 +25,7 @@ class DecisionEvaluationCreateRequest(BaseModel):
     actual_outcome: str = Field(..., min_length=3, description="Observed real-world result after execution")
     actual_metric_value: str | None = Field(None, description="Measured metric e.g. +22% ARR")
     impact_delta: float = Field(default=0.0, ge=-10.0, le=10.0, description="Actual impact vs estimated delta")
-    confidence_score: float = Field(default=0.85, ge=0.0, le=1.0, description="Confidence in this evaluation")
+    confidence_score: float = Field(..., ge=0.0, le=1.0, description="Evaluator's confidence in this evaluation (required, no default)")
     metric_evidence: list[dict[str, Any]] = Field(default_factory=list, description="Structured metric proofs")
     linked_signal_ids: list[str] = Field(default_factory=list, description="MarketSignal UUIDs as corroborating proof")
 
@@ -74,7 +74,7 @@ class BacktestFindingItem(BaseModel):
     estimated_impact: int
     market_signal_count: int
     market_sentiment_trend: float
-    backtest_verdict: str  # STRONGLY_ALIGNED, MODERATELY_ALIGNED, DIVERGENT, NEUTRAL
+    backtest_verdict: str  # STRONGLY_ALIGNED, MODERATELY_ALIGNED, DIVERGENT, NEUTRAL, INSUFFICIENT_DATA
     confidence: float
     key_market_evidence: list[str]
 
@@ -88,5 +88,5 @@ class BacktestResultResponse(BaseModel):
     total_recommendations: int
     aligned_recommendations: int
     divergent_recommendations: int
-    alignment_score: float  # 0.0 to 100.0%
+    alignment_score: float  # 0.0 to 100.0%; share of recommendations WITH matching signals that are aligned
     findings: list[BacktestFindingItem]

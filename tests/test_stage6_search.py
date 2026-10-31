@@ -30,7 +30,7 @@ from backend.app.providers.search.base import (
     SearchTimeoutError,
 )
 from backend.app.providers.search.factory import get_search_provider
-from backend.app.providers.search.mock import MockSearchProvider
+from tests.fakes import MockSearchProvider
 from backend.app.providers.search.sanitizer import (
     deduplicate_results,
     normalize_url,
@@ -276,12 +276,10 @@ def test_results_to_evidence_conversion():
 # ==============================================================================
 
 
-def test_factory_resolves_mock_provider():
-    """Verify factory returns MockSearchProvider when configured as mock."""
-    mock_settings = Settings(SEARCH_PROVIDER="mock", TAVILY_API_KEY=None)
-    provider = get_search_provider(mock_settings)
-    assert isinstance(provider, MockSearchProvider)
-    assert provider.provider_name == "mock"
+def test_factory_rejects_unknown_provider():
+    """Unknown providers raise instead of silently substituting fake data."""
+    with pytest.raises(ValueError):
+        get_search_provider(Settings(SEARCH_PROVIDER="mock", TAVILY_API_KEY=None))
 
 
 def test_factory_resolves_tavily_provider_with_key():
@@ -294,12 +292,10 @@ def test_factory_resolves_tavily_provider_with_key():
     assert provider.provider_name == "tavily"
 
 
-def test_factory_honest_fallback_when_key_missing():
-    """Verify factory falls back to MockSearchProvider when Tavily key is empty."""
-    missing_key_settings = Settings(SEARCH_PROVIDER="tavily", TAVILY_API_KEY=None)
-    provider = get_search_provider(missing_key_settings)
-    assert isinstance(provider, MockSearchProvider)
-    assert provider.provider_name == "mock"
+def test_factory_falls_back_to_real_duckduckgo_when_key_missing():
+    """Missing Tavily key degrades to the real keyless DuckDuckGo provider, never a mock."""
+    provider = get_search_provider(Settings(SEARCH_PROVIDER="tavily", TAVILY_API_KEY=None))
+    assert provider.provider_name == "duckduckgo"
 
 
 # ==============================================================================
@@ -473,8 +469,34 @@ async def test_worker_processes_with_live_tavily_search_provider():
                 select(TaskResult).where(TaskResult.task_id == task.id)
             )
             assert result is not None
-            assert "grounder" in result.model_name
+            assert result.model_name == "stratify-extractor-v1"
             assert (
                 result.citations[0]["url"]
                 == "https://www.federalaviation-news.gov/part-135-cargo-drone-ruling"
             )
+
+
+@pytest.mark.asyncio
+async def test_duckduckgo_retries_with_core_terms_when_long_query_matches_nothing():
+    """A verbose query that returns nothing is retried once with its few core words."""
+    from backend.app.providers.search.duckduckgo import DuckDuckGoSearchProvider
+
+    seen_queries: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "en.wikipedia.org":
+            q = request.url.params.get("srsearch", "")
+            seen_queries.append(q)
+            hits = [] if len(q.split()) > 4 else [
+                {"title": "Small modular reactor", "snippet": "A <b>small modular reactor</b> is a type of nuclear fission reactor."}
+            ]
+            return httpx.Response(200, json={"query": {"search": hits}})
+        return httpx.Response(200, json={}) if "duckduckgo.com/" in str(request.url) and request.method == "GET" else httpx.Response(200, text="")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        provider = DuckDuckGoSearchProvider(client=client)
+        results = await provider.search(
+            "Small modular nuclear reactor commercial deployment industry analysis forecast 2026-2035", 3
+        )
+    assert len(seen_queries) == 2 and len(seen_queries[1].split()) <= 4
+    assert results and results[0].url == "https://en.wikipedia.org/wiki/Small_modular_reactor"

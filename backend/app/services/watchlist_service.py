@@ -18,7 +18,6 @@ from backend.app.models.watchlist import Alert, Watchlist
 from backend.app.schemas.watchlist import (
     AlertListResponse,
     AlertResponse,
-    AlertSimulateRequest,
     WatchlistCreateRequest,
     WatchlistListResponse,
     WatchlistResponse,
@@ -463,65 +462,4 @@ class WatchlistService:
             is_read=alert.is_read,
             triggered_at=alert.triggered_at,
             watchlist_name=wl_name,
-        )
-
-    @classmethod
-    async def simulate_alert(
-        cls, session: AsyncSession, req: AlertSimulateRequest
-    ) -> AlertResponse:
-        """
-        Simulates an incoming market alert for demonstration and testing.
-        """
-        watchlist = None
-        if req.watchlist_id:
-            watchlist = await session.get(Watchlist, req.watchlist_id)
-
-        if not watchlist:
-            # Fetch first active watchlist or create a sensible default
-            watchlist = await session.scalar(
-                select(Watchlist).where(Watchlist.is_active == True).limit(1)
-            )
-            if not watchlist:
-                watchlist = Watchlist(
-                    name="Direct EV & Climate Tech Competitors",
-                    sector="Climate Tech",
-                    target_entities=["Tesla", "Rivian", "Lucid Motors", "Northvolt"],
-                    alert_threshold=-0.2,
-                    is_active=True,
-                )
-                session.add(watchlist)
-                await session.commit()
-                await session.refresh(watchlist)
-
-        severity = req.severity.upper() if req.severity else AlertSeverity.WARNING.value
-        title = req.title or f"[{watchlist.name[:20]}] Sudden Regulatory Compliance Audit Announced"
-        message = req.message or (
-            f"Department of Energy announced strict supply chain provenance audits affecting "
-            f"sector '{watchlist.sector}'. Key tracked competitors {watchlist.target_entities[:2]} "
-            f"face estimated 15% verification overhead in Q4."
-        )
-
-        alert = Alert(
-            watchlist_id=watchlist.id,
-            signal_id=None,
-            title=title[:255],
-            message=message,
-            severity=severity,
-            is_read=False,
-            triggered_at=utc_now(),
-        )
-        session.add(alert)
-        await session.commit()
-        await session.refresh(alert)
-
-        return AlertResponse(
-            id=alert.id,
-            watchlist_id=alert.watchlist_id,
-            signal_id=alert.signal_id,
-            title=alert.title,
-            message=alert.message,
-            severity=alert.severity,
-            is_read=alert.is_read,
-            triggered_at=alert.triggered_at,
-            watchlist_name=watchlist.name,
         )

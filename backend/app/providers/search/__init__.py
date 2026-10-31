@@ -1,5 +1,5 @@
 """
-Search Providers package: abstractions, sanitizers, and live/mock implementations.
+Search Providers package: abstractions, sanitizers, and live implementations.
 """
 
 from backend.app.providers.search.base import (
@@ -12,7 +12,6 @@ from backend.app.providers.search.base import (
 )
 from backend.app.providers.search.duckduckgo import DuckDuckGoSearchProvider
 from backend.app.providers.search.factory import get_search_provider
-from backend.app.providers.search.mock import MockSearchProvider
 from backend.app.providers.search.sanitizer import (
     deduplicate_results,
     normalize_url,
@@ -25,7 +24,6 @@ from backend.app.providers.search.tavily import TavilySearchProvider
 
 __all__ = [
     "DuckDuckGoSearchProvider",
-    "MockSearchProvider",
     "SearchAuthError",
     "SearchProvider",
     "SearchProviderError",

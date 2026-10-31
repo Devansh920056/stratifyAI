@@ -213,9 +213,9 @@ export function EvidenceFusionPanel() {
                   Fact Check Summary: {summary.entity_name}
                 </h3>
                 <p className="text-xs text-slate-300">
-                  Reliability Score:{" "}
+                  Source-class reliability prior:{" "}
                   <span className="font-mono font-bold text-[#FCF1D0]">
-                    {Math.round(summary.evidence_reliability_index * 100)}% Verified
+                    {Math.round(summary.evidence_reliability_index * 100)}%
                   </span>
                 </p>
               </div>
@@ -223,10 +223,18 @@ export function EvidenceFusionPanel() {
 
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#010736] text-[#FCF1D0] border border-[#22396F]">
-                {summary.total_fused_sources} Sources Verified
+                {summary.total_fused_sources} Sources Retrieved
               </span>
             </div>
           </div>
+
+          {summary.retrieval_warnings.length > 0 && (
+            <div className="p-3 rounded-lg border border-amber-500/40 bg-amber-500/10 text-xs text-amber-200 space-y-1">
+              {summary.retrieval_warnings.map((w, i) => (
+                <p key={i}>{w}</p>
+              ))}
+            </div>
+          )}
 
           {/* Metric Counter */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

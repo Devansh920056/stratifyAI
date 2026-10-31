@@ -256,38 +256,22 @@ class ReportAggregatorService:
         citation_count: int,
     ) -> str:
         """
-        Synthesizes a cohesive, high-level executive summary across all four research vectors.
+        Assembles the executive summary from the four research sections' own (quoted) summaries; adds no conclusions of its own.
         """
-        market_snippet = market_findings.get(
-            "summary", "Market sizing and baseline dynamics evaluated."
-        )
-        comp_snippet = competitor_analysis.get(
-            "summary", "Competitive landscape and incumbent moats examined."
-        )
-        cust_snippet = customer_insights.get(
-            "summary", "Enterprise buyer behavior and willingness to pay analyzed."
-        )
-        risk_snippet = opportunities_and_risks.get(
-            "summary", "Regulatory and operational headwinds identified."
-        )
+        def section(label: str, data: dict) -> str:
+            if data.get("status") == "COMPLETED" and data.get("summary"):
+                return f"{label}: {data['summary']}"
+            return f"{label}: no data was collected for this dimension."
 
         paragraphs = [
             (
-                f"Executive Intelligence Brief regarding '{job.research_question}' "
-                f"in {job.target_market} ({job.geography}). This intelligence synthesis is "
-                f"grounded across {citation_count} independently verified external evidence sources."
+                f"Research brief for '{job.research_question}' in {job.target_market} ({job.geography}). "
+                f"Compiled from {citation_count} retrieved source(s); every statement below is quoted "
+                f"from those sources."
             ),
-            (
-                f"Market Overview & Sizing: {market_snippet}\n"
-                f"Competitive Dynamics: {comp_snippet}"
-            ),
-            (
-                f"Customer & Buyer Insights: {cust_snippet}\n"
-                f"Opportunities & Risk Factors: {risk_snippet}"
-            ),
-            (
-                "Strategic Assessment: Capital investment in this domain presents significant upside "
-                "provided regulatory compliance is secured early and customer integration friction is minimized."
-            ),
+            section("Market Overview", market_findings),
+            section("Competitive Dynamics", competitor_analysis),
+            section("Customer & Buyer Insights", customer_insights),
+            section("Regulatory & Risk Factors", opportunities_and_risks),
         ]
         return "\n\n".join(paragraphs)

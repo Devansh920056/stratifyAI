@@ -225,15 +225,6 @@ export async function markAlertRead(
   });
 }
 
-export async function simulateAlert(
-  data: import("@/types/api").AlertSimulateRequest
-): Promise<import("@/types/api").AlertItem> {
-  return request<import("@/types/api").AlertItem>("/api/v1/alerts/simulate", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
 export async function recordEvaluation(
   recommendationId: string,
   data: import("@/types/api").DecisionEvaluationCreateRequest

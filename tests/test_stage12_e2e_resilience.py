@@ -21,6 +21,7 @@ from backend.app.services.export_service import ExecutiveExportService
 from backend.app.schemas.export import DossierExportRequest
 from backend.app.models.job import Job
 from backend.app.models.recommendation import Recommendation
+from tests.fakes import install_sec_arxiv_transport
 
 
 @pytest_asyncio.fixture
@@ -30,13 +31,14 @@ async def db_session():
 
 
 @pytest.mark.asyncio
-async def test_full_cross_stage_pipeline_orchestration(db_session: AsyncSession):
+async def test_full_cross_stage_pipeline_orchestration(db_session: AsyncSession, monkeypatch):
     """
     Validates complete end-to-end convergence:
     Evidence Fusion (Stage 9) -> Semantic Vector Memory (Stage 8) ->
     Dialectic Debate (Stage 10) -> Decision Quality Scoring (Stage 6) ->
     Executive Boardroom Dossier with SHA-256 Provenance (Stage 11).
     """
+    install_sec_arxiv_transport(monkeypatch)  # recorded-shape SEC/arXiv responses, no network
     entity = "Tesla"
     topic = f"{entity} Autonomous Logistics & 4680 Scaling"
 
@@ -133,7 +135,7 @@ async def test_full_cross_stage_pipeline_orchestration(db_session: AsyncSession)
     assert dossier.governance_audit.sha256_hash is not None
     assert len(dossier.governance_audit.sha256_hash) == 64
     assert dossier.governance_audit.entity_name == entity
-    assert "SHA-256 AUDIT DIGEST" in dossier.content
+    assert "SHA-256 of the content above" in dossier.content
     assert dossier.governance_audit.sha256_hash in dossier.content
 
     # Step 6: Verify Immutable Audit History

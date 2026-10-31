@@ -7,11 +7,13 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+import aio_pika
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.app.api.v1.router import api_router
+from backend.app.core import APP_VERSION
 from backend.app.core.config import get_settings
 from backend.app.db.session import async_engine, check_database_health
 
@@ -37,8 +39,6 @@ async def lifespan(app: FastAPI):
 
     # Attempt to assert broker topology on startup if RabbitMQ is reachable
     try:
-        import aio_pika
-
         from backend.app.broker.connection import get_broker_channel
 
         async with get_broker_channel(ensure_topology=True) as _:
@@ -85,7 +85,7 @@ async def lifespan(app: FastAPI):
                     )
                     try:
                         await asyncio.wait_for(stop_event.wait(), timeout=3.0)
-                    except asyncio.TimeoutError:
+                    except TimeoutError:
                         pass
 
         logger.info("Spawning integrated Worker Consumer...")
@@ -117,7 +117,7 @@ app = FastAPI(
         "Accepts market inquiries, decomposes them into orthogonal research tasks, "
         "persists reliable state, and coordinates distributed worker execution."
     ),
-    version="0.1.0",
+    version=APP_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -157,7 +157,7 @@ async def root():
     """Root info endpoint providing service metadata and documentation links."""
     return {
         "service": "Stratify AI Coordinator API",
-        "version": "0.1.0",
+        "version": APP_VERSION,
         "docs_url": "/docs",
         "health_check": "/api/v1/health/ready",
     }

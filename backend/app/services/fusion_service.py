@@ -13,8 +13,8 @@ from backend.app.db.base import utc_now
 from backend.app.models.enums import DivergenceStatus, EvidenceSourceType
 from backend.app.models.fused_evidence import FusedEvidence
 from backend.app.models.market_signal import MarketSignal
-from backend.app.providers.arxiv_preprint import ArxivPreprintProvider
-from backend.app.providers.sec_edgar import SECFilingsProvider
+from backend.app.providers.arxiv_preprint import ArxivPreprintProvider, ArxivProviderError
+from backend.app.providers.sec_edgar import SECFilingsProvider, SECProviderError
 from backend.app.schemas.fusion import (
     EvidenceReconciliationSummary,
     FusedEvidenceItem,
@@ -22,6 +22,16 @@ from backend.app.schemas.fusion import (
 )
 
 logger = logging.getLogger("stratify.services.evidence_fusion")
+
+# Transparent lexicons used for tone comparison (substring match on the lower-cased excerpt).
+FILING_RISK_TERMS = (
+    "adversely", "bottleneck", "delay", "decline", "default", "disruption", "impair", "inability",
+    "investigation", "litigation", "recall", "shortage", "unable", "uncertain", "yield",
+)
+PAPER_LIMITATION_TERMS = (
+    "bottleneck", "challenge", "degradation", "failure", "limitation", "limited", "overhead", "unstable",
+)
+POSITIVE_TONE_THRESHOLD = 0.30
 
 
 class EvidenceFusionService:
@@ -47,11 +57,17 @@ class EvidenceFusionService:
         fused_items: list[FusedEvidence] = []
         sec_count = 0
         arxiv_count = 0
+        warnings: list[str] = []
 
         # 1. Gather SEC EDGAR Filings
         if include_sec:
             sec_provider = SECFilingsProvider()
-            sec_results = await sec_provider.get_filings_for_entity(norm_entity, max_results=4)
+            try:
+                sec_results = await sec_provider.get_filings_for_entity(norm_entity, max_results=4)
+            except SECProviderError as exc:
+                logger.warning("SEC EDGAR retrieval failed for '%s': %s", norm_entity, exc)
+                warnings.append(f"SEC EDGAR unavailable: {exc}")
+                sec_results = []
             for sr in sec_results:
                 existing = await session.scalar(
                     select(FusedEvidence).where(
@@ -78,7 +94,7 @@ class EvidenceFusionService:
                         content_excerpt=sr.content_excerpt,
                         source_url=sr.source_url,
                         reliability_score=sr.reliability_score,
-                        divergence_status=DivergenceStatus.ALIGNED.value,
+                        divergence_status=DivergenceStatus.UNVERIFIED.value,
                         fiscal_period=sr.fiscal_period,
                         metadata_json=sr.metadata,
                         created_at=utc_now(),
@@ -92,7 +108,12 @@ class EvidenceFusionService:
         if include_arxiv:
             arxiv_provider = ArxivPreprintProvider()
             search_term = f"{norm_entity} {topic or ''}".strip()
-            arxiv_results = await arxiv_provider.search_preprints(search_term, max_results=3)
+            try:
+                arxiv_results = await arxiv_provider.search_preprints(search_term, max_results=3)
+            except ArxivProviderError as exc:
+                logger.warning("arXiv retrieval failed for '%s': %s", norm_entity, exc)
+                warnings.append(f"arXiv unavailable: {exc}")
+                arxiv_results = []
             for ar in arxiv_results:
                 existing = await session.scalar(
                     select(FusedEvidence).where(
@@ -118,7 +139,7 @@ class EvidenceFusionService:
                         content_excerpt=ar.abstract_excerpt,
                         source_url=ar.source_url,
                         reliability_score=ar.reliability_score,
-                        divergence_status=DivergenceStatus.ALIGNED.value,
+                        divergence_status=DivergenceStatus.UNVERIFIED.value,
                         fiscal_period=ar.published_date,
                         metadata_json=ar.metadata,
                         created_at=utc_now(),
@@ -131,6 +152,7 @@ class EvidenceFusionService:
         # 3. Cross-Source Reconciliation Engine
         divergent_count = 0
         contradictory_count = 0
+        unverified_count = 0
 
         if reconcile and fused_items:
             # Query existing commercial market signals related to this entity
@@ -150,6 +172,8 @@ class EvidenceFusionService:
                     divergent_count += 1
                 elif divergence == DivergenceStatus.CONTRADICTORY.value:
                     contradictory_count += 1
+                elif divergence == DivergenceStatus.UNVERIFIED.value:
+                    unverified_count += 1
 
         await session.commit()
         for f in fused_items:
@@ -160,11 +184,11 @@ class EvidenceFusionService:
         avg_eri = (
             round(sum(x.reliability_score for x in fused_items) / total_sources, 2)
             if total_sources > 0
-            else 0.90
+            else 0.0
         )
 
         takeaway = cls._generate_reconciliation_takeaway(
-            norm_entity, total_sources, divergent_count, contradictory_count, avg_eri
+            norm_entity, total_sources, divergent_count, contradictory_count, unverified_count, avg_eri
         )
 
         summary = EvidenceReconciliationSummary(
@@ -176,6 +200,8 @@ class EvidenceFusionService:
             contradictory_claims_count=contradictory_count,
             evidence_reliability_index=avg_eri,
             reconciliation_takeaway=takeaway,
+            unverified_claims_count=unverified_count,
+            retrieval_warnings=warnings,
         )
 
         items_resp = [
@@ -211,47 +237,49 @@ class EvidenceFusionService:
         signals: list[MarketSignal],
     ) -> tuple[str, str | None]:
         """
-        Cross-examines statutory Item 1A Risk Factors against commercial news headlines.
+        Compares the tone of a filing/paper excerpt against the tone of related stored news.
+        This is a keyword-and-sentiment heuristic; the notes always state exactly what matched.
         """
-        excerpt_lower = evidence.content_excerpt.lower()
+        excerpt_lower = (evidence.content_excerpt or "").lower()
+        is_sec = evidence.source_type == EvidenceSourceType.SEC_EDGAR.value
+        is_item_1a = (evidence.metadata_json or {}).get("excerpt_kind") == "item_1a_risk_factors"
 
-        # Check for classic commercial vs regulatory divergence themes
-        if evidence.source_type == EvidenceSourceType.SEC_EDGAR.value:
-            if "bottleneck" in excerpt_lower or "yield" in excerpt_lower or "delays" in excerpt_lower:
-                # Compare against optimistic news headlines
-                optimistic_signals = [
-                    s for s in signals if s.sentiment_score >= 0.30 or "surge" in s.headline.lower() or "record" in s.headline.lower()
-                ]
-                if optimistic_signals:
-                    sig = optimistic_signals[0]
-                    return (
-                        DivergenceStatus.CONTRADICTORY.value,
-                        f"Direct Claim Contradiction: Commercial news headline '{sig.headline[:75]}' asserts rapid scaling with positive sentiment (+{sig.sentiment_score:.2f}), but SEC Form {evidence.filing_type} statutory risk disclosures explicitly mandate caution regarding manufacturing yield bottlenecks and margin headwinds.",
-                    )
-                else:
-                    return (
-                        DivergenceStatus.DIVERGENT.value,
-                        "Source Asymmetry: SEC statutory risk disclosure highlights operational and supplier dependencies that are absent from general commercial news coverage.",
-                    )
-
-            if "recall" in excerpt_lower or "regulatory" in excerpt_lower or "investigation" in excerpt_lower:
-                return (
-                    DivergenceStatus.DIVERGENT.value,
-                    "Regulatory Divergence: Mandatory SEC disclosures emphasize ongoing compliance inquiries and liability caps which represent downside risk factors for strategic planning.",
-                )
-
-        if (
-            evidence.source_type == EvidenceSourceType.ARXIV_PREPRINT.value
-            and any(term in excerpt_lower for term in ("dendrite", "overhead", "hallucination"))
-        ):
+        if is_sec and not is_item_1a:
             return (
-                DivergenceStatus.DIVERGENT.value,
-                "Technical Empirical Constraint: Peer-reviewed preprint indicates physical and latency constraints in laboratory benchmarks before mass commercial deployment.",
+                DivergenceStatus.UNVERIFIED.value,
+                "Only filing metadata was available (risk-factor text could not be extracted); content not analysed.",
             )
 
+        terms = FILING_RISK_TERMS if is_sec else PAPER_LIMITATION_TERMS
+        matched = [t for t in terms if t in excerpt_lower]
+        label = "risk-language" if is_sec else "limitation-language"
+
+        if not signals:
+            return (
+                DivergenceStatus.UNVERIFIED.value,
+                "No related news signals are stored for this entity, so there is nothing to compare against. "
+                "Sync Market Pulse signals and re-run.",
+            )
+
+        positive = [s for s in signals if s.sentiment_score >= POSITIVE_TONE_THRESHOLD]
+        if matched and positive:
+            sig = max(positive, key=lambda s: s.sentiment_score)
+            status = DivergenceStatus.CONTRADICTORY if is_sec else DivergenceStatus.DIVERGENT
+            return (
+                status.value,
+                f"Tone mismatch: the excerpt contains {label} terms ({', '.join(matched)}), while "
+                f"{len(positive)} of {len(signals)} related news signal(s) have positive tone "
+                f"(e.g. '{sig.headline[:90]}', {sig.sentiment_score:+.2f}).",
+            )
+        if matched:
+            return (
+                DivergenceStatus.DIVERGENT.value,
+                f"The excerpt contains {label} terms ({', '.join(matched)}); none of the {len(signals)} related "
+                f"news signal(s) has positive tone, so no direct mismatch was found.",
+            )
         return (
             DivergenceStatus.ALIGNED.value,
-            "Claims Aligned: Secondary statutory and technical disclosures substantiate current commercial market trajectory.",
+            f"No {label} terms matched in the excerpt; compared against {len(signals)} related news signal(s).",
         )
 
     @classmethod
@@ -261,27 +289,18 @@ class EvidenceFusionService:
         total_sources: int,
         divergent: int,
         contradictory: int,
+        unverified: int,
         eri: float,
     ) -> str:
-        """Constructs executive takeaway for multi-source reconciliation."""
-        if contradictory > 0:
-            return (
-                f"High-Priority Warning for {entity_name}: Detected {contradictory} direct contradictions "
-                f"between commercial press reports and mandatory SEC EDGAR statutory disclosures. "
-                f"Evidence Reliability Index is calculated at {eri:.2f}. "
-                "Analysts are strongly advised to weight Form 10-K risk factors above commercial media projections."
-            )
-        elif divergent > 0:
-            return (
-                f"Moderate Discrepancy for {entity_name}: Identified {divergent} divergent disclosures across {total_sources} "
-                f"secondary sources (SEC filings & arXiv). Statutory risk factors note supply and regulatory constraints "
-                f"not fully reflected in public sentiment. Evidence Reliability Index: {eri:.2f}."
-            )
-        else:
-            return (
-                f"Fully Reconciled Evidence for {entity_name}: All {total_sources} secondary statutory filings and "
-                f"technical preprints confirm commercial claims. Evidence Reliability Index is high at {eri:.2f}."
-            )
+        """Factual one-line summary of reconciliation results."""
+        if total_sources == 0:
+            return f"No SEC filings or arXiv preprints were retrieved for {entity_name}."
+        return (
+            f"{total_sources} source(s) retrieved for {entity_name}: {contradictory} tone-contradictory, "
+            f"{divergent} divergent, {unverified} unverified, "
+            f"{total_sources - contradictory - divergent - unverified} aligned. "
+            f"Mean source-class reliability prior: {eri:.2f} (a fixed prior per source type, not a measurement)."
+        )
 
     @classmethod
     async def get_fused_evidence(

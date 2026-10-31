@@ -1,17 +1,24 @@
 """
-Multi-Agent Dialectic Debate Service (Stage 10).
-Orchestrates multi-agent cross-vector debates between:
-1. Bull Growth Specialist (Thesis & Expansion)
-2. Bear Risk Officer (Antithesis & Item 1A Constraints)
-3. Regulatory Compliance & Technical Auditor (Legal & Empirical Scrutiny)
-4. Principal Arbiter (Cross-Examination Synthesis, Conviction Scoring, & Verdict)
+Evidence-Grounded Debate Service (Stage 10).
+
+Builds a structured bull / bear / regulatory / arbiter debate where every statement is a
+listing or quotation of stored evidence (SEC filing excerpts, arXiv abstracts, news signals)
+with its source. No text is generated from imagination and no figures are assumed:
+
+* Bull case   = positive-tone news signals about the entity.
+* Bear case   = SEC risk-factor excerpts and negative-tone news signals.
+* Regulatory  = regulatory-update signals, regulatory terms in filings, arXiv limitations.
+* Arbiter     = a published rule applied to the counted evidence (see ``_arbitrate``).
+
+When no evidence exists the debate says so and the verdict is NEUTRAL_HOLD with 0% conviction.
 """
 
 import logging
 import uuid
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -22,6 +29,7 @@ from backend.app.models.enums import (
     ArgumentType,
     DebateStatus,
     EvidenceSourceType,
+    SignalType,
 )
 from backend.app.models.fused_evidence import FusedEvidence
 from backend.app.models.market_signal import MarketSignal
@@ -32,8 +40,51 @@ from backend.app.schemas.debate import (
     DebateListResponse,
     DebateMessageItem,
 )
+from backend.app.services.fusion_service import (
+    FILING_RISK_TERMS,
+    PAPER_LIMITATION_TERMS,
+    EvidenceFusionService,
+)
 
 logger = logging.getLogger("stratify.debate_service")
+
+POSITIVE_TONE = 0.15
+NEGATIVE_TONE = -0.15
+REGULATORY_TERMS = ("regulat", "recall", "investigation", "compliance", "antitrust", "litigation", "sanction")
+# Declared methodology: relative weight of each source class in the arbiter's score.
+SOURCE_WEIGHTS = {"SEC_EDGAR": 0.50, "ARXIV_PREPRINT": 0.30, "COMMERCIAL_NEWS": 0.20}
+CONVICTION_FULL_AT = 10  # polarised evidence items at which conviction reaches 100%
+
+
+def _excerpt(text: str | None, limit: int = 280) -> str:
+    text = " ".join((text or "").split())
+    return text if len(text) <= limit else text[:limit].rsplit(" ", 1)[0] + "..."
+
+
+@dataclass
+class _Evidence:
+    """One piece of stored evidence with a polarity assigned by transparent rules."""
+
+    source: str  # SEC_EDGAR | ARXIV_PREPRINT | COMMERCIAL_NEWS
+    title: str
+    reference_id: str
+    url: str
+    detail: str  # quoted excerpt or tone description
+    polarity: str  # BULL | BEAR | NEUTRAL
+    regulatory: bool = False
+    matched_terms: list[str] = field(default_factory=list)
+
+    def citation(self) -> dict:
+        return {
+            "source_type": self.source,
+            "title": self.title,
+            "reference_id": self.reference_id,
+            "url": self.url,
+            "reconciliation_impact": self.detail,
+        }
+
+    def line(self) -> str:
+        return f"- **{self.title}** ({self.reference_id}): {self.detail}"
 
 
 class MultiAgentDebateService:
@@ -41,87 +92,41 @@ class MultiAgentDebateService:
     async def initiate_debate(
         cls, session: AsyncSession, request: DebateInitiateRequest
     ) -> DebateDetailResponse:
-        """
-        Orchestrates an enterprise multi-round dialectic debate on the given topic and entity.
-        Grounded in empirical SEC EDGAR Form 10-K risk factors, arXiv research, and market signals.
-        """
+        """Builds and stores an evidence-grounded debate for the entity/topic."""
         entity = request.entity_name.strip()
         topic = request.topic.strip()
         rounds = min(max(request.rounds_count, 1), 5)
+        logger.info(f"Initiating evidence-grounded debate for '{entity}' on topic: '{topic}'")
 
-        logger.info(f"Initiating multi-agent dialectic debate for entity '{entity}' on topic: '{topic}'")
-
-        # 1. Gather empirical ground truth from FusedEvidence and MarketSignal
-        sec_stmt = (
-            select(FusedEvidence)
-            .where(
-                func.lower(FusedEvidence.entity_name).contains(entity.lower()),
-                FusedEvidence.source_type == EvidenceSourceType.SEC_EDGAR.value,
-            )
-            .order_by(desc(FusedEvidence.created_at))
-            .limit(5)
-        )
-        sec_res = await session.execute(sec_stmt)
-        sec_filings = sec_res.scalars().all()
-
-        arxiv_stmt = (
-            select(FusedEvidence)
-            .where(
-                func.lower(FusedEvidence.entity_name).contains(entity.lower()),
-                FusedEvidence.source_type == EvidenceSourceType.ARXIV_PREPRINT.value,
-            )
-            .order_by(desc(FusedEvidence.created_at))
-            .limit(3)
-        )
-        arxiv_res = await session.execute(arxiv_stmt)
-        arxiv_papers = arxiv_res.scalars().all()
+        sec_filings, arxiv_papers = await cls._load_fused(session, entity)
+        if not sec_filings and not arxiv_papers:
+            # Nothing stored yet: try to retrieve real evidence now (failures are tolerated).
+            try:
+                await EvidenceFusionService.query_and_fuse_evidence(session, entity, topic)
+            except Exception as exc:
+                logger.warning(f"Live evidence retrieval failed for '{entity}': {exc}")
+            sec_filings, arxiv_papers = await cls._load_fused(session, entity)
 
         signals_stmt = (
             select(MarketSignal)
-            .where(func.lower(MarketSignal.headline).contains(entity.lower()))
+            .where(
+                or_(
+                    func.lower(MarketSignal.headline).contains(entity.lower()),
+                    func.lower(MarketSignal.summary).contains(entity.lower()),
+                )
+            )
             .order_by(desc(MarketSignal.published_at))
-            .limit(4)
+            .limit(12)
         )
-        signals_res = await session.execute(signals_stmt)
-        market_signals = signals_res.scalars().all()
+        market_signals = (await session.execute(signals_stmt)).scalars().all()
 
-        # 2. Extract citations
-        sec_citations = [
-            {
-                "source_type": "SEC_EDGAR",
-                "title": f.title,
-                "reference_id": f.metadata_json.get("accession_number", "SEC-FILING"),
-                "url": f.source_url,
-                "reconciliation_impact": (
-                    f"Statutory Risk Factor: {f.title} ({f.fiscal_period or 'Recent Filing'})"
-                ),
-            }
-            for f in sec_filings
-        ]
+        evidence = cls._classify(sec_filings, arxiv_papers, market_signals)
+        bulls = [e for e in evidence if e.polarity == "BULL"]
+        bears = [e for e in evidence if e.polarity == "BEAR"]
+        regs = [e for e in evidence if e.regulatory]
+        arbitration = cls._arbitrate(evidence)
 
-        arxiv_citations = [
-            {
-                "source_type": "ARXIV_PREPRINT",
-                "title": p.title,
-                "reference_id": p.metadata_json.get("arxiv_id", "arXiv-Preprint"),
-                "url": p.source_url,
-                "reconciliation_impact": "Empirical Benchmark: Laboratory scaling and material physics constraints.",
-            }
-            for p in arxiv_papers
-        ]
-
-        news_citations = [
-            {
-                "source_type": "COMMERCIAL_NEWS",
-                "title": s.headline,
-                "reference_id": s.source_domain,
-                "url": s.source_url,
-                "reconciliation_impact": f"Market Sentiment ({s.sentiment_score:+.2f}) on expansion/product momentum.",
-            }
-            for s in market_signals
-        ]
-
-        # 3. Create initial Debate record
+        now = datetime.now(UTC)
         debate = Debate(
             id=uuid.uuid4(),
             topic=topic,
@@ -129,221 +134,286 @@ class MultiAgentDebateService:
             status=DebateStatus.IN_PROGRESS.value,
             rounds_count=rounds,
             synthesis_matrix={},
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+            created_at=now,
+            updated_at=now,
         )
         session.add(debate)
         await session.flush()
 
+        total = len(evidence)
+
+        def make_msg(role, name, rnd, arg_type, content, cites, conf) -> DebateMessage:
+            return DebateMessage(
+                id=uuid.uuid4(),
+                debate_id=debate.id,
+                agent_role=role.value,
+                agent_name=name,
+                round_number=rnd,
+                argument_type=arg_type.value,
+                content=content,
+                evidence_citations=[c.citation() for c in cites],
+                confidence_score=round(conf, 2),
+                created_at=datetime.now(UTC),
+            )
+
+        def share(n: int) -> float:
+            return n / total if total else 0.0
+
         messages: list[DebateMessage] = []
 
-        # ─── Round 1: Opening Arguments ──────────────────────────────
-        # Bull: Thesis
-        bull_r1_content = (
-            f"### Executive Thesis: Accelerating Market Expansion & Defensible Moats for {entity}\n\n"
-            f"**1. Commercial Catalyst Momentum**: Recent operational indicators substantiate an inflection in customer adoption and platform velocity. "
-            f"The primary expansion hypothesis for *{topic}* rests on operating leverage, proprietary architectural integration, and first-mover scale economics.\n\n"
-            f"**2. Competitive Moat Acceleration**: Market signals indicate key rivals are struggling with backward-compatible legacy architectures. "
-            f"By consolidating distribution channels and leveraging vertical optimization, {entity} is positioned to capture disproportionate profit pool share across tier-1 accounts.\n\n"
-            f"**3. Capital Efficiency**: Incremental gross margins on new platform deployments are projected to expand as initial fixed capital investments normalize."
+        # Round 1 - opening statements
+        messages.append(
+            make_msg(
+                AgentDebateRole.BULL_SPECIALIST, "Bull case (positive-tone news)", 1, ArgumentType.THESIS,
+                cls._render_case(
+                    f"Supporting evidence for {entity}: {topic}", bulls[:3],
+                    "No positive-tone news signals about this entity are stored, so the bull case has no supporting evidence.",
+                ),
+                bulls[:3], share(len(bulls)),
+            )
         )
-        msg_bull_1 = DebateMessage(
-            id=uuid.uuid4(),
-            debate_id=debate.id,
-            agent_role=AgentDebateRole.BULL_SPECIALIST.value,
-            agent_name="Marcus Vance (Growth & Market Expansion)",
-            round_number=1,
-            argument_type=ArgumentType.THESIS.value,
-            content=bull_r1_content,
-            evidence_citations=news_citations[:2],
-            confidence_score=0.88,
-            created_at=datetime.now(UTC),
+        messages.append(
+            make_msg(
+                AgentDebateRole.BEAR_RISK_OFFICER, "Bear case (filing risks & negative news)", 1, ArgumentType.ANTITHESIS,
+                cls._render_case(
+                    f"Risk evidence for {entity}: {topic}", bears[:3],
+                    "No risk-factor filing text or negative-tone news about this entity is stored, so the bear case has no supporting evidence.",
+                ),
+                bears[:3], share(len(bears)),
+            )
         )
-        messages.append(msg_bull_1)
 
-        # Bear: Antithesis
-        bear_citation_text = ""
-        if sec_citations:
-            bear_citation_text = f"\n\nSpecifically, mandatory Form 10-K Item 1A disclosures cite: *'{sec_citations[0]['title']}'* as an existential operating headwind."
-
-        bear_r1_content = (
-            f"### Counter-Thesis: Operational Fragility, Yield Constraints & Statutory Reality Check\n\n"
-            f"**1. Regulatory & Disclosure Friction**: The Bull thesis relies on unverified commercial press releases while systematically discounting statutory SEC Form 10-K Item 1A risk disclosures.{bear_citation_text}\n\n"
-            f"**2. Margin Compression & Bottlenecks**: High-volume commercial ramp schedules face severe execution drag. Equipment calibration, dry-room environmental yield constraints, and single-source supplier dependencies threaten delivery schedules.\n\n"
-            f"**3. Downside Risk Asymmetry**: If unit economics fail to achieve targeted yield thresholds in the next two quarters, capital burn will outpace free cash flow generation, triggering multiple contraction."
-        )
-        msg_bear_1 = DebateMessage(
-            id=uuid.uuid4(),
-            debate_id=debate.id,
-            agent_role=AgentDebateRole.BEAR_RISK_OFFICER.value,
-            agent_name="Dr. Evelyn Reed (Chief Risk Officer)",
-            round_number=1,
-            argument_type=ArgumentType.ANTITHESIS.value,
-            content=bear_r1_content,
-            evidence_citations=sec_citations[:2],
-            confidence_score=0.91,
-            created_at=datetime.now(UTC),
-        )
-        messages.append(msg_bear_1)
-
-        # ─── Round 2: Rebuttal & Cross-Examination ──────────────────
+        # Round 2 - remaining evidence on each side
         if rounds >= 2:
-            bull_r2_content = (
-                "### Cross-Rebuttal: Addressing Risk Factors with Structural Moat Defenses\n\n"
-                "**1. Refuting the Yield Bottleneck Premise**: Dr. Reed conflates standard cautionary legal boilerplate in Item 1A with operational reality. "
-                "Statutory 10-K risk factors are mandated by securities laws to articulate worst-case scenarios; they do not reflect actual internal engineering cadence.\n\n"
-                "**2. Secondary Sourcing & Redundancy**: Enterprise partners have already instituted dual-sourcing agreements for core componentry. "
-                "Furthermore, high switching costs in enterprise accounts ensure retention rates exceed 92%, protecting baseline gross revenue even during tooling transitions."
+            messages.append(
+                make_msg(
+                    AgentDebateRole.BULL_SPECIALIST, "Bull case (positive-tone news)", 2, ArgumentType.REBUTTAL,
+                    cls._render_case("Further supporting evidence", bulls[3:6], "No further supporting evidence is stored."),
+                    bulls[3:6], share(len(bulls[3:6])),
+                )
             )
-            msg_bull_2 = DebateMessage(
-                id=uuid.uuid4(),
-                debate_id=debate.id,
-                agent_role=AgentDebateRole.BULL_SPECIALIST.value,
-                agent_name="Marcus Vance (Growth & Market Expansion)",
-                round_number=2,
-                argument_type=ArgumentType.REBUTTAL.value,
-                content=bull_r2_content,
-                evidence_citations=news_citations[1:3] if len(news_citations) > 1 else news_citations,
-                confidence_score=0.82,
-                created_at=datetime.now(UTC),
+            messages.append(
+                make_msg(
+                    AgentDebateRole.BEAR_RISK_OFFICER, "Bear case (filing risks & negative news)", 2, ArgumentType.REBUTTAL,
+                    cls._render_case("Further risk evidence", bears[3:6], "No further risk evidence is stored."),
+                    bears[3:6], share(len(bears[3:6])),
+                )
             )
-            messages.append(msg_bull_2)
 
-            bear_r2_content = (
-                "### Interrogation: Capital Expenditure Run-Rate vs. Customer Retention Caps\n\n"
-                "**1. Boilerplate vs. Materiality**: The Supreme Court and SEC Enforcement Division have repeatedly affirmed that risk factors are material disclosures subject to antifraud liability. Calling them 'boilerplate' disregards fiduciary duty.\n\n"
-                "**2. The Empirical Gap**: Peer-reviewed scientific literature and technical benchmarking reveal that theoretical laboratory yields frequently drop by 30-40% in mass roll-to-roll production. The Bull model assumes friction-free scaling that has never occurred in this sector."
-            )
-            msg_bear_2 = DebateMessage(
-                id=uuid.uuid4(),
-                debate_id=debate.id,
-                agent_role=AgentDebateRole.BEAR_RISK_OFFICER.value,
-                agent_name="Dr. Evelyn Reed (Chief Risk Officer)",
-                round_number=2,
-                argument_type=ArgumentType.REBUTTAL.value,
-                content=bear_r2_content,
-                evidence_citations=(sec_citations[1:3] + arxiv_citations[:1])[:2],
-                confidence_score=0.89,
-                created_at=datetime.now(UTC),
-            )
-            messages.append(msg_bear_2)
-
-        # ─── Round 3: Regulatory & Technical Scrutiny ────────────────
+        # Round 3 - regulatory & technical review
         if rounds >= 3:
-            reg_content = (
-                f"### Statutory Audit & Empirical Boundary Conditions for {entity}\n\n"
-                f"**1. Regulatory Exposure Surface**: From an administrative law and regulatory governance perspective, {entity} operates under heightened compliance oversight. "
-                f"Mandatory disclosure rules, consumer protection inquiries, and environmental safety regulations impose hard legal boundaries on deployment velocity.\n\n"
-                f"**2. Empirical Research Findings**: arXiv technical preprints highlight that electrochemical/architectural constraints cannot be solved through software optimization alone. "
-                f"Hardware physics, thermal dissipation limits, and kernel stability guarantees require rigorous, audited validation before commercial deployment.\n\n"
-                f"**3. Auditor Finding**: Both Bull and Bear vectors possess valid empirical elements, but statutory filings legally constrain the Bull's aggressive timeline."
+            papers = [e for e in evidence if e.source == "ARXIV_PREPRINT"][:2]
+            reg_pool = (regs + [p for p in papers if p not in regs])[:4]
+            messages.append(
+                make_msg(
+                    AgentDebateRole.REGULATORY_AUDITOR, "Regulatory & technical review", 3,
+                    ArgumentType.REGULATORY_CHALLENGE,
+                    cls._render_case(
+                        "Regulatory and technical evidence", reg_pool,
+                        "No regulatory-update signals, regulatory terms in filings, or related arXiv papers are stored.",
+                    ),
+                    reg_pool, share(len(regs)),
+                )
             )
-            msg_reg = DebateMessage(
-                id=uuid.uuid4(),
-                debate_id=debate.id,
-                agent_role=AgentDebateRole.REGULATORY_AUDITOR.value,
-                agent_name="Hon. Elena Rostova (Regulatory & Empirical Auditor)",
-                round_number=3,
-                argument_type=ArgumentType.REGULATORY_CHALLENGE.value,
-                content=reg_content,
-                evidence_citations=(sec_citations[:1] + arxiv_citations[:2]),
-                confidence_score=0.94,
-                created_at=datetime.now(UTC),
+
+        # Arbiter
+        verdict = arbitration["verdict"]
+        conviction = arbitration["conviction"]
+        tripwires = cls._tripwires(bears)
+        summary_text = cls._summary(entity, evidence, bulls, bears, arbitration)
+        messages.append(
+            make_msg(
+                AgentDebateRole.PRINCIPAL_ARBITER, "Arbiter (rule-based)", rounds, ArgumentType.SYNTHESIS,
+                (
+                    f"### Rule-based verdict: {verdict.replace('_', ' ')}\n\n"
+                    f"**Evidence coverage**: `{conviction:.0%}` | **Bull score** {arbitration['bull_score']:.2f} "
+                    f"vs **Bear score** {arbitration['bear_score']:.2f}\n\n{summary_text}\n\n"
+                    + (
+                        "#### Monitoring triggers (from the cited risks)\n"
+                        + "\n".join(f"- {t}" for t in tripwires)
+                        if tripwires
+                        else "No monitoring triggers: no risk evidence is stored."
+                    )
+                ),
+                (bulls[:1] + bears[:2] + [e for e in evidence if e.source == "ARXIV_PREPRINT"][:1]),
+                conviction,
             )
-            messages.append(msg_reg)
-
-        # ─── Arbiter Verdict & Synthesis ─────────────────────────────
-        has_sec_contradictions = any("bottleneck" in s.get("title", "").lower() or "risk" in s.get("title", "").lower() for s in sec_citations)
-        bull_score = 0.74 if not has_sec_contradictions else 0.65
-        bear_score = 0.68 if has_sec_contradictions else 0.52
-        reg_risk_score = 0.62
-
-        if bull_score > 0.70 and bear_score < 0.60:
-            verdict = ArbiterVerdict.STRONG_BUY.value
-            conviction = 0.88
-        elif bull_score >= bear_score:
-            verdict = ArbiterVerdict.STRATEGIC_ACCUMULATE.value
-            conviction = 0.82
-        elif bear_score > 0.75:
-            verdict = ArbiterVerdict.DEFENSIVE_HEDGE.value
-            conviction = 0.85
-        else:
-            verdict = ArbiterVerdict.NEUTRAL_HOLD.value
-            conviction = 0.76
-
-        tripwires = [
-            f"If manufacturing yield/delivery metric drops below quarterly guidance by >12%, immediately downgrade to {ArbiterVerdict.DEFENSIVE_HEDGE.value}.",
-            "If new formal regulatory enforcement action is initiated by federal authorities, freeze capital allocation.",
-            "If gross margin contracts for 2 consecutive quarters, re-run dialectic debate with defensive risk weighting.",
-        ]
-
-        summary_text = (
-            f"Executive Dialectic Arbitration: {verdict.replace('_', ' ')} (Conviction: {conviction:.0%}). "
-            f"While Marcus Vance established strong commercial tailwinds and platform adoption momentum for {entity}, "
-            f"Dr. Reed and Auditor Rostova proved through statutory SEC Form 10-K Item 1A disclosures and empirical arXiv benchmarks "
-            f"that operational bottlenecks and regulatory compliance will delay peak margin realization. "
-            f"Decision-makers are advised to accumulate on pullbacks while strictly monitoring conditional yield tripwires."
         )
 
-        synthesis_matrix = {
-            "bull_score": round(bull_score, 2),
-            "bear_score": round(bear_score, 2),
-            "regulatory_risk_score": round(reg_risk_score, 2),
-            "primary_growth_vector": "Enterprise Platform Adoption & Operating Leverage",
-            "primary_vulnerability": "Statutory 10-K Yield Constraints & Regulatory Scrutiny",
-            "tripwires": tripwires,
-            "evidence_weighting": {
-                "statutory_sec_weight": 0.50,
-                "scientific_arxiv_weight": 0.30,
-                "commercial_news_weight": 0.20,
-            },
-        }
-
-        msg_arbiter = DebateMessage(
-            id=uuid.uuid4(),
-            debate_id=debate.id,
-            agent_role=AgentDebateRole.PRINCIPAL_ARBITER.value,
-            agent_name="Arbiter Core v2.0 (Executive Decision Arbiter)",
-            round_number=rounds,
-            argument_type=ArgumentType.SYNTHESIS.value,
-            content=(
-                f"### Final Arbitrated Decision Verdict: {verdict.replace('_', ' ')}\n\n"
-                f"**Conviction Index**: `{conviction:.0%}` | **Vector Balance**: Bull {bull_score:.2f} vs Bear {bear_score:.2f}\n\n"
-                f"{summary_text}\n\n"
-                f"#### Conditional Risk Tripwires\n"
-                + "\n".join([f"- **Tripwire {i+1}**: {tw}" for i, tw in enumerate(tripwires)])
-            ),
-            evidence_citations=(sec_citations[:2] + arxiv_citations[:1] + news_citations[:1]),
-            confidence_score=conviction,
-            created_at=datetime.now(UTC),
-        )
-        messages.append(msg_arbiter)
-
-        # Persist all messages and update debate
         for msg in messages:
             session.add(msg)
 
+        reg_share = round(share(len(regs)), 2)
         debate.status = DebateStatus.CONCLUDED.value
         debate.arbiter_verdict = verdict
         debate.conviction_score = conviction
         debate.executive_summary = summary_text
-        debate.synthesis_matrix = synthesis_matrix
+        debate.synthesis_matrix = {
+            "bull_score": arbitration["bull_score"],
+            "bear_score": arbitration["bear_score"],
+            "regulatory_risk_score": reg_share,
+            "primary_growth_vector": bulls[0].title if bulls else None,
+            "primary_vulnerability": bears[0].title if bears else None,
+            "tripwires": tripwires,
+            "evidence_weighting": {
+                "statutory_sec_weight": SOURCE_WEIGHTS["SEC_EDGAR"],
+                "scientific_arxiv_weight": SOURCE_WEIGHTS["ARXIV_PREPRINT"],
+                "commercial_news_weight": SOURCE_WEIGHTS["COMMERCIAL_NEWS"],
+            },
+            "evidence_counts": {
+                "sec_filings": len(sec_filings),
+                "arxiv_papers": len(arxiv_papers),
+                "news_signals": len(market_signals),
+                "bull": len(bulls),
+                "bear": len(bears),
+            },
+        }
         debate.updated_at = datetime.now(UTC)
 
         await session.commit()
         await session.refresh(debate)
 
-        # Ensure messages are loaded
-        stmt = (
-            select(Debate)
-            .options(joinedload(Debate.messages))
-            .where(Debate.id == debate.id)
-        )
-        res = await session.execute(stmt)
-        full_debate = res.unique().scalar_one()
-
+        stmt = select(Debate).options(joinedload(Debate.messages)).where(Debate.id == debate.id)
+        full_debate = (await session.execute(stmt)).unique().scalar_one()
         logger.info(f"Concluded debate {full_debate.id} with verdict {verdict} and {len(messages)} messages.")
         return cls._to_detail_response(full_debate)
+
+    # ------------------------------------------------------------------ helpers
+    @classmethod
+    async def _load_fused(cls, session: AsyncSession, entity: str):
+        async def fetch(source_type: str, limit: int):
+            stmt = (
+                select(FusedEvidence)
+                .where(
+                    func.lower(FusedEvidence.entity_name).contains(entity.lower()),
+                    FusedEvidence.source_type == source_type,
+                )
+                .order_by(desc(FusedEvidence.created_at))
+                .limit(limit)
+            )
+            return (await session.execute(stmt)).scalars().all()
+
+        return (
+            await fetch(EvidenceSourceType.SEC_EDGAR.value, 5),
+            await fetch(EvidenceSourceType.ARXIV_PREPRINT.value, 3),
+        )
+
+    @classmethod
+    def _classify(cls, sec_filings, arxiv_papers, signals) -> list[_Evidence]:
+        items: list[_Evidence] = []
+        for f in sec_filings:
+            meta = f.metadata_json or {}
+            text = (f.content_excerpt or "").lower()
+            is_1a = meta.get("excerpt_kind") == "item_1a_risk_factors"
+            terms = [t for t in FILING_RISK_TERMS if t in text] if is_1a else []
+            items.append(
+                _Evidence(
+                    source="SEC_EDGAR", title=f.title, reference_id=meta.get("accession_number", "SEC filing"),
+                    url=f.source_url,
+                    detail=f'"{_excerpt(f.content_excerpt)}"' + (f" [risk terms: {', '.join(terms)}]" if terms else ""),
+                    polarity="BEAR" if terms else "NEUTRAL",
+                    regulatory=any(t in text for t in REGULATORY_TERMS) if is_1a else False,
+                    matched_terms=terms,
+                )
+            )
+        for p in arxiv_papers:
+            meta = p.metadata_json or {}
+            text = (p.content_excerpt or "").lower()
+            terms = [t for t in PAPER_LIMITATION_TERMS if t in text]
+            items.append(
+                _Evidence(
+                    source="ARXIV_PREPRINT", title=p.title, reference_id=f"arXiv:{meta.get('arxiv_id', '')}",
+                    url=p.source_url,
+                    detail=f'"{_excerpt(p.content_excerpt)}"' + (f" [limitation terms: {', '.join(terms)}]" if terms else ""),
+                    polarity="BEAR" if terms else "NEUTRAL",
+                    matched_terms=terms,
+                )
+            )
+        for s in signals:
+            if s.sentiment_score >= POSITIVE_TONE:
+                polarity = "BULL"
+            elif s.sentiment_score <= NEGATIVE_TONE:
+                polarity = "BEAR"
+            else:
+                polarity = "NEUTRAL"
+            items.append(
+                _Evidence(
+                    source="COMMERCIAL_NEWS", title=s.headline, reference_id=s.source_domain, url=s.source_url,
+                    detail=f"headline tone {s.sentiment_score:+.2f}, signal type {s.signal_type}",
+                    polarity=polarity,
+                    regulatory=s.signal_type == SignalType.REGULATORY_UPDATE.value,
+                )
+            )
+        return items
+
+    @classmethod
+    def _arbitrate(cls, evidence: list[_Evidence]) -> dict:
+        """
+        Published rule:
+          per source class: bull_share = bull items / items, bear_share = bear items / items;
+          score = weighted average of shares over the source classes present (weights SOURCE_WEIGHTS).
+          diff = bull - bear  ->  >=0.40 STRONG_BUY | >=0.15 STRATEGIC_ACCUMULATE | >-0.15 NEUTRAL_HOLD
+                                  | >-0.40 DEFENSIVE_HEDGE | else DIVEST_AVOID
+          conviction = polarised items / CONVICTION_FULL_AT, capped at 1 (evidence coverage, not a probability).
+        """
+        if not evidence:
+            return {"verdict": ArbiterVerdict.NEUTRAL_HOLD.value, "conviction": 0.0, "bull_score": 0.0, "bear_score": 0.0}
+
+        weight_sum = bull = bear = 0.0
+        for source, weight in SOURCE_WEIGHTS.items():
+            group = [e for e in evidence if e.source == source]
+            if not group:
+                continue
+            weight_sum += weight
+            bull += weight * sum(1 for e in group if e.polarity == "BULL") / len(group)
+            bear += weight * sum(1 for e in group if e.polarity == "BEAR") / len(group)
+        bull_score, bear_score = round(bull / weight_sum, 2), round(bear / weight_sum, 2)
+
+        diff = bull_score - bear_score
+        if diff >= 0.40:
+            verdict = ArbiterVerdict.STRONG_BUY
+        elif diff >= 0.15:
+            verdict = ArbiterVerdict.STRATEGIC_ACCUMULATE
+        elif diff > -0.15:
+            verdict = ArbiterVerdict.NEUTRAL_HOLD
+        elif diff > -0.40:
+            verdict = ArbiterVerdict.DEFENSIVE_HEDGE
+        else:
+            verdict = ArbiterVerdict.DIVEST_AVOID
+
+        polarised = sum(1 for e in evidence if e.polarity != "NEUTRAL")
+        return {
+            "verdict": verdict.value,
+            "conviction": round(min(1.0, polarised / CONVICTION_FULL_AT), 2),
+            "bull_score": bull_score,
+            "bear_score": bear_score,
+        }
+
+    @staticmethod
+    def _render_case(heading: str, items: list[_Evidence], empty_text: str) -> str:
+        if not items:
+            return f"### {heading}\n\n{empty_text}"
+        return f"### {heading}\n\n" + "\n".join(e.line() for e in items)
+
+    @staticmethod
+    def _tripwires(bears: list[_Evidence]) -> list[str]:
+        return [f"Re-run this debate when new evidence changes: {e.title} ({e.reference_id})." for e in bears[:3]]
+
+    @staticmethod
+    def _summary(entity: str, evidence: list[_Evidence], bulls, bears, arb: dict) -> str:
+        if not evidence:
+            return (
+                f"No stored evidence (SEC filings, arXiv papers or news signals) was found for {entity}. "
+                f"No verdict can be supported; the default is NEUTRAL HOLD with 0% evidence coverage."
+            )
+        by_source = {s: sum(1 for e in evidence if e.source == s) for s in SOURCE_WEIGHTS}
+        return (
+            f"Rule-based arbitration over {len(evidence)} stored item(s) for {entity} "
+            f"({by_source['SEC_EDGAR']} SEC filing(s), {by_source['ARXIV_PREPRINT']} arXiv paper(s), "
+            f"{by_source['COMMERCIAL_NEWS']} news signal(s)): {len(bulls)} favourable, {len(bears)} adverse. "
+            f"Verdict {arb['verdict'].replace('_', ' ')} (bull {arb['bull_score']:.2f} vs bear {arb['bear_score']:.2f}); "
+            f"evidence coverage {arb['conviction']:.0%}. This is a keyword/tone heuristic over the cited sources, not investment advice."
+        )
 
     @classmethod
     async def get_debate(
@@ -375,13 +445,6 @@ class MultiAgentDebateService:
         debates = res.scalars().all()
         total = len(debates)
 
-        # If zero debates in database, seed institutional debates automatically!
-        if total == 0 and not entity_name:
-            await cls._seed_default_debates(session)
-            res = await session.execute(query)
-            debates = res.scalars().all()
-            total = len(debates)
-
         items = [
             DebateListItem(
                 id=d.id,
@@ -397,34 +460,6 @@ class MultiAgentDebateService:
             for d in debates
         ]
         return DebateListResponse(debates=items, total=total)
-
-    @classmethod
-    async def _seed_default_debates(cls, session: AsyncSession):
-        """Seeds institutional reference debates so the arena is immediately alive."""
-        seed_specs = [
-            {
-                "topic": "Tesla Robotaxi Fleet Commercialization & 4680 In-House Yield Scaling",
-                "entity": "Tesla",
-            },
-            {
-                "topic": "CrowdStrike Single-Kernel Sensor Outage Resilience Post-Channel 291",
-                "entity": "CrowdStrike",
-            },
-            {
-                "topic": "Rivian Commercial Van Dual-Sourcing & R2 Architecture Capex Run-Rate",
-                "entity": "Rivian",
-            },
-        ]
-        for spec in seed_specs:
-            req = DebateInitiateRequest(
-                topic=spec["topic"],
-                entity_name=spec["entity"],
-                rounds_count=3,
-            )
-            try:
-                await cls.initiate_debate(session, req)
-            except Exception as e:
-                logger.warning(f"Failed to seed debate for {spec['entity']}: {e}")
 
     @classmethod
     def _to_detail_response(cls, debate: Debate) -> DebateDetailResponse:

@@ -11,7 +11,6 @@ import {
   fetchWebhookDeliveries,
   fetchWebhooks,
   markAlertRead,
-  simulateAlert,
   testWebhookDispatch,
 } from "@/lib/api";
 import {
@@ -53,7 +52,6 @@ import {
   Terminal,
   Trash2,
   X,
-  Zap,
 } from "lucide-react";
 
 const SUGGESTED_SECTORS = [
@@ -91,7 +89,6 @@ export function WatchlistsWorkspace() {
 
   // Loading states
   const [isLoading, setIsLoading] = useState(true);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Watchlist Modal state
@@ -253,25 +250,6 @@ export function WatchlistsWorkspace() {
     }
   }
 
-  async function handleSimulateAlert() {
-    setIsSimulating(true);
-    try {
-      const sim = await simulateAlert({
-        watchlist_id: selectedWatchlistId || undefined,
-        severity: "WARNING",
-      });
-      setAlerts((prev) => [sim, ...prev]);
-      setTotalAlerts((t) => t + 1);
-      setUnreadCount((u) => u + 1);
-      const wlRes = await fetchWatchlists();
-      setWatchlists(wlRes.watchlists);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to simulate alert.");
-    } finally {
-      setIsSimulating(false);
-    }
-  }
-
   // Stage 7: Create Webhook
   async function handleCreateWebhook(e: React.FormEvent) {
     e.preventDefault();
@@ -374,15 +352,6 @@ export function WatchlistsWorkspace() {
 
           {activeTab === "alerts" ? (
             <>
-              <button
-                onClick={handleSimulateAlert}
-                disabled={isSimulating}
-                className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-[#010736] hover:bg-[#0D1C42] text-[#FCF1D0] border border-[#22396F] transition shadow-sm"
-              >
-                <Zap className={`w-3.5 h-3.5 ${isSimulating ? "animate-pulse" : ""}`} />
-                {isSimulating ? "Simulating..." : "Test Alert"}
-              </button>
-
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl bg-[#FCF1D0] hover:brightness-105 text-[#010736] shadow transition"
@@ -672,14 +641,8 @@ export function WatchlistsWorkspace() {
                     <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
                     <p className="text-sm font-medium text-white">All clear — No active alerts</p>
                     <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-                      No market alerts currently match your filters.
+                      No alerts yet. Alerts are created only when a stored market signal matches a watchlist entity and its threshold.
                     </p>
-                    <button
-                      onClick={handleSimulateAlert}
-                      className="mt-4 px-3 py-1.5 text-xs font-semibold rounded-xl bg-[#010736] hover:bg-[#22396F] text-[#FCF1D0] border border-[#22396F]"
-                    >
-                      Test Alert
-                    </button>
                   </div>
                 ) : (
                   alerts.map((alert) => {
@@ -863,7 +826,7 @@ export function WatchlistsWorkspace() {
                     <div className="pt-3 border-t border-[#22396F]/50 flex items-center justify-between text-xs text-slate-400">
                       <span>Total Sent: <strong className="text-white">{sub.total_deliveries}</strong></span>
                       <span className="text-emerald-400 font-mono">
-                        Success Rate: {sub.success_rate}%
+                        Success Rate: {sub.total_deliveries > 0 ? `${sub.success_rate}%` : "—"}
                       </span>
                     </div>
                   </div>

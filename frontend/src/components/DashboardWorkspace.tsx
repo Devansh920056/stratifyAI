@@ -286,6 +286,12 @@ export function DashboardWorkspace({
                     Pricing Power →
                   </text>
 
+                  {dashboard.moat_matrix.length === 0 && (
+                    <text x="200" y="150" textAnchor="middle" fill="#94a3b8" fontSize="11">
+                      No measured competitor moat data is available.
+                    </text>
+                  )}
+
                   {/* Plotted Points */}
                   {dashboard.moat_matrix.map((pt, idx) => {
                     // Coordinate transform (0-100 to svg 30-370 X, 270-30 Y)

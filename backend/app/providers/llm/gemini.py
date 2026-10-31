@@ -32,14 +32,14 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models"
 
 class GeminiLLMProvider(LLMProvider):
     """
-    Live AI reasoning provider using Google Gemini models (e.g. gemini-1.5-flash).
+    Live AI reasoning provider using Google Gemini models (e.g. gemini-3.8-flash).
     Extracts structured, grounded findings and enforces anti-hallucination verification.
     """
 
     def __init__(
         self,
         api_key: str,
-        model: str = "gemini-1.5-flash",
+        model: str = "gemini-3.8-flash",
         timeout_seconds: float = 30.0,
         client: httpx.AsyncClient | None = None,
     ):
@@ -70,7 +70,8 @@ class GeminiLLMProvider(LLMProvider):
         user_prompt = build_analysis_prompt(
             task_type, research_question, evidence_items
         )
-        url = f"{GEMINI_API_BASE}/{self._model}:generateContent?key={self._api_key}"
+        url = f"{GEMINI_API_BASE}/{self._model}:generateContent"
+        headers = {"x-goog-api-key": self._api_key}
 
         payload: dict[str, Any] = {
             "systemInstruction": {"parts": [{"text": SYSTEM_PROMPT}]},
@@ -84,11 +85,11 @@ class GeminiLLMProvider(LLMProvider):
         try:
             if self._client:
                 response = await self._client.post(
-                    url, json=payload, timeout=self._timeout
+                    url, json=payload, headers=headers, timeout=self._timeout
                 )
             else:
                 async with httpx.AsyncClient(timeout=self._timeout) as client:
-                    response = await client.post(url, json=payload)
+                    response = await client.post(url, json=payload, headers=headers)
 
             if response.status_code == 200:
                 body = response.json()

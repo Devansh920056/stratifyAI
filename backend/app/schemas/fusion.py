@@ -60,7 +60,11 @@ class EvidenceReconciliationSummary(BaseModel):
     divergent_claims_count: int = Field(default=0, description="Claims exhibiting moderate divergence")
     contradictory_claims_count: int = Field(default=0, description="Direct commercial vs statutory contradictions")
     evidence_reliability_index: float = Field(..., description="Overall weighted reliability (0.0 to 1.0)")
-    reconciliation_takeaway: str = Field(..., description="Executive reconciliation summary")
+    reconciliation_takeaway: str = Field(..., description="Factual reconciliation summary")
+    unverified_claims_count: int = Field(default=0, description="Items with nothing to compare against")
+    retrieval_warnings: list[str] = Field(
+        default_factory=list, description="Upstream sources that failed (e.g. SEC or arXiv outage)"
+    )
 
 
 class FusedEvidenceListResponse(BaseModel):

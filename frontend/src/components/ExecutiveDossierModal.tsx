@@ -286,10 +286,10 @@ export function ExecutiveDossierModal({
                 <Scale className="w-3.5 h-3.5" />
                 <span>Verdict:</span>
                 <strong className="text-white">
-                  {dossier.governance_audit.arbiter_verdict || "RECOMMENDED"}
+                  {dossier.governance_audit.arbiter_verdict || "NO VERDICT"}
                 </strong>
                 <span className="text-slate-400">
-                  ({Math.round((dossier.governance_audit.conviction_score || 0.85) * 100)}% conviction)
+                  ({dossier.governance_audit.conviction_score != null ? `${Math.round(dossier.governance_audit.conviction_score * 100)}% evidence coverage` : "no debate on record"})
                 </span>
               </div>
 
@@ -491,7 +491,7 @@ export function ExecutiveDossierModal({
 
                       <div className="flex items-center gap-4 text-[11px] text-slate-400 pt-1">
                         <span>Citations: {rec.total_citations}</span>
-                        <span>Confidence: {((rec.dqs_score || 0.84) * 100).toFixed(0)}%</span>
+                        <span>Decision quality: {rec.dqs_score != null ? `${(rec.dqs_score * 100).toFixed(0)}%` : "not scored"}</span>
                       </div>
                     </div>
                   ))}

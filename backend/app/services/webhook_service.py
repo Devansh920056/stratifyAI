@@ -56,7 +56,7 @@ class WebhookService:
             total = len(deliveries)
             success = sum(1 for d in deliveries if d.is_success)
             failed = total - success
-            rate = round((success / total) * 100.0, 1) if total > 0 else 100.0
+            rate = round((success / total) * 100.0, 1) if total > 0 else 0.0
 
             items.append(
                 WebhookResponse(
@@ -106,7 +106,7 @@ class WebhookService:
             total_deliveries=0,
             successful_deliveries=0,
             failed_deliveries=0,
-            success_rate=100.0,
+            success_rate=0.0,
             created_at=sub.created_at,
             updated_at=sub.updated_at,
         )
@@ -131,7 +131,7 @@ class WebhookService:
         total = len(deliveries)
         success = sum(1 for d in deliveries if d.is_success)
         failed = total - success
-        rate = round((success / total) * 100.0, 1) if total > 0 else 100.0
+        rate = round((success / total) * 100.0, 1) if total > 0 else 0.0
 
         return WebhookResponse(
             id=sub.id,
@@ -336,11 +336,9 @@ class WebhookService:
             return None
 
         test_payload = {
-            "alert_id": str(uuid.uuid4()),
-            "severity": "CRITICAL",
-            "title": f"Synthetic Test Anomaly: Subscribed Webhook '{sub.name}' Verified",
-            "message": "Stratify AI 2.0 Webhook Dispatcher verified end-to-end connectivity.",
             "test_mode": True,
+            "subscription": sub.name,
+            "message": "Connectivity test from Stratify AI. This is not a real alert.",
         }
 
         timestamp_str = utc_now().isoformat()

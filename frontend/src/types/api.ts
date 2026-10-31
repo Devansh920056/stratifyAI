@@ -315,13 +315,6 @@ export interface WatchlistListResponse {
   total: number;
 }
 
-export interface AlertSimulateRequest {
-  watchlist_id?: string | null;
-  title?: string | null;
-  message?: string | null;
-  severity?: AlertSeverityType;
-}
-
 export type DecisionOutcomeStatusType =
   | "VALIDATED"
   | "PARTIALLY_VALIDATED"
@@ -532,6 +525,8 @@ export interface EvidenceReconciliationSummary {
   contradictory_claims_count: number;
   evidence_reliability_index: number;
   reconciliation_takeaway: string;
+  unverified_claims_count: number;
+  retrieval_warnings: string[];
 }
 
 export interface FusedEvidenceListResponse {

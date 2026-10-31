@@ -22,8 +22,8 @@ from backend.app.models.job import Job
 from backend.app.models.report import Report
 from backend.app.models.task import Task
 from backend.app.models.task_result import TaskResult
-from backend.app.providers.llm.mock import MockLLMProvider
-from backend.app.providers.search.mock import MockSearchProvider
+from tests.fakes import MockLLMProvider
+from tests.fakes import MockSearchProvider
 from backend.app.services.aggregator import ReportAggregatorService
 from backend.app.services.job_service import JobService
 from workers.processor import TaskProcessor

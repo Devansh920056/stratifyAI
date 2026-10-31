@@ -15,7 +15,6 @@ from backend.app.schemas.watchlist import (
     AlertListResponse,
     AlertMarkReadRequest,
     AlertResponse,
-    AlertSimulateRequest,
     WatchlistCreateRequest,
     WatchlistListResponse,
     WatchlistResponse,
@@ -132,17 +131,3 @@ async def mark_alert_read(
             detail=f"Alert '{alert_id}' not found.",
         )
     return alert
-
-
-@router.post(
-    "/alerts/simulate",
-    response_model=AlertResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Simulate Market Alert",
-    description="Triggers a synthetic market or competitor alert for verification and simulation.",
-)
-async def simulate_alert(
-    request: AlertSimulateRequest,
-    db: SessionDep,
-) -> AlertResponse:
-    return await WatchlistService.simulate_alert(session=db, req=request)

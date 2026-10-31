@@ -8,6 +8,9 @@ Verifies:
 5. FastAPI endpoints: GET /api/v1/pulse, POST /api/v1/pulse/sync, GET /api/v1/pulse/stats.
 """
 
+import json
+import uuid
+
 import httpx
 import pytest
 import pytest_asyncio
@@ -33,6 +36,69 @@ async def api_client():
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+
+GDELT_PAYLOAD = {
+    "articles": [
+        {
+            "url": "https://www.example-news.test/a1?utm_source=x",
+            "title": "Cybersecurity firm secures record funding after surge in demand",
+            "seendate": "20260115T093000Z",
+            "domain": "example-news.test",
+            "sourcecountry": "United States",
+            "language": "English",
+        },
+        {
+            "url": "https://other-wire.test/a2",
+            "title": "Regulators probe Cybersecurity vendor over breach",
+            "seendate": "20260116T101500Z",
+            "domain": "other-wire.test",
+            "sourcecountry": "United Kingdom",
+            "language": "English",
+        },
+    ]
+}
+
+
+@pytest.fixture
+def gdelt_transport(monkeypatch):
+    """Serves a recorded-shape GDELT response through httpx.MockTransport (no network)."""
+    handler_calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        handler_calls.append(request)
+        assert request.url.host == "api.gdeltproject.org"
+        uid = uuid.uuid4().hex[:8]  # URLs are unique per call: signals are de-duplicated globally by URL
+        payload = {
+            "articles": [
+                {**a, "url": f"{a['url'].split('?')[0]}-{uid}" + ("?" + a["url"].split("?")[1] if "?" in a["url"] else "")}
+                for a in GDELT_PAYLOAD["articles"]
+            ]
+        }
+        return httpx.Response(200, content=json.dumps(payload))
+
+    original = MarketPulseService._fetch_gdelt_articles.__func__
+
+    async def patched(cls, sector, max_records=15, client=None):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+            return await original(cls, sector, max_records, client=c)
+
+    monkeypatch.setattr(MarketPulseService, "_fetch_gdelt_articles", classmethod(patched))
+    return handler_calls
+
+
+@pytest.fixture
+def gdelt_down(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503, text="unavailable")
+
+    original = MarketPulseService._fetch_gdelt_articles.__func__
+
+    async def patched(cls, sector, max_records=15, client=None):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as c:
+            return await original(cls, sector, max_records, client=c)
+
+    monkeypatch.setattr(MarketPulseService, "_fetch_gdelt_articles", classmethod(patched))
 
 
 @pytest.mark.asyncio
@@ -86,15 +152,22 @@ def test_sentiment_and_classification_heuristics():
 
 
 @pytest.mark.asyncio
-async def test_pulse_ingestion_and_stats(db_session: AsyncSession):
+async def test_pulse_ingestion_and_stats(db_session: AsyncSession, gdelt_transport):
     """Verify live signal ingestion service and aggregate stats computation."""
     signals = await MarketPulseService.ingest_live_signals(
         session=db_session,
         sector="Cybersecurity",
         max_records=5,
     )
+    assert len(gdelt_transport) == 1
     assert len(signals) >= 1
-    assert any("Cybersecurity" in s.market_sector for s in signals)
+    assert all(s.market_sector == "Cybersecurity" for s in signals)
+    # fields come straight from the GDELT payload (dates parsed, tracking params stripped)
+    by_domain = {s.source_domain: s for s in signals}
+    if "example-news.test" in by_domain:
+        sig = by_domain["example-news.test"]
+        assert "utm_source" not in sig.canonical_url
+        assert sig.published_at.year == 2026 and sig.published_at.month == 1
 
     # Verify stats
     stats = await MarketPulseService.get_stats(session=db_session)
@@ -103,7 +176,7 @@ async def test_pulse_ingestion_and_stats(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_pulse_api_endpoints(api_client: httpx.AsyncClient):
+async def test_pulse_api_endpoints(api_client: httpx.AsyncClient, gdelt_transport):
     """Verify HTTP GET /pulse, POST /pulse/sync, and GET /pulse/stats."""
     # 1. Sync signals
     sync_res = await api_client.post(
@@ -127,3 +200,14 @@ async def test_pulse_api_endpoints(api_client: httpx.AsyncClient):
     stats_data = stats_res.json()
     assert stats_data["total_signals"] >= 1
     assert "top_sectors" in stats_data
+
+
+@pytest.mark.asyncio
+async def test_pulse_sync_reports_upstream_failure_instead_of_inventing_signals(
+    api_client: httpx.AsyncClient, gdelt_down
+):
+    """When GDELT fails the API says so (502) and stores nothing."""
+    res = await api_client.post(
+        "/api/v1/pulse/sync", json={"sector": "Outage Sector", "max_signals": 3}
+    )
+    assert res.status_code == 502

@@ -12,7 +12,6 @@ Verifies:
    - DELETE /api/v1/watchlists/{id}
    - GET /api/v1/alerts
    - PATCH /api/v1/alerts/{id}/read
-   - POST /api/v1/alerts/simulate
 """
 
 import uuid
@@ -43,6 +42,41 @@ async def api_client():
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+
+
+async def _make_real_alert(db_session, entity_name: str):
+    """Creates an alert the only legitimate way: a stored signal matching a watchlist."""
+    test_id = uuid.uuid4().hex[:8]
+    wl = await WatchlistService.create_watchlist(
+        session=db_session,
+        req=WatchlistCreateRequest(
+            name=f"Alert Source {test_id}",
+            sector="Aerospace",
+            target_entities=[entity_name],
+            alert_threshold=-0.15,
+            is_active=True,
+        ),
+    )
+    sig = MarketSignal(
+        market_sector="Aerospace",
+        headline=f"{entity_name} faces certification delay {test_id}",
+        summary=f"Regulatory inquiry affects {entity_name}.",
+        source_url=f"https://example.test/news/{test_id}",
+        canonical_url=f"https://example.test/news/{test_id}",
+        source_domain="example.test",
+        sentiment_score=-0.45,
+        relevance_score=0.9,
+        signal_type=SignalType.COMPETITOR_MOVE.value,
+        published_at=utc_now(),
+    )
+    db_session.add(sig)
+    await db_session.commit()
+    await db_session.refresh(sig)
+    alerts = await WatchlistService.evaluate_signals_against_watchlists(
+        session=db_session, signals=[sig], target_watchlist_id=wl.id
+    )
+    assert alerts
+    return wl, alerts[0]
 
 
 @pytest.mark.asyncio
@@ -140,20 +174,17 @@ async def test_watchlist_service_evaluate_signals(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_watchlist_alert_read_status_toggle(db_session: AsyncSession):
-    """Test marking an alert as read / acknowledged."""
-    sim_resp = await WatchlistService.simulate_alert(
-        session=db_session,
-        req=type("Req", (), {"watchlist_id": None, "title": "Test Anomaly", "message": "Test note", "severity": "WARNING"}),
-    )
-    assert sim_resp.id is not None
-    assert sim_resp.is_read is False
+    """Test marking a real (signal-derived) alert as read / acknowledged."""
+    wl, alert = await _make_real_alert(db_session, f"Zephyr{uuid.uuid4().hex[:6]}")
+    assert alert.is_read is False
 
-    # Mark as read
     updated = await WatchlistService.mark_alert_read(
-        session=db_session, alert_id=sim_resp.id, is_read=True
+        session=db_session, alert_id=alert.id, is_read=True
     )
     assert updated is not None
     assert updated.is_read is True
+
+    await WatchlistService.delete_watchlist(session=db_session, watchlist_id=wl.id)
 
 
 @pytest.mark.asyncio
@@ -197,30 +228,29 @@ async def test_api_watchlist_crud_endpoints(api_client: httpx.AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_api_alerts_feed_and_simulate(api_client: httpx.AsyncClient):
-    """Test simulating alerts, querying alert feed with filters, and marking read."""
-    # 1. Simulate alert
+async def test_api_alerts_feed_and_mark_read(
+    api_client: httpx.AsyncClient, db_session: AsyncSession
+):
+    """Alert feed lists real alerts, can be marked read; no simulation endpoint exists."""
     sim_res = await api_client.post(
         "/api/v1/alerts/simulate",
-        json={"title": "Grid Storage Subsidy Shift", "message": "Federal subsidy update.", "severity": "WARNING"},
+        json={"title": "x", "message": "y", "severity": "WARNING"},
     )
-    assert sim_res.status_code == 201
-    alert_data = sim_res.json()
-    alert_id = alert_data["id"]
-    assert alert_data["severity"] == "WARNING"
-    assert alert_data["is_read"] is False
+    assert sim_res.status_code in (404, 405)
 
-    # 2. Query alerts feed
-    feed_res = await api_client.get("/api/v1/alerts?limit=10")
+    wl, alert = await _make_real_alert(db_session, f"Orion{uuid.uuid4().hex[:6]}")
+
+    feed_res = await api_client.get("/api/v1/alerts?limit=50")
     assert feed_res.status_code == 200
     feed = feed_res.json()
     assert feed["total"] >= 1
     assert feed["unread_count"] >= 1
 
-    # 3. Mark read
     patch_res = await api_client.patch(
-        f"/api/v1/alerts/{alert_id}/read",
+        f"/api/v1/alerts/{alert.id}/read",
         json={"is_read": True},
     )
     assert patch_res.status_code == 200
     assert patch_res.json()["is_read"] is True
+
+    await WatchlistService.delete_watchlist(session=db_session, watchlist_id=wl.id)

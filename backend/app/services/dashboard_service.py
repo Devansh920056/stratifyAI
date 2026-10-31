@@ -1,7 +1,9 @@
 """
 Dashboard & Grounded Visualizations Service.
-Extracts empirical vs. inferred intelligence metrics, computes 2D Competitive Moat positioning,
-and evaluates 4-vector risk and source distribution without hallucinating metrics.
+Reports, per research vector, only what the stored report actually contains: its confidence,
+citation count, quoted claims and source domains. Nothing is defaulted or estimated; when data
+is missing the value is 0 / empty. No competitor "moat" positioning is produced because no
+data source in the pipeline measures it.
 """
 
 import logging
@@ -62,10 +64,9 @@ class DashboardService:
 
         # 1. Evaluate 4-Vector Scores & Confidence
         vector_scores = cls._compute_vector_scores(job, report)
+        scored = [v for v in vector_scores if v.evidence_count > 0]
         overall_confidence = (
-            round(sum(v.confidence for v in vector_scores) / len(vector_scores), 2)
-            if vector_scores
-            else 0.8
+            round(sum(v.confidence for v in scored) / len(scored), 2) if scored else 0.0
         )
 
         # 2. Extract Competitive Moat Matrix Points (Vector 2 grounded)
@@ -109,20 +110,21 @@ class DashboardService:
 
         scores: list[VectorScoreItem] = []
         for key, label, report_key in vectors:
-            sec_dict: dict[str, Any] = getattr(report, report_key, {}) if report else {}
-            conf = float(sec_dict.get("confidence", 0.85)) if sec_dict else 0.85
-            citations = sec_dict.get("citations", []) if sec_dict else []
-            summary = sec_dict.get("summary", "") if sec_dict else ""
+            sec_dict: dict[str, Any] = (getattr(report, report_key, None) or {}) if report else {}
+            has_data = sec_dict.get("status") == "COMPLETED"
+            conf = float(sec_dict.get("confidence") or 0.0) if has_data else 0.0
+            citations = sec_dict.get("citations") or []
+            summary = sec_dict.get("summary") or ""
 
-            # Determine risk level from vector nature and confidence
-            if key == "regulatory_risks":
-                risk_level = "HIGH" if conf > 0.8 else "MEDIUM"
-            elif key == "customer_insights":
-                risk_level = "MEDIUM" if conf < 0.85 else "LOW"
+            # Risk level reflects the evidence gap: no data or weak support = HIGH.
+            if not has_data or conf < 0.33:
+                risk_level = "HIGH"
+            elif conf < 0.66 or len(citations) < 3:
+                risk_level = "MEDIUM"
             else:
-                risk_level = "LOW" if conf >= 0.85 else "MEDIUM"
+                risk_level = "LOW"
 
-            snippet = (summary[:120] + "...") if len(summary) > 120 else (summary or f"Empirical findings in {job.target_market}")
+            snippet = (summary[:120] + "...") if len(summary) > 120 else summary
 
             scores.append(
                 VectorScoreItem(
@@ -130,7 +132,7 @@ class DashboardService:
                     label=label,
                     confidence=conf,
                     risk_level=risk_level,
-                    evidence_count=max(len(citations), 1),
+                    evidence_count=len(citations),
                     summary_snippet=snippet,
                 )
             )
@@ -144,54 +146,11 @@ class DashboardService:
         report: Report | None,
     ) -> list[MoatCompetitorPoint]:
         """
-        Constructs verified 2D positioning (Tech Moat vs. Pricing Power) grounded in competitor findings.
+        Competitor technology-moat / pricing-power coordinates require quantitative competitor
+        data that the research pipeline does not collect. Rather than invent positions, this
+        returns an empty list.
         """
-        citations: list[dict[str, Any]] = []
-        if report and report.competitor_analysis:
-            citations = report.competitor_analysis.get("citations", [])
-
-        default_url = citations[0].get("url") if citations else None
-        market = job.target_market
-
-        # Grounded multi-player positioning matrix
-        return [
-            MoatCompetitorPoint(
-                name=f"{market} Incumbent Leaders",
-                technological_moat=82.0,
-                pricing_power=88.0,
-                quadrant="Market Dominators",
-                summary="High enterprise switching costs and established distribution channels.",
-                confidence=0.92,
-                source_url=default_url,
-            ),
-            MoatCompetitorPoint(
-                name=f"Emerging {market} AI Specialists",
-                technological_moat=89.0,
-                pricing_power=48.0,
-                quadrant="Niche Innovators",
-                summary="Proprietary algorithmic efficiency with aggressive lower-tier introductory pricing.",
-                confidence=0.88,
-                source_url=citations[1].get("url") if len(citations) > 1 else default_url,
-            ),
-            MoatCompetitorPoint(
-                name="Horizontal Cloud Ecosystems",
-                technological_moat=58.0,
-                pricing_power=84.0,
-                quadrant="Price Leaders",
-                summary="Bundling advantages across existing enterprise contracts.",
-                confidence=0.85,
-                source_url=default_url,
-            ),
-            MoatCompetitorPoint(
-                name="Legacy Point-Solutions",
-                technological_moat=38.0,
-                pricing_power=34.0,
-                quadrant="Disrupted Challengers",
-                summary="Facing rapid margin compression and feature commoditization.",
-                confidence=0.79,
-                source_url=default_url,
-            ),
-        ]
+        return []
 
     @classmethod
     def _classify_claims(
@@ -200,7 +159,7 @@ class DashboardService:
         report: Report | None,
     ) -> tuple[list[ClaimClassification], int, int]:
         """
-        Separates empirical verified facts (linked to specific citations) from model-inferred projections.
+        Separates claims that quote a cited source URL (empirical) from claims without one (inferred).
         """
         claims: list[ClaimClassification] = []
         empirical_count = 0
@@ -214,11 +173,11 @@ class DashboardService:
         ]
 
         for vector_type, sec_dict in sections:
-            kf_list = sec_dict.get("key_findings", [])
+            kf_list = (sec_dict or {}).get("key_findings") or []
             for kf in kf_list:
                 claim_text = kf.get("claim", "")
                 src = kf.get("source_url")
-                is_empirical = bool(src and "mock" not in src and "http" in src)
+                is_empirical = bool(src and src.startswith(("http://", "https://")))
                 if is_empirical:
                     empirical_count += 1
                 else:
@@ -229,33 +188,10 @@ class DashboardService:
                         claim=claim_text,
                         source_url=src,
                         is_empirical=is_empirical,
-                        confidence=float(kf.get("confidence", 0.85)),
+                        confidence=float(kf.get("confidence") or 0.0),
                         vector_type=vector_type,
                     )
                 )
-
-        # Ensure baseline empirical facts representation if report was minimal
-        if not claims:
-            claims.append(
-                ClaimClassification(
-                    claim=f"Primary demand drivers for {job.target_market} confirmed across external sources.",
-                    source_url="https://verified-source.internal/market-size",
-                    is_empirical=True,
-                    confidence=0.92,
-                    vector_type="market_overview",
-                )
-            )
-            claims.append(
-                ClaimClassification(
-                    claim="Projected 5-year CAGR estimates synthesized from multi-model industry forecasts.",
-                    source_url=None,
-                    is_empirical=False,
-                    confidence=0.81,
-                    vector_type="market_overview",
-                )
-            )
-            empirical_count = 1
-            inferred_count = 1
 
         return claims, empirical_count, inferred_count
 
@@ -281,17 +217,10 @@ class DashboardService:
                 if netloc:
                     domain_counts[netloc] = domain_counts.get(netloc, 0) + 1
 
-        total = sum(domain_counts.values()) or len(citations) or 1
+        total = sum(domain_counts.values())
         items: list[SourceDomainItem] = []
         for domain, count in sorted(domain_counts.items(), key=lambda x: x[1], reverse=True):
-            pct = round((count / total) * 100, 1)
+            pct = round((count / total) * 100, 1) if total else 0.0
             items.append(SourceDomainItem(domain=domain, count=count, percentage=pct))
-
-        if not items:
-            items = [
-                SourceDomainItem(domain="wikipedia.org", count=2, percentage=50.0),
-                SourceDomainItem(domain="duckduckgo.com/news", count=2, percentage=50.0),
-            ]
-            total = 4
 
         return items, total

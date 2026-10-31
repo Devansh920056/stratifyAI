@@ -15,7 +15,7 @@ class KeyFinding(BaseModel):
     claim: str = Field(..., description="Fact-based finding synthesized from evidence")
     source_url: str = Field(..., description="Exact URL of the source evidence item")
     confidence: float = Field(
-        default=0.9, ge=0.0, le=1.0, description="Confidence score for this finding"
+        ..., ge=0.0, le=1.0, description="Evidence-support score for this finding (0-1)"
     )
 
 
@@ -36,7 +36,7 @@ class AnalysisOutput(BaseModel):
         ..., min_length=20, description="Comprehensive evidence-grounded summary"
     )
     confidence_score: float = Field(
-        default=0.9, ge=0.0, le=1.0, description="Overall task confidence score"
+        ..., ge=0.0, le=1.0, description="Overall evidence-support score for the task (0-1)"
     )
     citations: list[Citation] = Field(
         ..., min_length=1, description="List of unique evidence citations"
@@ -80,7 +80,7 @@ class LLMProvider(ABC):
     @property
     @abstractmethod
     def provider_name(self) -> str:
-        """Identifying name of the LLM provider (e.g. 'gemini', 'mock')."""
+        """Identifying name of the LLM provider (e.g. 'gemini', 'smart-extractor')."""
 
     @property
     @abstractmethod

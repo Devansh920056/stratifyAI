@@ -89,15 +89,22 @@ class Settings(BaseSettings):
     # Research Providers (Search & LLM)
     # --------------------------------------------------------------------------
     SEARCH_PROVIDER: str = Field(
-        default="mock", description="duckduckgo | tavily | mock"
+        default="duckduckgo", description="duckduckgo | tavily (live providers only)"
     )
     TAVILY_API_KEY: str | None = Field(default=None)
 
     LLM_PROVIDER: str = Field(
-        default="mock", description="gemini | smart | mock"
+        default="smart", description="gemini | smart (smart = extractive, no API key needed)"
     )
     GEMINI_API_KEY: str | None = Field(default=None)
-    LLM_MODEL: str = Field(default="gemini-1.5-flash")
+    LLM_MODEL: str = Field(default="gemini-3.8-flash")
+
+    # SEC EDGAR fair-access policy requires a User-Agent that identifies the requester
+    # with a real contact address, e.g. "Acme Research jane@acme.com".
+    SEC_USER_AGENT: str = Field(
+        default="StratifyAI-Research (set SEC_USER_AGENT to 'Your Name your@email.com')",
+        description="Declared User-Agent sent to SEC EDGAR and other public APIs",
+    )
 
     # --------------------------------------------------------------------------
     # Worker & Reliability Tuning

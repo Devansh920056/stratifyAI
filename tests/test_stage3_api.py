@@ -239,7 +239,7 @@ async def test_system_telemetry_endpoint(api_client: httpx.AsyncClient):
     telemetry = res.json()
     assert telemetry["status"] in ("healthy", "degraded")
     assert "database" in telemetry
-    assert telemetry["database"]["host_port"] == 5434
+    assert telemetry["database"]["port"] > 0
     assert "broker" in telemetry
     assert telemetry["broker"]["amqp_port"] == 5672
     assert "orchestrator" in telemetry

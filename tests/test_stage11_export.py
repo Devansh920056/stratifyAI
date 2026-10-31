@@ -95,7 +95,7 @@ async def test_executive_export_service_markdown_and_html(db_session: AsyncSessi
     assert md_res is not None
     assert md_res.entity_name == entity
     assert md_res.format == "MARKDOWN"
-    assert "STRATIFY AI 2.0 — EXECUTIVE INTELLIGENCE DOSSIER" in md_res.content
+    assert "STRATIFY AI - INTELLIGENCE DOSSIER" in md_res.content
     assert "Titanium Supply Chain Scarcity" in md_res.content
     assert "STRATEGIC ACCUMULATE" in md_res.content
     assert md_res.governance_audit.sha256_hash is not None
@@ -109,7 +109,7 @@ async def test_executive_export_service_markdown_and_html(db_session: AsyncSessi
     assert html_res.format == "HTML"
     assert "<!DOCTYPE html>" in html_res.content
     assert "Titanium Supply Chain Scarcity" in html_res.content
-    assert "@media print" in html_res.content
+    assert "<table>" in html_res.content
 
 
 @pytest.mark.asyncio
@@ -126,8 +126,7 @@ async def test_executive_export_service_json_format(db_session: AsyncSession):
     assert parsed["entity_name"] == entity
     assert "arbitration_decision" in parsed
     assert "statutory_sec_filings" in parsed
-    assert "cryptographic_sha256_hash" in parsed
-    assert len(parsed["cryptographic_sha256_hash"]) == 64
+    assert len(parsed["sha256_of_content_without_this_field"]) == 64
 
 
 @pytest.mark.asyncio

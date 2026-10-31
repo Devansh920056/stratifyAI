@@ -5,7 +5,7 @@ Provides real-time signal stream, live sync triggers, and volume velocity stats.
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.db.session import get_async_session
@@ -15,7 +15,7 @@ from backend.app.schemas.pulse import (
     MarketPulseSyncRequest,
     MarketSignalItem,
 )
-from backend.app.services.pulse_service import MarketPulseService
+from backend.app.services.pulse_service import MarketPulseService, PulseSyncError
 
 router = APIRouter()
 
@@ -61,11 +61,17 @@ async def sync_market_signals(
     request: MarketPulseSyncRequest,
     db: SessionDep,
 ) -> MarketPulseResponse:
-    signals = await MarketPulseService.ingest_live_signals(
-        session=db,
-        sector=request.sector,
-        max_records=request.max_signals,
-    )
+    try:
+        signals = await MarketPulseService.ingest_live_signals(
+            session=db,
+            sector=request.sector,
+            max_records=request.max_signals,
+        )
+    except PulseSyncError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Live news source unavailable: {exc}",
+        ) from exc
     return MarketPulseResponse(
         signals=[MarketSignalItem.model_validate(s) for s in signals],
         total=len(signals),

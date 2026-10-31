@@ -27,6 +27,7 @@ from backend.app.models.task_result import TaskResult
 from backend.app.schemas.job import JobCreateRequest
 from backend.app.services.job_service import JobService
 from backend.app.services.outbox_relay import OutboxRelayService
+from tests.fakes import MockSearchProvider
 from workers.consumer import WorkerConsumer
 from workers.processor import TaskProcessor
 
@@ -86,7 +87,8 @@ async def test_worker_task_processor_success():
         )
 
         success, reason = await TaskProcessor.process_task(
-            session=session, task_message=task_msg
+            session=session, task_message=task_msg,
+            search_provider=MockSearchProvider(),
         )
         assert success is True
         assert reason == "completed"
@@ -104,7 +106,7 @@ async def test_worker_task_processor_success():
             await session.scalars(select(Evidence).where(Evidence.task_id == task.id))
         ).all()
         assert len(evidence_items) >= 1
-        assert evidence_items[0].provider_name in ("mock", "duckduckgo")
+        assert evidence_items[0].provider_name == "mock"
         assert (
             "internal" in evidence_items[0].source_url
             or "http" in evidence_items[0].source_url
@@ -115,8 +117,8 @@ async def test_worker_task_processor_success():
             select(TaskResult).where(TaskResult.task_id == task.id)
         )
         assert result is not None
-        assert result.confidence_score > 0.8
-        assert result.model_name.startswith(("mock-grounder", "stratify-grounder"))
+        assert 0.0 < result.confidence_score <= 1.0
+        assert result.model_name == "stratify-extractor-v1"
 
 
 @pytest.mark.asyncio
@@ -156,7 +158,8 @@ async def test_worker_idempotency_on_redelivery():
 
         # First delivery -> processes to completion
         success1, reason1 = await TaskProcessor.process_task(
-            session=session, task_message=task_msg
+            session=session, task_message=task_msg,
+            search_provider=MockSearchProvider(),
         )
         assert success1 is True
         assert reason1 == "completed"
@@ -203,8 +206,12 @@ async def test_two_workers_concurrent_processing(broker_channel):
 
     # Spin up two distinct workers with QoS prefetch_count=1
     stop_event = asyncio.Event()
-    worker_alpha = WorkerConsumer(worker_id="worker-alpha", prefetch_count=1)
-    worker_beta = WorkerConsumer(worker_id="worker-beta", prefetch_count=1)
+    worker_alpha = WorkerConsumer(
+        worker_id="worker-alpha", prefetch_count=1, search_provider=MockSearchProvider()
+    )
+    worker_beta = WorkerConsumer(
+        worker_id="worker-beta", prefetch_count=1, search_provider=MockSearchProvider()
+    )
 
     task_alpha = asyncio.create_task(worker_alpha.start(stop_event=stop_event))
     task_beta = asyncio.create_task(worker_beta.start(stop_event=stop_event))

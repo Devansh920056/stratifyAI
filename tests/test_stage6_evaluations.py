@@ -186,7 +186,7 @@ async def test_backtest_simulation_engine(db_session: AsyncSession):
     assert 0.0 <= backtest.alignment_score <= 100.0
     finding = backtest.findings[0]
     assert finding.recommendation_id == rec.id
-    assert finding.backtest_verdict in ("STRONGLY_ALIGNED", "MODERATELY_ALIGNED", "DIVERGENT", "NEUTRAL")
+    assert finding.backtest_verdict in ("STRONGLY_ALIGNED", "MODERATELY_ALIGNED", "DIVERGENT", "NEUTRAL", "INSUFFICIENT_DATA")
 
 
 @pytest.mark.asyncio

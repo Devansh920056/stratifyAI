@@ -5,7 +5,9 @@ and runs counterfactual market backtests against continuous market signals.
 """
 
 import logging
+import re
 import uuid
+from datetime import timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,9 +15,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.db.base import utc_now
 from backend.app.models.decision_evaluation import DecisionEvaluation
 from backend.app.models.enums import DecisionOutcomeStatus, RecommendationStatus
-from backend.app.models.job import Job
 from backend.app.models.market_signal import MarketSignal
 from backend.app.models.recommendation import Recommendation
+from backend.app.services.recommendation_service import UNDEFINED_FIELD
 from backend.app.schemas.evaluation import (
     BacktestFindingItem,
     BacktestResultResponse,
@@ -27,6 +29,13 @@ from backend.app.schemas.evaluation import (
 )
 
 logger = logging.getLogger("stratify.services.evaluation")
+
+MIN_KEYWORD_MATCHES = 2
+BACKTEST_STOPWORDS = frozenset(
+    "about above after against finding source quoted market overview landscape competitive customer insights "
+    "regulatory their there these those which would could should being between through while because "
+    "decision owner defined evidence support score impact derived effort neutral default assessed".split()
+)
 
 
 class EvaluationService:
@@ -279,69 +288,65 @@ class EvaluationService:
             rec_stmt = rec_stmt.where(Recommendation.job_id == req.job_id)
         else:
             rec_stmt = rec_stmt.limit(10)
-
         recs = (await session.scalars(rec_stmt)).all()
-        if not recs:
-            # Fallback: find any job and create recommendations if none exist
-            job = await session.scalar(select(Job).order_by(Job.created_at.desc()).limit(1))
-            if job:
-                from backend.app.services.recommendation_service import (
-                    RecommendationService,
-                )
-                recs = await RecommendationService.get_recommendations_for_job(session, job.id)
 
-        # 2. Query market signals
+        # 2. Query real market signals inside the requested lookback window
+        cutoff = utc_now() - timedelta(days=req.lookback_days)
         signals_stmt = (
             select(MarketSignal)
+            .where(MarketSignal.published_at >= cutoff)
             .order_by(MarketSignal.published_at.desc())
-            .limit(100)
+            .limit(500)
         )
         all_signals = (await session.scalars(signals_stmt)).all()
 
         findings: list[BacktestFindingItem] = []
         aligned_count = 0
         divergent_count = 0
+        assessed = 0
 
         for r in recs:
-            # Extract keywords from title and hypothesis
-            keywords = [
-                w.lower()
-                for w in (r.title + " " + r.outcome_hypothesis).split()
-                if len(w) > 4 and w.lower() not in ("should", "accelerate", "leverage", "strategic", "market", "deployment")
-            ]
+            keywords = cls._extract_keywords(r)
 
-            # Find matching market signals
             matched_signals = []
             for s in all_signals:
                 sig_text = f"{s.headline} {s.summary}".lower()
-                if any(kw in sig_text for kw in keywords):
+                if sum(1 for kw in keywords if kw in sig_text) >= MIN_KEYWORD_MATCHES:
                     matched_signals.append(s)
 
             signal_count = len(matched_signals)
-            if matched_signals:
-                avg_sent = sum(s.sentiment_score for s in matched_signals) / len(matched_signals)
-                evidence = [f"{s.headline} ({s.source_domain})" for s in matched_signals[:3]]
-            else:
-                avg_sent = 0.15
-                evidence = ["Macro market stability across target sector (Reuters / Bloomberg index)"]
+            if signal_count == 0:
+                # No matching real signals: report that honestly instead of assuming sentiment.
+                findings.append(
+                    BacktestFindingItem(
+                        recommendation_id=r.id,
+                        title=r.title,
+                        original_hypothesis=r.outcome_hypothesis,
+                        estimated_impact=r.estimated_impact,
+                        market_signal_count=0,
+                        market_sentiment_trend=0.0,
+                        backtest_verdict="INSUFFICIENT_DATA",
+                        confidence=0.0,
+                        key_market_evidence=[],
+                    )
+                )
+                continue
 
-            # Compute backtest verdict
+            assessed += 1
+            avg_sent = sum(s.sentiment_score for s in matched_signals) / signal_count
+            evidence = [f"{s.headline} ({s.source_domain})" for s in matched_signals[:3]]
+
             if avg_sent >= 0.25 and r.estimated_impact >= 7:
                 verdict = "STRONGLY_ALIGNED"
                 aligned_count += 1
-                confidence = 0.92
             elif avg_sent >= 0.05:
                 verdict = "MODERATELY_ALIGNED"
                 aligned_count += 1
-                confidence = 0.81
             elif avg_sent <= -0.20:
                 verdict = "DIVERGENT"
                 divergent_count += 1
-                confidence = 0.78
             else:
                 verdict = "NEUTRAL"
-                aligned_count += 1
-                confidence = 0.70
 
             findings.append(
                 BacktestFindingItem(
@@ -352,20 +357,27 @@ class EvaluationService:
                     market_signal_count=signal_count,
                     market_sentiment_trend=round(avg_sent, 2),
                     backtest_verdict=verdict,
-                    confidence=confidence,
+                    # Evidence coverage: 5 or more matching signals = 1.0
+                    confidence=round(min(1.0, signal_count / 5.0), 2),
                     key_market_evidence=evidence,
                 )
             )
 
-        total = len(findings)
-        alignment_score = (
-            round((aligned_count / total) * 100.0, 1) if total > 0 else 100.0
-        )
+        alignment_score = round((aligned_count / assessed) * 100.0, 1) if assessed else 0.0
 
         return BacktestResultResponse(
-            total_recommendations=total,
+            total_recommendations=len(findings),
             aligned_recommendations=aligned_count,
             divergent_recommendations=divergent_count,
             alignment_score=alignment_score,
             findings=findings,
         )
+
+    @staticmethod
+    def _extract_keywords(rec: Recommendation) -> list[str]:
+        """Distinctive words (>4 letters) from the recommendation text, minus boilerplate."""
+        text = f"{rec.title} {rec.description}"
+        if rec.outcome_hypothesis and rec.outcome_hypothesis != UNDEFINED_FIELD:
+            text += f" {rec.outcome_hypothesis}"
+        words = {re.sub(r"[^a-z0-9]", "", w.lower()) for w in text.split()}
+        return sorted(w for w in words if len(w) > 4 and w not in BACKTEST_STOPWORDS)

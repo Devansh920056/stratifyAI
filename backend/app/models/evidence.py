@@ -52,7 +52,7 @@ class Evidence(Base):
         nullable=False,
     )
     provider_name: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="mock"
+        String(50), nullable=False, default="unknown"
     )
     provider_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 

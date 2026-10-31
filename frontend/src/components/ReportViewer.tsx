@@ -95,10 +95,33 @@ export function ReportViewer({
       report.customer_insights,
       report.opportunities_and_risks,
     ].filter((s) => s && s.status === "COMPLETED");
-    if (sections.length === 0) return 85;
+    if (sections.length === 0) return 0;
     const avg =
-      sections.reduce((acc, s) => acc + (s.confidence || 0.85), 0) / sections.length;
+      sections.reduce((acc, s) => acc + (s.confidence || 0), 0) / sections.length;
     return Math.round(avg * 100);
+  }, [report]);
+
+  const completedSectionsCount = useMemo(() => {
+    if (!report) return 0;
+    return [
+      report.market_findings,
+      report.competitor_analysis,
+      report.customer_insights,
+      report.opportunities_and_risks,
+    ].filter((s) => s && s.status === "COMPLETED").length;
+  }, [report]);
+
+  const citedFindingsCount = useMemo(() => {
+    if (!report) return 0;
+    return [
+      report.market_findings,
+      report.competitor_analysis,
+      report.customer_insights,
+      report.opportunities_and_risks,
+    ].reduce(
+      (n, s) => n + (s?.key_findings || []).filter((f) => !!f.source_url).length,
+      0
+    );
   }, [report]);
 
   const totalCitationsCount = useMemo(() => {
@@ -304,13 +327,13 @@ export function ReportViewer({
           />
           <Scorecard
             label="Research Areas"
-            value="4 / 4 Complete"
-            subtext="Full market coverage"
+            value={`${completedSectionsCount} / 4 Complete`}
+            subtext="Sections with retrieved evidence"
           />
           <Scorecard
-            label="Accuracy Check"
-            value="100% Verified"
-            subtext="Fact-checked claims"
+            label="Cited Findings"
+            value={`${citedFindingsCount}`}
+            subtext="Findings linked to a source URL"
           />
         </div>
       </div>
